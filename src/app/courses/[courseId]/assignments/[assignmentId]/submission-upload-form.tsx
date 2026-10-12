@@ -3,77 +3,73 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { formatBytes } from "@/lib/format-bytes";
-import { pickedFromDrop, pickedFromInput, readPicked } from "@/lib/submissions/collect-files";
-import { prepareUpload, UploadTooLargeError, type PreparedFile } from "@/lib/submissions/prepare-upload";
-import { SUBMISSION_BUCKET, submissionObjectName } from "@/lib/submissions/storage";
+import { pickedFromDrop, pickedFromInput, readPicked, type PickedFile } from "@/lib/submissions/collect-files";
+import {
+  prepareUpload,
+  SUBMISSION_MAX_FILES,
+  UploadTooLargeError,
+  type PreparedUpload,
+} from "@/lib/submissions/prepare-upload";
+import { discardUploaded, submissionStorage, uploadPrepared } from "@/lib/submissions/upload";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
-import { submitUploadedFiles, type UploadedFile } from "./submission-actions";
+import { submitUploadedFiles } from "./submission-actions";
 
 type Props = { assignmentId: string; studentId: string; resubmit: boolean };
 
 const TOO_LARGE = "node_modules, .git 같은 폴더를 빼고도 20MB가 넘어서 제출할 수 없어요.";
-const PARALLEL_UPLOADS = 4;
+const PREPARE_ERRORS: Record<Exclude<PreparedUpload, { ok: true }>["reason"], string> = {
+  "too-large": TOO_LARGE,
+  empty: "제출할 파일이 없어요. (제외되는 폴더만 들어 있어요)",
+  "too-many-files": `파일이 ${SUBMISSION_MAX_FILES}개를 넘어서 제출할 수 없어요. 빌드 결과물 같은 폴더를 빼 주세요.`,
+  "duplicate-paths": "경로가 같은 파일이 여러 개 있어요. 폴더 구조를 확인해 주세요.",
+};
 const PREVIEW_COUNT = 8;
 
 // Uploads go straight from the browser to Storage (docs/adr/0002); the server
 // action then makes them the 제출물.
 export function SubmissionUploadForm({ assignmentId, studentId, resubmit }: Props) {
-  const [files, setFiles] = useState<PreparedFile[] | null>(null);
+  const [prepared, setPrepared] = useState<Extract<PreparedUpload, { ok: true }> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  async function prepare(collect: () => Promise<Parameters<typeof readPicked>[0]>) {
+  async function prepare(picking: Promise<PickedFile[]>) {
     setError(null);
-    setFiles(null);
+    setPrepared(null);
     try {
-      const result = prepareUpload(await readPicked(await collect()));
-      if (result.ok) setFiles(result.files);
-      else setError(result.reason === "too-large" ? TOO_LARGE : "제출할 파일이 없어요. (제외되는 폴더만 들어 있어요)");
+      const result = prepareUpload(await readPicked(await picking));
+      if (result.ok) setPrepared(result);
+      else setError(PREPARE_ERRORS[result.reason]);
     } catch (e) {
       setError(e instanceof UploadTooLargeError ? TOO_LARGE : "파일을 읽지 못했어요. zip이 손상되지 않았는지 확인해 주세요.");
     }
   }
 
   function submit() {
-    if (!files) return;
+    if (!prepared) return;
+    const { files } = prepared;
     startTransition(async () => {
       setError(null);
-      const attempt = crypto.randomUUID();
-      const storage = createBrowserSupabase().storage.from(SUBMISSION_BUCKET);
-      const uploaded: UploadedFile[] = files.map((file, index) => ({
-        path: file.path,
-        storage_path: submissionObjectName(assignmentId, studentId, attempt, index),
-        kind: file.kind,
-      }));
-
-      let done = 0;
-      let failed = false;
-      const queue = [...files.keys()];
-      const worker = async () => {
-        for (let index = queue.shift(); index !== undefined && !failed; index = queue.shift()) {
-          const { error: uploadError } = await storage.upload(uploaded[index].storage_path, files[index].data, {
-            contentType: files[index].kind === "text" ? "text/plain;charset=utf-8" : "application/octet-stream",
-          });
-          if (uploadError) failed = true;
-          setProgress(`올리는 중 ${++done}/${files.length}`);
-        }
-      };
-      await Promise.all(Array.from({ length: Math.min(PARALLEL_UPLOADS, files.length) }, worker));
+      const storage = submissionStorage(createBrowserSupabase());
+      const uploaded = await uploadPrepared(storage, { assignmentId, studentId }, files, (done) =>
+        setProgress(`올리는 중 ${done}/${files.length}`),
+      );
       setProgress(null);
 
-      if (failed) {
-        setError("파일을 올리지 못했어요. 마감이 지났는지 확인하고 다시 해 주세요.");
+      if (!uploaded) {
+        setError("파일을 올리지 못했어요. 마감이 지나지 않았는지, 인터넷 연결을 확인하고 다시 해 주세요.");
         return;
       }
       const result = await submitUploadedFiles(assignmentId, uploaded);
-      if (result.error) return setError(result.error);
-      setFiles(null);
+      if (result.error) {
+        await discardUploaded(storage, uploaded);
+        setError(result.error);
+        return;
+      }
+      setPrepared(null);
     });
   }
-
-  const totalBytes = files?.reduce((sum, f) => sum + f.data.byteLength, 0) ?? 0;
 
   return (
     <div className="flex flex-col gap-3">
@@ -86,8 +82,7 @@ export function SubmissionUploadForm({ assignmentId, studentId, resubmit }: Prop
         onDrop={(event) => {
           event.preventDefault();
           setDragging(false);
-          const pick = pickedFromDrop(event.dataTransfer.items);
-          void prepare(() => pick);
+          void prepare(pickedFromDrop(event.dataTransfer.items));
         }}
         className={`flex flex-col items-center gap-3 rounded-lg border-2 border-dashed p-6 text-center text-sm ${
           dragging ? "border-ring bg-muted" : "border-input"
@@ -100,30 +95,30 @@ export function SubmissionUploadForm({ assignmentId, studentId, resubmit }: Prop
           </span>
         </p>
         <div className="flex gap-2">
-          <PickButton label="파일·zip 고르기" onPick={(list) => prepare(async () => pickedFromInput(list))} />
-          <PickButton label="폴더 고르기" directory onPick={(list) => prepare(async () => pickedFromInput(list))} />
+          <PickButton label="파일·zip 고르기" onPick={(list) => prepare(Promise.resolve(pickedFromInput(list)))} />
+          <PickButton label="폴더 고르기" directory onPick={(list) => prepare(Promise.resolve(pickedFromInput(list)))} />
         </div>
       </div>
 
-      {files && (
+      {prepared && (
         <div className="flex flex-col gap-1 text-sm">
           <p className="font-medium">
-            파일 {files.length}개 · {formatBytes(totalBytes)}
+            파일 {prepared.files.length}개 · {formatBytes(prepared.totalBytes)}
           </p>
           <ul className="text-muted-foreground">
-            {files.slice(0, PREVIEW_COUNT).map((f) => (
+            {prepared.files.slice(0, PREVIEW_COUNT).map((f) => (
               <li key={f.path}>
                 {f.path} {f.kind === "binary" && <span className="text-xs">(바이너리)</span>}
               </li>
             ))}
-            {files.length > PREVIEW_COUNT && <li>외 {files.length - PREVIEW_COUNT}개</li>}
+            {prepared.files.length > PREVIEW_COUNT && <li>외 {prepared.files.length - PREVIEW_COUNT}개</li>}
           </ul>
           {resubmit && <p className="text-xs text-muted-foreground">다시 제출하면 지금 파일은 모두 지워지고 이 파일들로 바뀌어요.</p>}
         </div>
       )}
 
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="button" onClick={submit} disabled={!files || pending} className="self-start">
+      <Button type="button" onClick={submit} disabled={!prepared || pending} className="self-start">
         {pending ? (progress ?? "제출 중…") : resubmit ? "다시 제출하기" : "제출하기"}
       </Button>
     </div>

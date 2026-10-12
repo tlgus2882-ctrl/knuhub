@@ -7,6 +7,11 @@ create type public.file_kind as enum ('text', 'binary');
 alter table public.submission_file
   add column kind public.file_kind not null default 'binary';
 
+-- 이미 제출된 파일은 내용을 읽을 수 없으니 흔한 텍스트 확장자로 구분한다.
+update public.submission_file
+set kind = 'text'
+where lower(path) ~ '\.(txt|md|csv|json|xml|ya?ml|toml|ini|html?|css|scss|js|jsx|mjs|cjs|ts|tsx|py|java|kt|c|h|cpp|hpp|cc|cs|go|rs|rb|php|swift|sql|sh|r|m|ipynb)$';
+
 -- 올린 파일 묶음을 내 제출물로 확정한다. 이미 제출했다면 파일을 통째로 바꾼다 (덮어쓰기).
 -- files: [{ "path": "src/main.py", "storage_path": "<assignment>/<me>/<attempt>/0", "kind": "text" }, ...]
 -- kind를 빼면 바이너리로 본다 (다운로드만 가능).

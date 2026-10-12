@@ -10,10 +10,24 @@ export type PreparedFile = UploadEntry & { kind: FileKind };
 
 export type PreparedUpload =
   | { ok: true; files: PreparedFile[]; totalBytes: number }
-  | { ok: false; reason: "too-large" | "empty"; totalBytes: number };
+  | { ok: false; reason: "too-large" | "empty" | "too-many-files" | "duplicate-paths"; totalBytes: number };
 
 /** Folders and files that are never part of a 제출물. Matched against any path segment. */
-const EXCLUDED_NAMES = new Set(["node_modules", ".git", "__MACOSX", ".DS_Store"]);
+const EXCLUDED_NAMES = new Set([
+  "node_modules",
+  ".git",
+  "__pycache__",
+  ".venv",
+  "venv",
+  ".idea",
+  ".vscode",
+  "__MACOSX",
+  ".DS_Store",
+  "Thumbs.db",
+]);
+
+/** Each file is its own Storage upload, so keep a 제출물 to a sane number of them. */
+export const SUBMISSION_MAX_FILES = 1000;
 
 export function prepareUpload(entries: UploadEntry[]): PreparedUpload {
   const files = entries
@@ -23,6 +37,8 @@ export function prepareUpload(entries: UploadEntry[]): PreparedUpload {
 
   if (files.length === 0) return { ok: false, reason: "empty", totalBytes };
   if (totalBytes > SUBMISSION_MAX_BYTES) return { ok: false, reason: "too-large", totalBytes };
+  if (files.length > SUBMISSION_MAX_FILES) return { ok: false, reason: "too-many-files", totalBytes };
+  if (new Set(files.map((f) => f.path)).size < files.length) return { ok: false, reason: "duplicate-paths", totalBytes };
   return { ok: true, files: files.map((file) => ({ ...file, kind: classify(file.data) })), totalBytes };
 }
 
@@ -51,13 +67,31 @@ export function entriesFromZip(zip: Uint8Array): UploadEntry[] {
   let declaredBytes = 0;
   const files = unzipSync(zip, {
     filter: (file) => {
-      if (file.name.endsWith("/") || isExcluded(normalizePath(file.name))) return false;
+      if (file.name.endsWith("/") || isExcluded(normalizePath(zipEntryName(file.name)))) return false;
       declaredBytes += file.originalSize;
       if (declaredBytes > SUBMISSION_MAX_BYTES) throw new UploadTooLargeError();
       return true;
     },
   });
-  return Object.entries(files).map(([path, data]) => ({ path, data }));
+  return Object.entries(files).map(([name, data]) => ({ path: zipEntryName(name), data }));
+}
+
+const utf8Strict = new TextDecoder("utf-8", { fatal: true });
+const cp949 = new TextDecoder("euc-kr"); // browsers' euc-kr is the CP949 superset
+
+/**
+ * fflate reads a name without the zip's UTF-8 flag as Latin-1. Zips from Windows
+ * Explorer store Korean names as CP949 that way, and some macOS tools store
+ * UTF-8 without the flag; recover both. NFC so macOS's decomposed 한글 matches.
+ */
+function zipEntryName(name: string): string {
+  if (/^[\x00-\x7f]*$/.test(name) || /[^\x00-\xff]/.test(name)) return name.normalize("NFC");
+  const bytes = Uint8Array.from(name, (c) => c.charCodeAt(0));
+  try {
+    return utf8Strict.decode(bytes).normalize("NFC");
+  } catch {
+    return cp949.decode(bytes).normalize("NFC");
+  }
 }
 
 // Forward slashes, no empty, "." or ".." segments: zips and Windows use other forms.

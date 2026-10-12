@@ -5,7 +5,7 @@ import { entriesFromZip, isExcluded, UploadTooLargeError, type UploadEntry } fro
 import { SUBMISSION_MAX_BYTES } from "./storage";
 
 /** A file and the path it had inside the picked or dropped folder. */
-type PickedFile = { path: string; file: File };
+export type PickedFile = { path: string; file: File };
 
 /** Files from an <input type="file">, with or without webkitdirectory. */
 export function pickedFromInput(files: File[]): PickedFile[] {
@@ -39,15 +39,20 @@ async function walk(entry: FileSystemEntry, into: PickedFile[]): Promise<void> {
 }
 
 /**
- * Reads the picked files. A lone .zip is unpacked (its inner paths are kept);
- * excluded paths are never read. Throws UploadTooLargeError before reading
- * anything when the files are already over the limit.
+ * Reads the picked files. A .zip picked or dropped on its own (not inside a
+ * folder) is unpacked in place of itself; excluded paths are never read.
+ * Throws UploadTooLargeError before reading anything when the files are
+ * already over the limit.
  */
 export async function readPicked(picked: PickedFile[]): Promise<UploadEntry[]> {
   const kept = picked.filter((p) => !isExcluded(p.path));
-  if (kept.length === 1 && kept[0].file.name.toLowerCase().endsWith(".zip")) {
-    return entriesFromZip(new Uint8Array(await kept[0].file.arrayBuffer()));
-  }
-  if (kept.reduce((sum, p) => sum + p.file.size, 0) > SUBMISSION_MAX_BYTES) throw new UploadTooLargeError();
-  return Promise.all(kept.map(async (p) => ({ path: p.path, data: new Uint8Array(await p.file.arrayBuffer()) })));
+  const isTopLevelZip = (p: PickedFile) => !p.path.includes("/") && p.path.toLowerCase().endsWith(".zip");
+  const plain = kept.filter((p) => !isTopLevelZip(p));
+  if (plain.reduce((sum, p) => sum + p.file.size, 0) > SUBMISSION_MAX_BYTES) throw new UploadTooLargeError();
+
+  const unzipped = await Promise.all(
+    kept.filter(isTopLevelZip).map(async (p) => entriesFromZip(new Uint8Array(await p.file.arrayBuffer()))),
+  );
+  const read = await Promise.all(plain.map(async (p) => ({ path: p.path, data: new Uint8Array(await p.file.arrayBuffer()) })));
+  return [...unzipped.flat(), ...read];
 }

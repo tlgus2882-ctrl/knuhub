@@ -80,6 +80,36 @@ describe("prepareUpload", () => {
       "project/etc/passwd",
     ]);
   });
+
+  it("경로를 정리했더니 같은 경로가 되는 파일이 있으면 거부한다", () => {
+    const result = prepareUpload([
+      { path: "project/a/b.txt", data: text("1") },
+      { path: "project/a/./b.txt", data: text("2") },
+    ]);
+
+    expect(result.ok ? "ok" : result.reason).toBe("duplicate-paths");
+  });
+
+  it("파일이 1000개를 넘으면 거부한다", () => {
+    const many = (n: number) => Array.from({ length: n }, (_, i) => ({ path: `f${i}.txt`, data: text("x") }));
+
+    expect(prepareUpload(many(1000)).ok).toBe(true);
+    const over = prepareUpload(many(1001));
+    expect(over.ok ? "ok" : over.reason).toBe("too-many-files");
+  });
+
+  it("__pycache__, 가상환경, 편집기 설정 폴더도 뺀다", () => {
+    const result = prepareUpload([
+      { path: "app/main.py", data: text("x") },
+      { path: "app/__pycache__/main.cpython-312.pyc", data: text("x") },
+      { path: "app/.venv/bin/python", data: text("x") },
+      { path: "app/venv/lib/site.py", data: text("x") },
+      { path: "app/.idea/workspace.xml", data: text("x") },
+      { path: "app/.vscode/settings.json", data: text("x") },
+    ]);
+
+    expect(result.ok && result.files.map((f) => f.path)).toEqual(["app/main.py"]);
+  });
 });
 
 describe("entriesFromZip", () => {
@@ -101,5 +131,20 @@ describe("entriesFromZip", () => {
     const zip = zipSync({ "a.bin": new Uint8Array(15 * 1024 * 1024), "b.bin": new Uint8Array(15 * 1024 * 1024) });
 
     expect(() => entriesFromZip(zip)).toThrow(UploadTooLargeError);
+  });
+
+  it("UTF-8 표시 없이 CP949로 저장된 한글 파일 이름(윈도우 탐색기 zip)도 제대로 읽는다", () => {
+    // "과제/a.txt" in CP949, written as Latin-1 characters so fflate stores the raw bytes without the UTF-8 flag.
+    const cp949Name = String.fromCharCode(0xb0, 0xfa, 0xc1, 0xa6) + "/a.txt";
+    const zip = zipSync({ [cp949Name]: text("x") });
+
+    expect(entriesFromZip(zip).map((e) => e.path)).toEqual(["과제/a.txt"]);
+  });
+
+  it("UTF-8 표시 없이 UTF-8로 저장된 이름도 제대로 읽는다", () => {
+    const utf8AsLatin1 = String.fromCharCode(...new TextEncoder().encode("과제")) + "/a.txt";
+    const zip = zipSync({ [utf8AsLatin1]: text("x") });
+
+    expect(entriesFromZip(zip).map((e) => e.path)).toEqual(["과제/a.txt"]);
   });
 });

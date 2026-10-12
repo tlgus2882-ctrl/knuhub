@@ -34,7 +34,7 @@ async function mySubmission(student: TestUser, assignmentId: string) {
   return data;
 }
 
-describe("파일 하나 제출", () => {
+describe("제출", () => {
   it("수강생은 과제에 파일 하나를 제출하고 자기 제출물과 제출 시각을 본다", async () => {
     const { student, assignmentId } = await assignmentSetup();
 
