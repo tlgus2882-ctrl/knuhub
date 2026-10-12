@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { SearchBox } from "../search/search-box";
 import { compareSemestersNewestFirst, sectionLabel, semesterLabel } from "./course-term";
 
 export default function BrowseCoursesPage() {
@@ -10,6 +11,7 @@ export default function BrowseCoursesPage() {
         ← 처음으로
       </Link>
       <h1 className="text-2xl font-semibold tracking-tight">과목 둘러보기</h1>
+      <SearchBox />
       <Suspense fallback={<p className="text-sm text-muted-foreground">불러오는 중…</p>}>
         <CoursesBySemester />
       </Suspense>

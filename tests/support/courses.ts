@@ -52,7 +52,7 @@ export const inDays = (days: number) => new Date(Date.now() + days * 24 * 60 * 6
 export async function postTestAssignment(
   professor: TestUser,
   courseId: string,
-  fields: { due_at?: string; visibility?: Visibility } = {},
+  fields: { title?: string; due_at?: string; visibility?: Visibility } = {},
 ): Promise<string> {
   const { data, error } = await professor.client
     .from("assignment")
@@ -61,4 +61,10 @@ export async function postTestAssignment(
     .single();
   if (error) throw error;
   return data.id;
+}
+
+/** Moves the assignment's 마감일, as its professor (e.g. to the past to close it). */
+export async function moveDeadline(professor: TestUser, assignmentId: string, dueAt: string): Promise<void> {
+  const { error } = await professor.client.from("assignment").update({ due_at: dueAt }).eq("id", assignmentId);
+  if (error) throw error;
 }
