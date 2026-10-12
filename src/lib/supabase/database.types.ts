@@ -149,6 +149,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"profile_contact": {
+                  Row: {
+                    "contact_visibility": Database["public"]['Enums']["contact_visibility"],"github": string | null,"id": string,"open_chat_url": string | null,"show_email": boolean
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "contact_visibility"?: Database["public"]['Enums']["contact_visibility"],"github"?: string | null,"id": string,"open_chat_url"?: string | null,"show_email"?: boolean
+                  }
+                  Update: {
+                    "contact_visibility"?: Database["public"]['Enums']["contact_visibility"],"github"?: string | null,"id"?: string,"open_chat_url"?: string | null,"show_email"?: boolean
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "profile_contact_id_fkey"
+      columns: ["id"]
+isOneToOne: true
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profile_private": {
                   Row: {
                     "id": string,"pending_student_number": string | null,"phone": string,"privacy_consented_at": string
@@ -250,6 +270,11 @@ isOneToOne: false
             "assert_school_email":
 { Args: { "email": string }; Returns: undefined
                            },
+"author_contacts":
+{ Args: { "target": string }; Returns: {
+              "email": string,"github": string,"open_chat_url": string
+            }[]
+                           },
 "can_delete":
 { Args: { "": Database["public"]['Tables']["review"]['Row'] }; Returns: { error: true } & "the function public.can_delete with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
                            },
@@ -321,6 +346,9 @@ isOneToOne: false
 "regenerate_invite_code":
 { Args: { "target_course": string }; Returns: string
                            },
+"shares_course_with":
+{ Args: { "other": string }; Returns: boolean
+                           },
 "student_number_taken":
 { Args: { "candidate": string }; Returns: boolean
                            },
@@ -331,10 +359,13 @@ isOneToOne: false
                            },
 "submit_files":
 { Args: { "files": Json,"target_assignment": string }; Returns: (string)[]
+                           },
+"update_my_profile":
+{ Args: { "contact_visibility": Database["public"]['Enums']["contact_visibility"],"github"?: string,"new_name": string,"open_chat_url"?: string,"show_email": boolean }; Returns: undefined
                            }
           }
           Enums: {
-            "file_kind": "text"|"binary","role": "student"|"professor"|"admin","visibility": "private"|"course"|"campus"
+            "contact_visibility": "public"|"course"|"private","file_kind": "text"|"binary","role": "student"|"professor"|"admin","visibility": "private"|"course"|"campus"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -454,7 +485,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "file_kind": ["text", "binary"],"role": ["student", "professor", "admin"],"visibility": ["private", "course", "campus"]
+            "contact_visibility": ["public", "course", "private"],"file_kind": ["text", "binary"],"role": ["student", "professor", "admin"],"visibility": ["private", "course", "campus"]
           }
         }
 } as const
