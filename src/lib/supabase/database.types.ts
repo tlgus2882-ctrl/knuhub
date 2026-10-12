@@ -343,6 +343,9 @@ isOneToOne: false
 "new_invite_code":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"prepare_withdrawal":
+{ Args: Record<PropertyKey, never>; Returns: (string)[]
+                           },
 "regenerate_invite_code":
 { Args: { "target_course": string }; Returns: string
                            },
