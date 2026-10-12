@@ -103,6 +103,20 @@ supabase db push                                 # 아직 적용 안 된 마이�
 - **Site URL**: Vercel 주소
 - **Redirect URLs**: `https://<Vercel 주소>/**`와 `http://localhost:3000/**` 추가
 
+## 메일 템플릿
+
+인증 메일 문구는 `supabase/templates/`에 있다. 로컬 Supabase는 `config.toml`로 이 파일을 쓰고, 클라우드는 대시보드 → Authentication → Emails → Templates에 **직접 붙여 넣어야** 한다. 파일을 고치면 클라우드에도 다시 붙여 넣는다.
+
+| 대시보드 탭 | 파일 | 제목 |
+|---|---|---|
+| Confirm signup | `confirmation.html` | [knuhub] 메일 인증을 마무리해 주세요 |
+| Reset Password | `recovery.html` | [knuhub] 비밀번호 재설정 |
+| Change Email Address | `email_change.html` | [knuhub] 메일 주소 변경 확인 |
+
+가입 인증과 비밀번호 재설정 링크는 메일에 담긴 일회용 토큰(`token_hash`)을 `/auth/confirm`이 확인하는 방식이라, 휴대폰이나 다른 브라우저에서 열어도 동작한다. 링크 주소는 `{{ .RedirectTo }}`(앱이 넘긴 `NEXT_PUBLIC_SITE_URL/auth/confirm`)라서, 그 주소가 Supabase의 Redirect URLs에 있어야 한다.
+
+메일 발송은 Brevo SMTP를 쓴다 (대시보드 → Authentication → Emails → SMTP Settings). Brevo의 Authorized IPs 차단은 꺼 둬야 Supabase 서버에서 보낼 수 있다.
+
 ## CI
 
 PR과 `main` 푸시마다 GitHub Actions가 로컬 Supabase를 띄우고 DB 타입 최신 여부, 타입 검사, 린트, 단위 테스트, 권한 테스트를 돌린다 ([.github/workflows/ci.yml](.github/workflows/ci.yml)).

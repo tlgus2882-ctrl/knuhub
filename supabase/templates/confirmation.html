@@ -5,15 +5,15 @@
     아래 버튼을 누르면 메일 인증이 끝나고 바로 로그인돼요.
   </p>
   <p style="margin:0 0 24px">
-    <a href="{{ .ConfirmationURL }}"
+    <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email"
        style="display:inline-block;padding:12px 20px;background:#171717;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600">
       메일 인증하기
     </a>
   </p>
   <p style="margin:0 0 8px;font-size:13px;color:#737373">
-    가입한 브라우저에서 열어 주세요. 버튼이 안 눌리면 아래 주소를 복사해 열어도 돼요.
+    휴대폰이나 다른 브라우저에서 열어도 돼요. 버튼이 안 눌리면 아래 주소를 복사해 열어 주세요.
   </p>
-  <p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="{{ .ConfirmationURL }}" style="color:#737373">{{ .ConfirmationURL }}</a></p>
+  <p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email" style="color:#737373">{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email</a></p>
   <p style="margin:0;font-size:13px;color:#737373">
     직접 가입하지 않았다면 이 메일은 무시하세요. 인증하지 않으면 가입되지 않아요.
   </p>

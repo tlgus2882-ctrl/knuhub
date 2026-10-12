@@ -32,8 +32,8 @@ async function ConfirmFailedNotice({ searchParams }: Pick<PageProps<"/login">, "
 
   return (
     <p className="text-sm text-destructive">
-      메일 인증에 실패했어요. 링크가 만료됐거나, 같은 학번으로 먼저 인증한 사용자가 있을 수 있어요.
-      다시 가입하거나 관리자에게 문의하세요.
+      메일 링크를 확인하지 못했어요. 링크가 만료됐거나 이미 쓴 링크일 수 있어요. 가입 인증이라면 같은
+      학번으로 먼저 인증한 사용자가 있을 수도 있어요. 다시 시도하거나 관리자에게 문의하세요.
     </p>
   );
 }

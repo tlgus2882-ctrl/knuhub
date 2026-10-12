@@ -4,7 +4,7 @@
     비밀번호 재설정을 요청하셨어요. 아래 버튼을 눌러 새 비밀번호를 정해 주세요.
   </p>
   <p style="margin:0 0 24px">
-    <a href="{{ .ConfirmationURL }}"
+    <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=recovery"
        style="display:inline-block;padding:12px 20px;background:#171717;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600">
       비밀번호 재설정하기
     </a>
@@ -12,7 +12,7 @@
   <p style="margin:0 0 8px;font-size:13px;color:#737373">
     버튼이 안 눌리면 아래 주소를 복사해 열어도 돼요.
   </p>
-  <p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="{{ .ConfirmationURL }}" style="color:#737373">{{ .ConfirmationURL }}</a></p>
+  <p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=recovery" style="color:#737373">{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=recovery</a></p>
   <p style="margin:0;font-size:13px;color:#737373">
     직접 요청하지 않았다면 이 메일은 무시하세요. 비밀번호는 바뀌지 않아요.
   </p>

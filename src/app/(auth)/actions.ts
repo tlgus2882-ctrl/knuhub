@@ -1,8 +1,13 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { resolveLoginEmail } from "@/lib/auth/resolve-login-email";
+import { PASSWORD_RESET_COOKIE } from "@/lib/auth/password-reset-cookie";
+import {
+  normalizeEmail,
+  resolveLoginEmail,
+  STUDENT_NUMBER_PATTERN,
+} from "@/lib/auth/resolve-login-email";
 import type { SignupMetadata } from "@/lib/auth/signup-metadata";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -14,7 +19,7 @@ const SCHOOL_DOMAIN = "@kangnam.ac.kr";
 // The DB trigger is the real guard for these rules (docs/adr/0002). These
 // checks only exist to show a clear message before calling Supabase.
 export async function signUp(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
-  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const email = normalizeEmail(String(form.get("email") ?? ""));
   const password = String(form.get("password") ?? "");
   const name = String(form.get("name") ?? "").trim();
   const studentNumber = String(form.get("student_number") ?? "").trim();
@@ -27,7 +32,7 @@ export async function signUp(_prev: AuthFormState, form: FormData): Promise<Auth
   if (!name || !phone || !password) {
     return { error: "이름, 전화번호, 비밀번호를 모두 입력해 주세요." };
   }
-  if (studentNumber && !/^[0-9]{6,12}$/.test(studentNumber)) {
+  if (studentNumber && !STUDENT_NUMBER_PATTERN.test(studentNumber)) {
     return { error: "학번은 숫자 6~12자리로 입력해 주세요." };
   }
   if (!consent) {
@@ -71,10 +76,10 @@ export async function signUp(_prev: AuthFormState, form: FormData): Promise<Auth
 export async function logIn(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
   const identifier = String(form.get("identifier") ?? "");
   const password = String(form.get("password") ?? "");
-  const wrong = { error: "학번(또는 메일)이나 비밀번호가 맞지 않습니다." };
+  const invalidCredentials = { error: "학번(또는 메일)이나 비밀번호가 맞지 않습니다." };
 
-  const email = await resolveLoginEmail(createAdminSupabase(), identifier);
-  if (!email) return wrong;
+  const email = await lookUpLoginEmail(identifier);
+  if (!email) return invalidCredentials;
 
   const supabase = await createServerSupabase();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -83,7 +88,7 @@ export async function logIn(_prev: AuthFormState, form: FormData): Promise<AuthF
     if (error.code === "email_not_confirmed") {
       return { error: "메일 인증을 먼저 마쳐 주세요. 학교 메일함을 확인하세요." };
     }
-    return wrong;
+    return invalidCredentials;
   }
 
   redirect("/");
@@ -101,12 +106,12 @@ export async function requestPasswordReset(
   form: FormData,
 ): Promise<AuthFormState> {
   const identifier = String(form.get("identifier") ?? "");
-  const email = await resolveLoginEmail(createAdminSupabase(), identifier);
+  const email = await lookUpLoginEmail(identifier);
 
   if (email) {
     const supabase = await createServerSupabase();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${await siteUrl()}/auth/confirm?next=/reset-password`,
+      redirectTo: `${await siteUrl()}/auth/confirm`,
     });
     if (error) console.error("resetPasswordForEmail failed", { status: error.status, message: error.message });
   }
@@ -124,6 +129,11 @@ export async function updatePassword(_prev: AuthFormState, form: FormData): Prom
   if (password.length < 6) return { error: "비밀번호는 6자 이상이어야 합니다." };
   if (password !== confirm) return { error: "두 비밀번호가 같지 않습니다." };
 
+  const cookieStore = await cookies();
+  if (!cookieStore.has(PASSWORD_RESET_COOKIE)) {
+    return { error: "재설정 링크가 만료됐어요. 재설정 링크를 다시 요청해 주세요." };
+  }
+
   const supabase = await createServerSupabase();
   const { error } = await supabase.auth.updateUser({ password });
 
@@ -131,7 +141,18 @@ export async function updatePassword(_prev: AuthFormState, form: FormData): Prom
     return { error: "비밀번호를 바꾸지 못했습니다. 재설정 링크를 다시 요청해 주세요." };
   }
 
+  cookieStore.delete(PASSWORD_RESET_COOKIE);
   redirect("/");
+}
+
+// A failed lookup is treated like an unknown 학번 so the forms answer the same way.
+async function lookUpLoginEmail(identifier: string): Promise<string | null> {
+  try {
+    return await resolveLoginEmail(createAdminSupabase, identifier);
+  } catch (error) {
+    console.error("login email lookup failed", error);
+    return null;
+  }
 }
 
 async function siteUrl(): Promise<string> {
