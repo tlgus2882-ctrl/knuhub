@@ -1,4 +1,35 @@
 -- 제출물 열람 규칙 완성 (#12)
+
+-- 그 과목의 수강생인가
+create function public.is_enrolled(target_course uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.enrollment
+    where course_id = target_course and student_id = (select auth.uid())
+  );
+$$;
+
+revoke execute on function public.is_enrolled(uuid) from public, anon;
+grant execute on function public.is_enrolled(uuid) to authenticated;
+
+create or replace function public.can_submit(target_assignment uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.assignment
+    where id = target_assignment and public.is_enrolled(course_id) and now() < due_at
+  );
+$$;
+
 --
 -- 공개 여부는 저장하지 않고 항상 현재 마감일과 현재 시각으로 계산한다.
 -- 그래서 공개 범위를 바꾸면 바로 반영되고, 마감을 연장하면 다시 숨겨진다.
@@ -25,13 +56,7 @@ as $$
           now() >= a.due_at
           and (
             a.visibility = 'campus'
-            or (
-              a.visibility = 'course'
-              and exists (
-                select 1 from public.enrollment e
-                where e.course_id = a.course_id and e.student_id = (select auth.uid())
-              )
-            )
+            or (a.visibility = 'course' and public.is_enrolled(a.course_id))
           )
         )
       )

@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { enrollInTestCourse, openTestCourse } from "../support/courses";
+import type { Visibility } from "../../src/app/courses/visibility";
+import { enrollInTestCourse, inDays, openTestCourse, postTestAssignment } from "../support/courses";
 import { download, submitFiles } from "../support/submissions";
 import { createTestUser, type TestUser } from "../support/supabase";
-
-type Visibility = "private" | "course" | "campus";
-
-const inDays = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
 
 /** A course with every kind of viewer, and one 제출물 submitted before the 마감일. */
 async function submittedSetup(visibility: Visibility) {
@@ -21,23 +18,18 @@ async function submittedSetup(visibility: Visibility) {
   for (const student of [author, classmate, assistant]) await enrollInTestCourse(student, professor, course.id);
   await professor.client.from("course_assistant").insert({ course_id: course.id, user_id: assistant.id });
 
-  const { data: assignment, error } = await professor.client
-    .from("assignment")
-    .insert({ course_id: course.id, title: "1주차 과제", due_at: inDays(7), visibility })
-    .select("id")
-    .single();
-  if (error) throw error;
+  const assignmentId = await postTestAssignment(professor, course.id, { visibility });
 
-  const { storagePaths } = await submitFiles(author, assignment.id, [{ path: "main.py", body: "print(1)" }]);
+  const { storagePaths } = await submitFiles(author, assignmentId, [{ path: "main.py", body: "print(1)" }]);
 
   const update = async (fields: { due_at?: string; visibility?: Visibility }) => {
-    const { error } = await professor.client.from("assignment").update(fields).eq("id", assignment.id);
+    const { error } = await professor.client.from("assignment").update(fields).eq("id", assignmentId);
     if (error) throw error;
   };
 
   /** Whether `user` sees the 제출물 row, its file list and the file itself. All three must agree. */
   const sees = async (user: TestUser) => {
-    const { data: rows } = await user.client.from("submission").select("id").eq("assignment_id", assignment.id);
+    const { data: rows } = await user.client.from("submission").select("id").eq("assignment_id", assignmentId);
     const { data: files } = await user.client.from("submission_file").select("storage_path").in("storage_path", storagePaths);
     const content = await download(user, storagePaths[0]);
     const seen = [rows?.length === 1, files?.length === 1, content === "print(1)"];
@@ -53,7 +45,7 @@ async function submittedSetup(visibility: Visibility) {
     return names;
   };
 
-  return { ...viewers, assignmentId: assignment.id, update, whoSees };
+  return { ...viewers, assignmentId, update, whoSees };
 }
 
 describe("제출물 열람", () => {
@@ -84,13 +76,15 @@ describe("제출물 열람", () => {
     expect(await whoSees()).toEqual(["professor", "assistant", "author", "classmate", "outsider", "otherProfessor"]);
   });
 
-  it("공개 범위를 바꾸면 바로 반영된다", async () => {
+  it("공개 범위를 좁히거나 넓히면 바로 반영된다", async () => {
     const { update, whoSees } = await submittedSetup("campus");
     await update({ due_at: inDays(-1) });
 
     await update({ visibility: "private" });
-
     expect(await whoSees()).toEqual(["professor", "assistant", "author"]);
+
+    await update({ visibility: "course" });
+    expect(await whoSees()).toEqual(["professor", "assistant", "author", "classmate"]);
   });
 
   it("마감을 연장하면 공개된 제출물이 다시 숨겨지고 재제출할 수 있다", async () => {

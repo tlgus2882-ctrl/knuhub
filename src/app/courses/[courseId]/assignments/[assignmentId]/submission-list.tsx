@@ -2,15 +2,22 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
 import { SubmissionFileList, signDownloadLinks } from "./submission-files";
 
+type Props = {
+  assignmentId: string;
+  /** Left out of the list because "내 제출물" already shows it. */
+  viewerId?: string;
+};
+
 // Every 제출물 of the assignment the viewer may see. Which ones that is
 // (마감일, 공개 범위, role) is decided by RLS alone (docs/adr/0002).
-export async function SubmissionList({ assignmentId }: { assignmentId: string }) {
+export async function SubmissionList({ assignmentId, viewerId }: Props) {
   const supabase = await createServerSupabase();
-  const { data: submissions } = await supabase
+  let query = supabase
     .from("submission")
     .select("id, submitted_at, profile(name, student_number), submission_file(path, size, storage_path)")
-    .eq("assignment_id", assignmentId)
-    .order("submitted_at");
+    .eq("assignment_id", assignmentId);
+  if (viewerId) query = query.neq("student_id", viewerId);
+  const { data: submissions } = await query.order("submitted_at");
 
   const rows = submissions ?? [];
   const links = await signDownloadLinks(
@@ -21,7 +28,7 @@ export async function SubmissionList({ assignmentId }: { assignmentId: string })
   return (
     <section className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold">
-        제출물 <span className="text-muted-foreground">{rows.length}</span>
+        {viewerId ? "다른 사람의 제출물" : "제출물"} <span className="text-muted-foreground">{rows.length}</span>
       </h2>
       {rows.length ? (
         <ul className="flex flex-col divide-y rounded-xl border">

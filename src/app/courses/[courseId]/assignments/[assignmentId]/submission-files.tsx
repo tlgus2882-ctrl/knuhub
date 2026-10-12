@@ -1,7 +1,8 @@
-import type { createServerSupabase } from "@/lib/supabase/server";
+import type { Tables } from "@/lib/supabase/database.types";
+import type { ServerSupabase } from "@/lib/supabase/server";
 import { SUBMISSION_BUCKET } from "@/lib/submissions/storage";
 
-export type SubmissionFile = { path: string; size: number; storage_path: string };
+export type SubmissionFile = Pick<Tables<"submission_file">, "path" | "size" | "storage_path">;
 
 const DOWNLOAD_LINK_SECONDS = 60 * 5;
 
@@ -10,7 +11,7 @@ const DOWNLOAD_LINK_SECONDS = 60 * 5;
  * only the files the viewer may read (the submission viewing rules).
  */
 export async function signDownloadLinks(
-  supabase: Awaited<ReturnType<typeof createServerSupabase>>,
+  supabase: ServerSupabase,
   files: SubmissionFile[],
 ): Promise<Map<string, string>> {
   if (!files.length) return new Map();

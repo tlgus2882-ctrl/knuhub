@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { Visibility } from "../../src/app/courses/visibility";
 import type { TestUser } from "./supabase";
 
 export type TestCourse = { id: string; name: string; semester: string; section: string };
@@ -42,4 +43,22 @@ export async function enrollInTestCourse(
   const code = await inviteCodeOf(professor, courseId);
   const { error } = await student.client.rpc("join_course", { code });
   if (error) throw error;
+}
+
+/** An ISO timestamp `days` from now (negative for the past). */
+export const inDays = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+
+/** Posts an assignment as `professor`, due in a week unless overridden; returns its id. */
+export async function postTestAssignment(
+  professor: TestUser,
+  courseId: string,
+  fields: { due_at?: string; visibility?: Visibility } = {},
+): Promise<string> {
+  const { data, error } = await professor.client
+    .from("assignment")
+    .insert({ course_id: courseId, title: "1주차 과제", due_at: inDays(7), ...fields })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
 }

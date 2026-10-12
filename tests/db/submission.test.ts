@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { enrollInTestCourse, openTestCourse } from "../support/courses";
+import { enrollInTestCourse, inDays, openTestCourse, postTestAssignment } from "../support/courses";
 import { download, SUBMISSION_BUCKET, submitFiles, uploadAttempt } from "../support/submissions";
 import { adminClient, createTestUser, type TestUser } from "../support/supabase";
 
@@ -14,20 +14,13 @@ async function stillStored(storagePath: string) {
   return data !== null;
 }
 
-const inDays = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
-
 async function assignmentSetup() {
   const professor = await createTestUser({ role: "professor" });
   const course = await openTestCourse(professor);
   const student = await createTestUser();
   await enrollInTestCourse(student, professor, course.id);
-  const { data: assignment, error } = await professor.client
-    .from("assignment")
-    .insert({ course_id: course.id, title: "1주차 과제", due_at: inDays(7) })
-    .select("id")
-    .single();
-  if (error) throw error;
-  return { professor, course, student, assignmentId: assignment.id };
+  const assignmentId = await postTestAssignment(professor, course.id);
+  return { professor, course, student, assignmentId };
 }
 
 async function mySubmission(student: TestUser, assignmentId: string) {

@@ -27,3 +27,5 @@ export async function createServerSupabase() {
     },
   });
 }
+
+export type ServerSupabase = Awaited<ReturnType<typeof createServerSupabase>>;
