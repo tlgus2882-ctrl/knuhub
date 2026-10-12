@@ -13,3 +13,7 @@ function required(name: string, value: string | undefined): string {
   if (!value) throw new Error(`Missing environment variable ${name}. See .env.example.`);
   return value;
 }
+
+export function supabaseSecretKey(): string {
+  return required("SUPABASE_SECRET_KEY", process.env.SUPABASE_SECRET_KEY);
+}

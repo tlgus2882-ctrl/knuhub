@@ -245,6 +245,18 @@ otp_expiry = 3600
 # sender_name = "Admin"
 
 # Uncomment to customize email template
+[auth.email.template.confirmation]
+subject = "[knuhub] 메일 인증을 마무리해 주세요"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "[knuhub] 비밀번호 재설정"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "[knuhub] 메일 주소 변경 확인"
+content_path = "./supabase/templates/email_change.html"
+
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
