@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { formatBytes } from "@/lib/format-bytes";
+import { downloadUrl } from "@/lib/storage-download";
 import { decodeText, highlight } from "@/lib/highlight";
 import { buildFileTree } from "@/lib/submissions/file-tree";
 import { SUBMISSION_BUCKET } from "@/lib/submissions/storage";
@@ -108,9 +109,7 @@ const NO_PREVIEW = {
 async function FileContent({ supabase, file }: { supabase: ServerSupabase; file: ViewedFile }) {
   const storage = supabase.storage.from(SUBMISSION_BUCKET);
   const { data: signed } = await storage.createSignedUrl(file.storage_path, DOWNLOAD_LINK_SECONDS);
-  // Download under the submitted file name (the object name is just an index).
-  // supabase-js's `download` option encodes the name twice, so Korean names come out garbled.
-  const download = signed && `${signed.signedUrl}&download=${encodeURIComponent(file.path.split("/").pop()!)}`;
+  const download = signed && downloadUrl(signed.signedUrl, file.path.split("/").pop()!);
 
   let html: string | null = null;
   let noPreview: keyof typeof NO_PREVIEW | null = null;
