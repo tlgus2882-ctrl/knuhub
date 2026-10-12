@@ -2,7 +2,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
 import { DeleteSubmissionForm } from "./delete-submission-form";
 import { SubmissionFileList, signDownloadLinks } from "./submission-files";
-import { SubmitFileForm } from "./submit-file-form";
+import { SubmissionUploadForm } from "./submission-upload-form";
 
 type Props = { assignmentId: string; studentId: string; open: boolean };
 
@@ -37,7 +37,7 @@ export async function MySubmission({ assignmentId, studentId, open }: Props) {
 
       {open ? (
         <>
-          <SubmitFileForm assignmentId={assignmentId} studentId={studentId} resubmit={Boolean(submission)} />
+          <SubmissionUploadForm assignmentId={assignmentId} studentId={studentId} resubmit={Boolean(submission)} />
           {submission && <DeleteSubmissionForm assignmentId={assignmentId} />}
         </>
       ) : (

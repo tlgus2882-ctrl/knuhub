@@ -1,22 +1,25 @@
 import { randomUUID } from "node:crypto";
+import type { FileKind } from "../../src/lib/submissions/prepare-upload";
 import { SUBMISSION_BUCKET, submissionObjectName } from "../../src/lib/submissions/storage";
+import type { UploadedFile } from "../../src/lib/submissions/upload";
 import type { TestUser } from "./supabase";
 
 export { SUBMISSION_BUCKET };
 
-export type UploadFile = { path: string; body: string };
+/** A file to upload; text unless said otherwise (the bodies here are strings). */
+export type UploadFile = { path: string; body: string; kind?: FileKind };
 
 /** Uploads files the way the browser does: one fresh folder per attempt, objects named by index. */
 export async function uploadAttempt(student: TestUser, assignmentId: string, files: UploadFile[]) {
   const attempt = randomUUID();
-  const uploaded: { path: string; storage_path: string }[] = [];
+  const uploaded: UploadedFile[] = [];
   for (const [index, file] of files.entries()) {
     const storagePath = submissionObjectName(assignmentId, student.id, attempt, index);
     const { error } = await student.client.storage
       .from(SUBMISSION_BUCKET)
       .upload(storagePath, new Blob([file.body], { type: "text/plain" }));
     if (error) return { files: uploaded, error };
-    uploaded.push({ path: file.path, storage_path: storagePath });
+    uploaded.push({ path: file.path, storage_path: storagePath, kind: file.kind ?? "text" });
   }
   return { files: uploaded, error: null };
 }

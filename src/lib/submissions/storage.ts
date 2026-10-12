@@ -12,3 +12,9 @@ export const SUBMISSION_MAX_BYTES = 20 * 1024 * 1024;
 export function submissionObjectName(assignmentId: string, studentId: string, attempt: string, index: number) {
   return `${assignmentId}/${studentId}/${attempt}/${index}`;
 }
+
+/** Content type to store each kind of file with (text is served as UTF-8). */
+export const CONTENT_TYPE: Record<"text" | "binary", string> = {
+  text: "text/plain;charset=utf-8",
+  binary: "application/octet-stream",
+};

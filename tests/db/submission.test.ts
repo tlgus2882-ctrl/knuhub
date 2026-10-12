@@ -34,7 +34,7 @@ async function mySubmission(student: TestUser, assignmentId: string) {
   return data;
 }
 
-describe("파일 하나 제출", () => {
+describe("제출", () => {
   it("수강생은 과제에 파일 하나를 제출하고 자기 제출물과 제출 시각을 본다", async () => {
     const { student, assignmentId } = await assignmentSetup();
 
@@ -198,5 +198,27 @@ describe("파일 하나 제출", () => {
     expect(intoTheirFolder.error).not.toBeNull();
     expect(stealing.error).not.toBeNull();
     expect(notUploaded.error).not.toBeNull();
+  });
+
+  it("여러 파일을 폴더 구조와 텍스트·바이너리 구분을 그대로 담아 제출한다", async () => {
+    const { student, assignmentId } = await assignmentSetup();
+
+    const { error } = await submitFiles(student, assignmentId, [
+      { path: "과제/src/main.py", body: "print(1)", kind: "text" },
+      { path: "과제/docs/설계.md", body: "# 설계", kind: "text" },
+      { path: "과제/logo.png", body: "PNG", kind: "binary" },
+    ]);
+
+    expect(error).toBeNull();
+    const { data } = await student.client
+      .from("submission_file")
+      .select("path, kind, submission!inner(assignment_id)")
+      .eq("submission.assignment_id", assignmentId)
+      .order("path");
+    expect(data?.map((f) => [f.path, f.kind])).toEqual([
+      ["과제/docs/설계.md", "text"],
+      ["과제/logo.png", "binary"],
+      ["과제/src/main.py", "text"],
+    ]);
   });
 });

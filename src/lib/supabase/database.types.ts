@@ -197,14 +197,14 @@ isOneToOne: false
                   ]
                 },"submission_file": {
                   Row: {
-                    "id": string,"path": string,"size": number,"storage_path": string,"submission_id": string
+                    "id": string,"kind": Database["public"]['Enums']["file_kind"],"path": string,"size": number,"storage_path": string,"submission_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "id"?: string,"path": string,"size": number,"storage_path": string,"submission_id": string
+                    "id"?: string,"kind"?: Database["public"]['Enums']["file_kind"],"path": string,"size": number,"storage_path": string,"submission_id": string
                   }
                   Update: {
-                    "id"?: string,"path"?: string,"size"?: number,"storage_path"?: string,"submission_id"?: string
+                    "id"?: string,"kind"?: Database["public"]['Enums']["file_kind"],"path"?: string,"size"?: number,"storage_path"?: string,"submission_id"?: string
                   }
                   Relationships: [
                     {
@@ -288,7 +288,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "role": "student"|"professor"|"admin","visibility": "private"|"course"|"campus"
+            "file_kind": "text"|"binary","role": "student"|"professor"|"admin","visibility": "private"|"course"|"campus"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -408,7 +408,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "role": ["student", "professor", "admin"],"visibility": ["private", "course", "campus"]
+            "file_kind": ["text", "binary"],"role": ["student", "professor", "admin"],"visibility": ["private", "course", "campus"]
           }
         }
 } as const
