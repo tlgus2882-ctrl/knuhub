@@ -43,7 +43,21 @@ describe("과목 개설", () => {
     expect(new Set([first.id, otherSection.id, otherSemester.id]).size).toBe(3);
   });
 
-  it("과목명, 학기, 분반이 모두 같은 과목은 또 열 수 없다", async () => {
+  it("다른 교수는 과목명, 학기, 분반이 같아도 따로 과목을 열 수 있다", async () => {
+    const professor = await createTestUser({ role: "professor" });
+    const other = await createTestUser({ role: "professor" });
+    const first = await openTestCourse(professor);
+
+    const second = await openTestCourse(other, {
+      name: first.name,
+      semester: first.semester,
+      section: first.section,
+    });
+
+    expect(second.id).not.toBe(first.id);
+  });
+
+  it("같은 교수가 과목명, 학기, 분반이 모두 같은 과목을 또 열 수는 없다", async () => {
     const professor = await createTestUser({ role: "professor" });
     const first = await openTestCourse(professor);
 
@@ -111,7 +125,7 @@ describe("초대 코드로 참여", () => {
 
     const { error } = await student.client.rpc("join_course", { code: "NOPE0000" });
 
-    expect(error).not.toBeNull();
+    expect(error?.code).toBe("KH002");
     const { data } = await student.client.from("enrollment").select("course_id");
     expect(data).toEqual([]);
   });
@@ -139,7 +153,7 @@ describe("초대 코드로 참여", () => {
       code: await inviteCodeOf(professor, course.id),
     });
 
-    expect(error).not.toBeNull();
+    expect(error?.code).toBe("KH001");
   });
 
   it("초대 코드 없이 수강 기록을 직접 넣을 수 없다", async () => {

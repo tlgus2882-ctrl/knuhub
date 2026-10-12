@@ -8,7 +8,8 @@ create table public.course (
   section text not null check (length(btrim(section)) > 0),
   professor_id uuid not null default auth.uid() references public.profile (id) on delete cascade,
   created_at timestamptz not null default now(),
-  unique (name, semester, section)
+  -- 학과가 달라도 과목명과 분반이 겹칠 수 있어서, 같은 교수 안에서만 중복을 막는다.
+  unique (professor_id, name, semester, section)
 );
 
 -- 초대 코드는 과목 목록과 따로 둔다. 과목 목록은 로그인한 누구나 보지만
@@ -88,9 +89,17 @@ security definer
 set search_path = ''
 as $$
 begin
-  insert into public.course_invite (course_id, invite_code)
-  values (new.id, public.new_invite_code());
-  return new;
+  -- 코드가 이미 쓰였으면 새로 뽑는다.
+  for attempt in 1..5 loop
+    begin
+      insert into public.course_invite (course_id, invite_code)
+      values (new.id, public.new_invite_code());
+      return new;
+    exception when unique_violation then
+      -- 다음 시도에서 다른 코드를 뽑는다.
+    end;
+  end loop;
+  raise exception '초대 코드를 만들지 못했습니다. 다시 시도해 주세요';
 end;
 $$;
 
@@ -100,6 +109,7 @@ create trigger on_course_created
 
 -- 학생이 초대 코드로 과목에 참여한다. 승인 없이 바로 수강생이 되고,
 -- 이미 수강생이면 그대로 둔다. 참여한 과목의 id를 돌려준다.
+-- 오류 코드: KH001 학생이 아님, KH002 초대 코드가 맞지 않음
 create function public.join_course(code text)
 returns uuid
 language plpgsql
@@ -112,7 +122,7 @@ begin
   if not exists (
     select 1 from public.profile where id = (select auth.uid()) and role = 'student'
   ) then
-    raise exception '학생만 초대 코드로 과목에 참여할 수 있습니다';
+    raise exception '학생만 초대 코드로 과목에 참여할 수 있습니다' using errcode = 'KH001';
   end if;
 
   select course_id into target
@@ -120,7 +130,7 @@ begin
   where invite_code = upper(btrim(code));
 
   if target is null then
-    raise exception '초대 코드가 맞지 않습니다';
+    raise exception '초대 코드가 맞지 않습니다' using errcode = 'KH002';
   end if;
 
   insert into public.enrollment (course_id, student_id)

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { logOut } from "./(auth)/actions";
+import { courseTerm } from "./courses/course-term";
 import { JoinCourseForm } from "./courses/join-course-form";
 
 export default function Home() {
@@ -19,6 +20,7 @@ export default function Home() {
   );
 }
 
+type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
 type CourseSummary = { id: string; name: string; semester: string; section: string };
 
 async function SignedInHome() {
@@ -45,24 +47,6 @@ async function SignedInHome() {
     .select("name, student_number, role")
     .eq("id", user.id)
     .single();
-  const isProfessor = profile?.role === "professor";
-
-  let courses: CourseSummary[] = [];
-  if (isProfessor) {
-    const { data } = await supabase
-      .from("course")
-      .select("id, name, semester, section")
-      .eq("professor_id", user.id)
-      .order("created_at", { ascending: false });
-    courses = data ?? [];
-  } else {
-    const { data } = await supabase
-      .from("enrollment")
-      .select("course(id, name, semester, section)")
-      .eq("student_id", user.id)
-      .order("created_at", { ascending: false });
-    courses = (data ?? []).flatMap((row) => (row.course ? [row.course] : []));
-  }
 
   return (
     <>
@@ -77,40 +61,65 @@ async function SignedInHome() {
           </Button>
         </form>
       </div>
-
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{isProfessor ? "담당 과목" : "내 과목"}</h2>
-          {isProfessor && (
-            <Button size="sm" nativeButton={false} render={<Link href="/courses/new" />}>
-              과목 열기
-            </Button>
-          )}
-        </div>
-
-        {courses.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {isProfessor
-              ? "아직 연 과목이 없어요."
-              : "아직 참여한 과목이 없어요. 교수님께 받은 초대 코드를 입력해 주세요."}
-          </p>
-        ) : (
-          <ul className="flex flex-col divide-y rounded-lg border">
-            {courses.map((course) => (
-              <li key={course.id}>
-                <Link href={`/courses/${course.id}`} className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted">
-                  <span className="font-medium">{course.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {course.semester}학기 · {course.section}분반
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {!isProfessor && <JoinCourseForm />}
-      </section>
+      {profile?.role === "professor" && <ProfessorCourses supabase={supabase} userId={user.id} />}
+      {profile?.role === "student" && <StudentCourses supabase={supabase} userId={user.id} />}
     </>
+  );
+}
+
+async function ProfessorCourses({ supabase, userId }: { supabase: Supabase; userId: string }) {
+  const { data } = await supabase
+    .from("course")
+    .select("id, name, semester, section")
+    .eq("professor_id", userId)
+    .order("created_at", { ascending: false });
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">담당 과목</h2>
+        <Button size="sm" nativeButton={false} render={<Link href="/courses/new" />}>
+          과목 열기
+        </Button>
+      </div>
+      <CourseList courses={data ?? []} empty="아직 연 과목이 없어요." />
+    </section>
+  );
+}
+
+async function StudentCourses({ supabase, userId }: { supabase: Supabase; userId: string }) {
+  const { data } = await supabase
+    .from("enrollment")
+    .select("course(id, name, semester, section)")
+    .eq("student_id", userId)
+    .order("created_at", { ascending: false });
+  const courses = (data ?? []).flatMap((row) => (row.course ? [row.course] : []));
+
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-lg font-semibold">내 과목</h2>
+      <CourseList
+        courses={courses}
+        empty="아직 참여한 과목이 없어요. 교수님께 받은 초대 코드를 입력해 주세요."
+      />
+      <JoinCourseForm />
+    </section>
+  );
+}
+
+function CourseList({ courses, empty }: { courses: CourseSummary[]; empty: string }) {
+  if (courses.length === 0) return <p className="text-sm text-muted-foreground">{empty}</p>;
+
+  return (
+    <ul className="flex flex-col divide-y rounded-lg border">
+      {courses.map((course) => (
+        <li key={course.id}>
+          <Link href={`/courses/${course.id}`} className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted">
+            <span className="font-medium">{course.name}</span>
+            <span className="text-xs text-muted-foreground">{courseTerm(course)}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }

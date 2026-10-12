@@ -67,4 +67,4 @@ Code (tables, columns, types, variables) uses these English names for the `GLOSS
 | 제출 파일 | `submission_file` |
 | 리뷰 | `review` |
 | 연락처 공개 범위 | `contact_visibility`: `public` / `course` / `private` |
-| 초대 코드 | `invite_code` |
+| 초대 코드 | `invite_code` (테이블 `course_invite`: 담당 교수만 읽도록 과목과 분리) |

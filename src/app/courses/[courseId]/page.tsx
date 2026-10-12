@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { courseTerm } from "../course-term";
 
 export default function CoursePage({ params }: PageProps<"/courses/[courseId]">) {
   return (
@@ -40,7 +41,7 @@ async function CourseDetail({ courseId }: { courseId: string }) {
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">{course.name}</h1>
         <p className="text-sm text-muted-foreground">
-          {course.semester}학기 · {course.section}분반 · 담당 교수 {course.professor?.name}
+          {courseTerm(course)} · 담당 교수 {course.professor?.name}
         </p>
       </header>
 

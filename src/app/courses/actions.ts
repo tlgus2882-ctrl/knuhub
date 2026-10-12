@@ -5,6 +5,13 @@ import { createServerSupabase } from "@/lib/supabase/server";
 
 export type CourseFormState = { error: string | null };
 
+const UNIQUE_VIOLATION = "23505";
+// Raised by join_course() in the course migration.
+const JOIN_ERRORS: Record<string, string> = {
+  KH001: "학생만 초대 코드로 과목에 참여할 수 있어요.",
+  KH002: "초대 코드가 맞지 않아요. 교수님께 받은 코드를 다시 확인해 주세요.",
+};
+
 // Who may open or join a course is decided by RLS and join_course() (docs/adr/0002).
 export async function openCourse(_prev: CourseFormState, form: FormData): Promise<CourseFormState> {
   const name = String(form.get("name") ?? "").trim();
@@ -23,8 +30,8 @@ export async function openCourse(_prev: CourseFormState, form: FormData): Promis
     .single();
 
   if (error) {
-    if (error.code === "23505") {
-      return { error: "같은 과목명, 학기, 분반의 과목이 이미 있어요." };
+    if (error.code === UNIQUE_VIOLATION) {
+      return { error: "같은 과목명, 학기, 분반으로 이미 연 과목이 있어요." };
     }
     return { error: "과목을 열지 못했어요. 교수 권한이 있는지 확인해 주세요." };
   }
@@ -39,7 +46,7 @@ export async function joinCourse(_prev: CourseFormState, form: FormData): Promis
   const { data: courseId, error } = await supabase.rpc("join_course", { code });
 
   if (error || !courseId) {
-    return { error: "초대 코드가 맞지 않아요. 교수님께 받은 코드를 다시 확인해 주세요." };
+    return { error: JOIN_ERRORS[error?.code ?? ""] ?? "과목에 참여하지 못했어요. 다시 시도해 주세요." };
   }
 
   redirect(`/courses/${courseId}`);
