@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { Suspense } from "react";
+import { Button } from "@/components/ui/button";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { logOut } from "./(auth)/actions";
 
 export default function Home() {
   return (
@@ -15,11 +18,40 @@ export default function Home() {
 
 async function SessionStatus() {
   const supabase = await createServerSupabase();
-  const { data } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return (
+      <div className="flex gap-2">
+        <Button nativeButton={false} render={<Link href="/login" />}>
+          로그인
+        </Button>
+        <Button variant="outline" nativeButton={false} render={<Link href="/signup" />}>
+          가입하기
+        </Button>
+      </div>
+    );
+  }
+
+  const { data: profile } = await supabase
+    .from("profile")
+    .select("name, student_number")
+    .eq("id", user.id)
+    .single();
 
   return (
-    <p className="text-sm text-muted-foreground">
-      {data.user ? `${data.user.email}로 로그인됨` : "로그인하지 않음"}
-    </p>
+    <div className="flex items-center gap-3">
+      <p className="text-sm">
+        {profile?.name}
+        {profile?.student_number && ` (${profile.student_number})`}님, 안녕하세요.
+      </p>
+      <form action={logOut}>
+        <Button type="submit" variant="outline" size="sm">
+          로그아웃
+        </Button>
+      </form>
+    </div>
   );
 }

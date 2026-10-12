@@ -23,16 +23,55 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            [_ in never]: never
+            "profile": {
+                  Row: {
+                    "created_at": string,"id": string,"name": string,"role": Database["public"]['Enums']["role"],"student_number": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id": string,"name": string,"role"?: Database["public"]['Enums']["role"],"student_number"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"name"?: string,"role"?: Database["public"]['Enums']["role"],"student_number"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"profile_private": {
+                  Row: {
+                    "id": string,"phone": string,"privacy_consented_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id": string,"phone": string,"privacy_consented_at": string
+                  }
+                  Update: {
+                    "id"?: string,"phone"?: string,"privacy_consented_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "profile_private_id_fkey"
+      columns: ["id"]
+isOneToOne: true
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
+                }
           }
           Views: {
             [_ in never]: never
           }
           Functions: {
-            [_ in never]: never
+            "is_admin":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"student_number_taken":
+{ Args: { "candidate": string }; Returns: boolean
+                           }
           }
           Enums: {
-            [_ in never]: never
+            "role": "student"|"professor"|"admin"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -152,7 +191,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            
+            "role": ["student", "professor", "admin"]
           }
         }
 } as const
