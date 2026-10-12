@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { openCourse, type CourseFormState } from "../actions";
+import { SEMESTER_TERMS } from "../course-term";
 
 const initial: CourseFormState = { error: null };
 
@@ -17,10 +18,29 @@ export function OpenCourseForm() {
         <Label htmlFor="name">과목명</Label>
         <Input id="name" name="name" placeholder="자료구조" required />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="semester">학기</Label>
-          <Input id="semester" name="semester" placeholder="2026-2" required />
+          <Label htmlFor="year">연도</Label>
+          <Input id="year" name="year" inputMode="numeric" pattern="[0-9]{4}" placeholder="2026" required />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="term">학기</Label>
+          <select
+            id="term"
+            name="term"
+            required
+            defaultValue=""
+            className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <option value="" disabled>
+              고르기
+            </option>
+            {SEMESTER_TERMS.map((term) => (
+              <option key={term} value={term}>
+                {/^[0-9]$/.test(term) ? `${term}학기` : `${term}학기 (계절)`}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="section">분반</Label>
