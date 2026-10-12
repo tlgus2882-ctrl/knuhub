@@ -4,7 +4,8 @@ import type { Database } from "@/lib/supabase/database.types";
 import { supabasePublishableKey, supabaseUrl } from "@/lib/supabase/env";
 
 // Refreshes the auth session cookie on every request so Server Components
-// always see a valid session.
+// always see a valid session, and sends signed-out visitors of course pages to
+// the login page (an optimistic check: RLS is what actually guards the data).
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -23,7 +24,13 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user && request.nextUrl.pathname.startsWith("/courses")) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
 
   return response;
 }
