@@ -44,13 +44,14 @@ describe("prepareUpload", () => {
     });
   });
 
-  it("UTF-8로 읽히는 파일은 텍스트, 아니면 바이너리로 분류한다", () => {
+  it("UTF-8이나 CP949로 읽히는 파일은 텍스트, 아니면 바이너리로 분류한다", () => {
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00]);
     const latin1 = new Uint8Array([0x63, 0x61, 0x66, 0xe9]); // "café" in Latin-1, not UTF-8
 
     const result = prepareUpload([
       { path: "main.py", data: text("print('안녕')\n") },
       { path: "README", data: text("확장자 없는 텍스트") },
+      { path: "옛날.c", data: new Uint8Array([0x2f, 0x2f, 0x20, 0xb0, 0xfa, 0xc1, 0xa6, 0x0a]) }, // "// 과제\n" in CP949
       { path: "empty.txt", data: new Uint8Array() },
       { path: "logo.png", data: png },
       { path: "old.txt", data: latin1 },
@@ -59,6 +60,7 @@ describe("prepareUpload", () => {
     expect(result.ok && result.files.map((f) => [f.path, f.kind])).toEqual([
       ["main.py", "text"],
       ["README", "text"],
+      ["옛날.c", "text"],
       ["empty.txt", "text"],
       ["logo.png", "binary"],
       ["old.txt", "binary"],

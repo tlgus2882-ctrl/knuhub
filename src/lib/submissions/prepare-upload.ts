@@ -42,17 +42,24 @@ export function prepareUpload(entries: UploadEntry[]): PreparedUpload {
   return { ok: true, files: files.map((file) => ({ ...file, kind: classify(file.data) })), totalBytes };
 }
 
-const utf8 = new TextDecoder("utf-8", { fatal: true });
+const TEXT_ENCODINGS = [
+  new TextDecoder("utf-8", { fatal: true }),
+  // Older Korean files (Windows editors) are saved as CP949; the viewer decodes them too.
+  new TextDecoder("euc-kr", { fatal: true }),
+];
 
-// Text means valid UTF-8 without NUL bytes (git's heuristic plus a decode check).
+// Text means no NUL bytes (git's heuristic) and valid UTF-8 or CP949.
 function classify(data: Uint8Array): FileKind {
   if (data.includes(0)) return "binary";
-  try {
-    utf8.decode(data);
-    return "text";
-  } catch {
-    return "binary";
+  for (const decoder of TEXT_ENCODINGS) {
+    try {
+      decoder.decode(data);
+      return "text";
+    } catch {
+      // try the next encoding
+    }
   }
+  return "binary";
 }
 
 /** Thrown when files add up to more than a 제출물 may hold, before they are all read. */
