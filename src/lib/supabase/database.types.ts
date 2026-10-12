@@ -348,7 +348,7 @@ isOneToOne: false
                            },
 "search":
 { Args: { "query": string }; Returns: {
-              "assignment_id": string,"course_id": string,"detail": string,"kind": string,"submission_id": string,"title": string
+              "assignment_id": string,"course_id": string,"detail": string,"kind": string,"section": string,"semester": string,"submission_id": string,"title": string
             }[]
                            },
 "shares_course_with":

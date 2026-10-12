@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import type { Visibility } from "../../src/app/courses/visibility";
-import { enrollInTestCourse, inDays, openTestCourse, postTestAssignment } from "../support/courses";
+import { enrollInTestCourse, inDays, moveDeadline, openTestCourse, postTestAssignment } from "../support/courses";
 import { submitFiles } from "../support/submissions";
 import { anonClient, createTestUser, type TestUser } from "../support/supabase";
 
@@ -19,10 +19,7 @@ async function searchSetup(visibility: Visibility) {
   for (const student of [author, classmate]) await enrollInTestCourse(student, professor, course.id);
   const assignmentId = await postTestAssignment(professor, course.id, { visibility });
   await submitFiles(author, assignmentId, [{ path: "a.txt", body: "a" }]);
-  const closeDeadline = async () => {
-    const { error } = await professor.client.from("assignment").update({ due_at: inDays(-1) }).eq("id", assignmentId);
-    if (error) throw error;
-  };
+  const closeDeadline = () => moveDeadline(professor, assignmentId, inDays(-1));
 
   const viewers = { professor, author, classmate, outsider };
   /** Who finds the author's 제출물 by searching for `query`. */
@@ -42,18 +39,31 @@ describe("검색", () => {
     const tag = randomUUID().slice(0, 8);
     const professor = await createTestUser({ role: "professor" });
     const course = await openTestCourse(professor, { name: `운영체제-${tag}` });
-    const { data: assignment } = await professor.client
-      .from("assignment")
-      .insert({ course_id: course.id, title: `스케줄러 과제-${tag}`, due_at: inDays(7) })
-      .select("id")
-      .single();
+    const assignmentId = await postTestAssignment(professor, course.id, { title: `스케줄러 과제-${tag}` });
     const stranger = await createTestUser();
 
     const byCourse = await search(stranger, `운영체제-${tag}`);
     const byAssignment = await search(stranger, `스케줄러 과제-${tag}`);
 
     expect(byCourse.map((r) => [r.kind, r.course_id])).toEqual([["course", course.id]]);
-    expect(byAssignment.map((r) => [r.kind, r.assignment_id])).toEqual([["assignment", assignment!.id]]);
+    expect(byAssignment.map((r) => [r.kind, r.assignment_id])).toEqual([["assignment", assignmentId]]);
+  });
+
+  it("같은 이름의 과목은 최신 학기부터 (1 → 여름 → 2 → 겨울 순서로) 나오고 학기·분반이 함께 온다", async () => {
+    const tag = randomUUID().slice(0, 8);
+    const professor = await createTestUser({ role: "professor" });
+    for (const semester of ["2026-1", "2026-겨울", "2026-여름", "2026-2"]) {
+      await openTestCourse(professor, { name: `캡스톤-${tag}`, semester, section: "01" });
+    }
+
+    const results = await search(professor, `캡스톤-${tag}`);
+
+    expect(results.map((r) => [r.semester, r.section])).toEqual([
+      ["2026-겨울", "01"],
+      ["2026-2", "01"],
+      ["2026-여름", "01"],
+      ["2026-1", "01"],
+    ]);
   });
 
   it("학생 이름이나 학번으로 그 학생의 제출물을 찾는다", async () => {
