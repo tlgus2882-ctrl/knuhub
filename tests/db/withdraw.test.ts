@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { withdrawAccount } from "../../src/lib/account/withdraw";
+import { withdrawUser } from "../../src/lib/account/withdraw-user";
 import { SUBMISSION_BUCKET } from "../../src/lib/submissions/storage";
 import { enrollInTestCourse, openTestCourse, postTestAssignment } from "../support/courses";
 import { submitFiles, uploadAttempt } from "../support/submissions";
@@ -10,14 +10,23 @@ async function stillStored(storagePath: string) {
   return data !== null;
 }
 
-async function rowsOf(table: "profile" | "profile_private" | "profile_contact" | "enrollment" | "course_assistant", column: string, id: string) {
-  const { data, error } = await adminClient().from(table).select("*").eq(column, id);
+/** Each per-사용자 table and the column that holds the 사용자's id. */
+const USER_COLUMN = {
+  profile: "id",
+  profile_private: "id",
+  profile_contact: "id",
+  enrollment: "student_id",
+  course_assistant: "user_id",
+} as const;
+
+async function rowsOf(table: keyof typeof USER_COLUMN, userId: string) {
+  const { data, error } = await adminClient().from(table).select("*").filter(USER_COLUMN[table], "eq", userId);
   if (error) throw error;
   return data.length;
 }
 
 async function withdraw(user: TestUser) {
-  return withdrawAccount({ userClient: user.client, adminClient: adminClient(), userId: user.id });
+  return withdrawUser({ userClient: user.client, adminClient: adminClient(), userId: user.id });
 }
 
 describe("탈퇴", () => {
@@ -42,17 +51,13 @@ describe("탈퇴", () => {
     const { error } = await withdraw(leaver);
 
     expect(error).toBeNull();
-    for (const [table, column] of [
-      ["profile", "id"],
-      ["profile_private", "id"],
-      ["profile_contact", "id"],
-      ["enrollment", "student_id"],
-      ["course_assistant", "user_id"],
-    ] as const) {
-      expect(await rowsOf(table, column, leaver.id), table).toBe(0);
+    for (const table of Object.keys(USER_COLUMN) as (keyof typeof USER_COLUMN)[]) {
+      expect(await rowsOf(table, leaver.id), table).toBe(0);
     }
     const { data: submissions } = await adminClient().from("submission").select("student_id").eq("assignment_id", assignmentId);
     expect(submissions?.map((s) => s.student_id)).toEqual([stayer.id]);
+    const { data: files } = await adminClient().from("submission_file").select("storage_path").eq("submission_id", mySubmission!.id);
+    expect(files).toEqual([]);
     const { data: reviews } = await adminClient().from("review").select("body").in("submission_id", [mySubmission!.id, theirSubmission!.id]);
     expect(reviews).toEqual([]);
     expect(await stillStored(mine.storagePaths[0])).toBe(false);
@@ -76,7 +81,7 @@ describe("탈퇴", () => {
     const { error } = await withdraw(professor);
 
     expect(error?.code).toBe("KH006");
-    expect(await rowsOf("profile", "id", professor.id)).toBe(1);
+    expect(await rowsOf("profile", professor.id)).toBe(1);
   });
 
   it("과목을 열지 않은 교수는 탈퇴할 수 있다", async () => {
@@ -85,7 +90,7 @@ describe("탈퇴", () => {
     const { error } = await withdraw(professor);
 
     expect(error).toBeNull();
-    expect(await rowsOf("profile", "id", professor.id)).toBe(0);
+    expect(await rowsOf("profile", professor.id)).toBe(0);
   });
 
   it("다른 사람의 파일 목록은 탈퇴 준비로 얻을 수 없다 (자기 것만 나온다)", async () => {

@@ -16,7 +16,7 @@ export default function WithdrawPage() {
           <li>내가 쓴 리뷰와 내 제출물에 달린 리뷰</li>
           <li>수강 중인 과목과 조교 지정</li>
         </ul>
-        <p className="text-muted-foreground">탈퇴한 뒤에는 이 계정으로 로그인할 수 없어요.</p>
+        <p className="text-muted-foreground">탈퇴한 뒤에는 이 학교 메일과 학번으로 로그인할 수 없어요.</p>
       </section>
       <WithdrawForm />
     </main>

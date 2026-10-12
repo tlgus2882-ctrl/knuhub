@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { withdrawAccount } from "@/lib/account/withdraw";
+import { withdrawUser } from "@/lib/account/withdraw-user";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { CONFIRM_PHRASE } from "./confirm-phrase";
@@ -24,14 +24,14 @@ export async function withdraw(_prev: WithdrawFormState, form: FormData): Promis
   } = await supabase.auth.getUser();
   if (!user) return { error: "다시 로그인해 주세요." };
 
-  const { error } = await withdrawAccount({ userClient: supabase, adminClient: createAdminSupabase(), userId: user.id });
+  const { error } = await withdrawUser({ userClient: supabase, adminClient: createAdminSupabase(), userId: user.id });
   if (error) {
     const known = error.code ? WITHDRAW_ERRORS[error.code] : undefined;
     if (!known) console.error("withdraw failed", error.message);
     return { error: known ?? "탈퇴하지 못했어요. 잠시 뒤에 다시 해 주세요." };
   }
 
-  // The account is gone; clear this browser's session cookies too.
+  // The 사용자 is gone; clear this browser's session cookies too.
   await supabase.auth.signOut({ scope: "local" });
   redirect("/?withdrawn=1");
 }
