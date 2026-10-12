@@ -62,6 +62,9 @@ async function SignedInHome() {
         <Link href="/courses" className="text-sm underline">
           과목 둘러보기
         </Link>
+        <Link href="/profile" className="text-sm underline">
+          프로필
+        </Link>
       </div>
       {profile?.role === "professor" && <ProfessorCourses supabase={supabase} userId={user.id} />}
       {profile?.role === "student" && <StudentCourses supabase={supabase} userId={user.id} />}

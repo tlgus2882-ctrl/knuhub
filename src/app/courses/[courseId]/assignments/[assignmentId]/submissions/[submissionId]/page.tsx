@@ -39,7 +39,7 @@ async function SubmissionView({ courseId, assignmentId, submissionId, file }: Pa
   const { data: submission } = await supabase
     .from("submission")
     .select(
-      "submitted_at, profile(name, student_number), assignment!inner(title, course_id), submission_file(path, size, storage_path, kind)",
+      "submitted_at, student_id, profile(name, student_number), assignment!inner(title, course_id), submission_file(path, size, storage_path, kind)",
     )
     .eq("id", submissionId)
     .eq("assignment_id", assignmentId)
@@ -69,7 +69,11 @@ async function SubmissionView({ courseId, assignmentId, submissionId, file }: Pa
     <>
       {backLink}
       <div className="flex flex-col gap-2">
-        <AuthorCard name={submission.profile?.name ?? "알 수 없음"} studentNumber={submission.profile?.student_number ?? null} />
+        <AuthorCard
+          authorId={submission.student_id}
+          name={submission.profile?.name ?? "알 수 없음"}
+          studentNumber={submission.profile?.student_number ?? null}
+        />
         <p className="text-sm text-muted-foreground">
           제출 {formatKst(submission.submitted_at)} · 파일 {files.length}개
         </p>
