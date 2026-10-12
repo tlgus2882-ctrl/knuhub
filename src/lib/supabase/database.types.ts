@@ -169,6 +169,32 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"review": {
+                  Row: {
+                    "author_id": string,"body": string,"created_at": string,"id": string,"submission_id": string,"updated_at": string,"can_delete": boolean | null,"can_edit": boolean | null
+                  }
+                  ComputedFields: "can_delete" | "can_edit"
+                  Insert: {
+                    "author_id"?: string,"body": string,"created_at"?: string,"id"?: string,"submission_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "author_id"?: string,"body"?: string,"created_at"?: string,"id"?: string,"submission_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "review_author_id_fkey"
+      columns: ["author_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "review_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: false
+      referencedRelation: "submission"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"submission": {
                   Row: {
                     "assignment_id": string,"id": string,"student_id": string,"submitted_at": string
@@ -224,6 +250,18 @@ isOneToOne: false
             "assert_school_email":
 { Args: { "email": string }; Returns: undefined
                            },
+"can_delete":
+{ Args: { "": Database["public"]['Tables']["review"]['Row'] }; Returns: { error: true } & "the function public.can_delete with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+                           },
+"can_delete_review":
+{ Args: { "review_author": string,"target_submission": string }; Returns: boolean
+                           },
+"can_edit":
+{ Args: { "": Database["public"]['Tables']["review"]['Row'] }; Returns: { error: true } & "the function public.can_edit with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+                           },
+"can_edit_review":
+{ Args: { "review_author": string }; Returns: boolean
+                           },
 "can_read_submission_object":
 { Args: { "object_name": string }; Returns: boolean
                            },
@@ -258,6 +296,9 @@ isOneToOne: false
                            },
 "is_professor_or_assistant":
 { Args: { "target_course": string }; Returns: boolean
+                           },
+"is_submission_course_professor":
+{ Args: { "target_submission": string }; Returns: boolean
                            },
 "is_submitted_object":
 { Args: { "object_name": string }; Returns: boolean

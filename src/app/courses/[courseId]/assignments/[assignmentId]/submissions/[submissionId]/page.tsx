@@ -10,6 +10,7 @@ import { formatKst } from "@/lib/time";
 import { submissionFileHrefs } from "../submission-href";
 import { AuthorCard } from "./author-card";
 import { FileTree } from "./file-tree";
+import { Reviews } from "./reviews";
 
 type Route = "/courses/[courseId]/assignments/[assignmentId]/submissions/[submissionId]";
 type Params = Awaited<PageProps<Route>["params"]>;
@@ -88,6 +89,8 @@ async function SubmissionView({ courseId, assignmentId, submissionId, file }: Pa
           <p className="text-sm text-muted-foreground">파일이 없는 제출물이에요.</p>
         )}
       </div>
+
+      <Reviews submissionId={submissionId} />
     </>
   );
 }
