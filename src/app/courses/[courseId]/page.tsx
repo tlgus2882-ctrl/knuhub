@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { asCourseRole } from "../course-role";
 import { courseTerm } from "../course-term";
 import { regenerateInviteCode } from "../actions";
+import { AssignmentList } from "./assignment-list";
 import { Roster } from "./roster";
 
 export default function CoursePage({ params }: PageProps<"/courses/[courseId]">) {
@@ -71,6 +72,8 @@ async function CourseDetail({ courseId }: { courseId: string }) {
           </p>
         </section>
       )}
+
+      <AssignmentList courseId={courseId} canPost={myRole === "professor" || myRole === "assistant"} />
 
       {myRole === "professor" && <Roster courseId={courseId} />}
     </>

@@ -23,7 +23,33 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "course": {
+            "assignment": {
+                  Row: {
+                    "course_id": string,"created_at": string,"created_by": string | null,"description": string,"due_at": string,"id": string,"title": string,"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "course_id": string,"created_at"?: string,"created_by"?: string | null,"description"?: string,"due_at": string,"id"?: string,"title": string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
+                  }
+                  Update: {
+                    "course_id"?: string,"created_at"?: string,"created_by"?: string | null,"description"?: string,"due_at"?: string,"id"?: string,"title"?: string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "assignment_course_id_fkey"
+      columns: ["course_id"]
+isOneToOne: false
+      referencedRelation: "course"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assignment_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"course": {
                   Row: {
                     "created_at": string,"id": string,"name": string,"professor_id": string,"section": string,"semester": string
                   }
@@ -163,6 +189,9 @@ isOneToOne: true
 "is_course_professor":
 { Args: { "target_course": string }; Returns: boolean
                            },
+"is_course_staff":
+{ Args: { "target_course": string }; Returns: boolean
+                           },
 "is_professor":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
@@ -189,7 +218,7 @@ isOneToOne: true
                            }
           }
           Enums: {
-            "role": "student"|"professor"|"admin"
+            "role": "student"|"professor"|"admin","visibility": "private"|"course"|"campus"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -309,7 +338,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "role": ["student", "professor", "admin"]
+            "role": ["student", "professor", "admin"],"visibility": ["private", "course", "campus"]
           }
         }
 } as const
