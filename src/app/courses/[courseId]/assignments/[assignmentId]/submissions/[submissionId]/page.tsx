@@ -1,21 +1,24 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { formatBytes } from "@/lib/format-bytes";
-import { highlight } from "@/lib/highlight";
+import { decodeText, highlight } from "@/lib/highlight";
 import { buildFileTree } from "@/lib/submissions/file-tree";
 import { SUBMISSION_BUCKET } from "@/lib/submissions/storage";
+import type { Tables } from "@/lib/supabase/database.types";
 import { createServerSupabase, type ServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
-import { signDownloadLinks, type SubmissionFile } from "../../submission-files";
-import { submissionHref } from "../submission-href";
+import { submissionFileHrefs } from "../submission-href";
 import { AuthorCard } from "./author-card";
 import { FileTree } from "./file-tree";
 
 type Route = "/courses/[courseId]/assignments/[assignmentId]/submissions/[submissionId]";
 type Params = Awaited<PageProps<Route>["params"]>;
 
+type ViewedFile = Pick<Tables<"submission_file">, "path" | "size" | "storage_path" | "kind">;
+
 /** Bigger text files are offered as a download instead of being highlighted. */
 const HIGHLIGHT_MAX_BYTES = 1024 * 1024;
+const DOWNLOAD_LINK_SECONDS = 60 * 5;
 
 export default function SubmissionPage({ params, searchParams }: PageProps<Route>) {
   return (
@@ -42,7 +45,7 @@ async function SubmissionView({ courseId, assignmentId, submissionId, file }: Pa
     .eq("assignment.course_id", courseId)
     .maybeSingle();
 
-  const back = (
+  const backLink = (
     <Link href={`/courses/${courseId}/assignments/${assignmentId}`} className="text-sm text-muted-foreground underline">
       ← {submission?.assignment.title ?? "과제로"}
     </Link>
@@ -51,10 +54,8 @@ async function SubmissionView({ courseId, assignmentId, submissionId, file }: Pa
   if (!submission) {
     return (
       <>
-        {back}
-        <p className="text-sm text-muted-foreground">
-          볼 수 없는 제출물이에요. 마감 전이거나 공개 범위 밖이면 작성자와 담당 교수·조교만 볼 수 있어요.
-        </p>
+        {backLink}
+        <p className="text-sm text-muted-foreground">볼 수 없거나 없는 제출물이에요.</p>
       </>
     );
   }
@@ -65,7 +66,7 @@ async function SubmissionView({ courseId, assignmentId, submissionId, file }: Pa
 
   return (
     <>
-      {back}
+      {backLink}
       <div className="flex flex-col gap-2">
         <AuthorCard name={submission.profile?.name ?? "알 수 없음"} studentNumber={submission.profile?.student_number ?? null} />
         <p className="text-sm text-muted-foreground">
@@ -78,24 +79,40 @@ async function SubmissionView({ courseId, assignmentId, submissionId, file }: Pa
           <FileTree
             nodes={buildFileTree(files.map((f) => f.path))}
             selected={selected?.path}
-            hrefFor={(path) => submissionHref(courseId, assignmentId, submissionId, path)}
+            hrefFor={submissionFileHrefs(courseId, assignmentId, submissionId)}
           />
         </nav>
-        {selected && <FileContent supabase={supabase} file={selected} />}
+        {selected ? (
+          <FileContent supabase={supabase} file={selected} />
+        ) : (
+          <p className="text-sm text-muted-foreground">파일이 없는 제출물이에요.</p>
+        )}
       </div>
     </>
   );
 }
 
-async function FileContent({ supabase, file }: { supabase: ServerSupabase; file: SubmissionFile }) {
-  const links = await signDownloadLinks(supabase, [file]);
-  const download = links.get(file.storage_path);
-  const showCode = file.kind === "text" && file.size <= HIGHLIGHT_MAX_BYTES;
+const NO_PREVIEW = {
+  binary: "바이너리 파일이라 미리 볼 수 없어요. 내려받아서 확인해 주세요.",
+  large: "파일이 커서 미리 보기를 건너뛰었어요. 내려받아서 확인해 주세요.",
+  failed: "파일을 불러오지 못했어요.",
+};
+
+async function FileContent({ supabase, file }: { supabase: ServerSupabase; file: ViewedFile }) {
+  const storage = supabase.storage.from(SUBMISSION_BUCKET);
+  const { data: signed } = await storage.createSignedUrl(file.storage_path, DOWNLOAD_LINK_SECONDS);
+  // Download under the submitted file name (the object name is just an index).
+  // supabase-js's `download` option encodes the name twice, so Korean names come out garbled.
+  const download = signed && `${signed.signedUrl}&download=${encodeURIComponent(file.path.split("/").pop()!)}`;
 
   let html: string | null = null;
-  if (showCode) {
-    const { data } = await supabase.storage.from(SUBMISSION_BUCKET).download(file.storage_path);
-    if (data) html = await highlight(await data.text(), file.path);
+  let noPreview: keyof typeof NO_PREVIEW | null = null;
+  if (file.kind === "binary") noPreview = "binary";
+  else if (file.size > HIGHLIGHT_MAX_BYTES) noPreview = "large";
+  else {
+    const { data } = await storage.download(file.storage_path);
+    if (data) html = await highlight(decodeText(await data.arrayBuffer()), file.path);
+    else noPreview = "failed";
   }
 
   return (
@@ -114,13 +131,7 @@ async function FileContent({ supabase, file }: { supabase: ServerSupabase; file:
       {html ? (
         <div className="code-view" dangerouslySetInnerHTML={{ __html: html }} />
       ) : (
-        <p className="rounded-lg border p-6 text-sm text-muted-foreground">
-          {file.kind === "binary"
-            ? "바이너리 파일이라 미리 볼 수 없어요. 내려받아서 확인해 주세요."
-            : showCode
-              ? "파일을 불러오지 못했어요."
-              : "파일이 커서 미리 보기를 건너뛰었어요. 내려받아서 확인해 주세요."}
-        </p>
+        noPreview && <p className="rounded-lg border p-6 text-sm text-muted-foreground">{NO_PREVIEW[noPreview]}</p>
       )}
     </section>
   );

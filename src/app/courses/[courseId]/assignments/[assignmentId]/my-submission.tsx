@@ -2,7 +2,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
 import { DeleteSubmissionForm } from "./delete-submission-form";
 import { SubmissionFileList } from "./submission-files";
-import { submissionHref } from "./submissions/submission-href";
+import { submissionFileHrefs } from "./submissions/submission-href";
 import { SubmissionUploadForm } from "./submission-upload-form";
 
 type Props = { courseId: string; assignmentId: string; studentId: string; open: boolean };
@@ -12,7 +12,7 @@ export async function MySubmission({ courseId, assignmentId, studentId, open }: 
   const supabase = await createServerSupabase();
   const { data: submission } = await supabase
     .from("submission")
-    .select("id, submitted_at, submission_file(path, size, storage_path, kind)")
+    .select("id, submitted_at, submission_file(path, size, storage_path)")
     .eq("assignment_id", assignmentId)
     .eq("student_id", studentId)
     .maybeSingle();
@@ -31,7 +31,7 @@ export async function MySubmission({ courseId, assignmentId, studentId, open }: 
           </p>
           <SubmissionFileList
             files={files}
-            hrefFor={(path) => submissionHref(courseId, assignmentId, submission.id, path)}
+            hrefFor={submissionFileHrefs(courseId, assignmentId, submission.id)}
           />
         </>
       ) : (

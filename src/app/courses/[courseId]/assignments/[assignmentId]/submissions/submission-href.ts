@@ -3,3 +3,8 @@ export function submissionHref(courseId: string, assignmentId: string, submissio
   const base = `/courses/${courseId}/assignments/${assignmentId}/submissions/${submissionId}`;
   return path ? `${base}?file=${encodeURIComponent(path)}` : base;
 }
+
+/** Links to each file of one 제출물 in the code viewer. */
+export function submissionFileHrefs(courseId: string, assignmentId: string, submissionId: string) {
+  return (path: string) => submissionHref(courseId, assignmentId, submissionId, path);
+}
