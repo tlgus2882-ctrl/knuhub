@@ -48,6 +48,9 @@ async function MyProfile() {
         name={profile?.name ?? ""}
         contact={contact ?? NO_CONTACT_SETTINGS}
       />
+      <Link href="/profile/withdraw" className="self-start text-sm text-muted-foreground underline">
+        탈퇴하기
+      </Link>
     </>
   );
 }

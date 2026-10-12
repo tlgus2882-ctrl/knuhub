@@ -7,13 +7,20 @@ import { courseTerm } from "./courses/course-term";
 import { JoinCourseForm } from "./courses/join-course-form";
 import { SearchBox } from "./search/search-box";
 
-export default function Home() {
+export default function Home({ searchParams }: PageProps<"/">) {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-16">
       <header className="flex flex-col gap-1">
         <h1 className="text-3xl font-semibold tracking-tight">knuhub</h1>
         <p className="text-muted-foreground">강남대 과제 공유 & 리뷰 플랫폼</p>
       </header>
+      <Suspense>
+        {searchParams.then(({ withdrawn }) =>
+          withdrawn === "1" ? (
+            <p className="rounded-lg border p-3 text-sm">탈퇴가 끝났어요. 프로필, 제출물, 리뷰를 모두 지웠어요.</p>
+          ) : null,
+        )}
+      </Suspense>
       <Suspense fallback={<p className="text-sm text-muted-foreground">세션 확인 중…</p>}>
         <SignedInHome />
       </Suspense>
