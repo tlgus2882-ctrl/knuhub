@@ -3,20 +3,27 @@ import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { logOut } from "./(auth)/actions";
+import { courseTerm } from "./courses/course-term";
+import { JoinCourseForm } from "./courses/join-course-form";
 
 export default function Home() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-6 py-24">
-      <h1 className="text-3xl font-semibold tracking-tight">knuhub</h1>
-      <p className="text-muted-foreground">강남대 과제 공유 & 리뷰 플랫폼</p>
+    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-16">
+      <header className="flex flex-col gap-1">
+        <h1 className="text-3xl font-semibold tracking-tight">knuhub</h1>
+        <p className="text-muted-foreground">강남대 과제 공유 & 리뷰 플랫폼</p>
+      </header>
       <Suspense fallback={<p className="text-sm text-muted-foreground">세션 확인 중…</p>}>
-        <SessionStatus />
+        <SignedInHome />
       </Suspense>
     </main>
   );
 }
 
-async function SessionStatus() {
+type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
+type CourseSummary = { id: string; name: string; semester: string; section: string };
+
+async function SignedInHome() {
   const supabase = await createServerSupabase();
   const {
     data: { user },
@@ -37,21 +44,82 @@ async function SessionStatus() {
 
   const { data: profile } = await supabase
     .from("profile")
-    .select("name, student_number")
+    .select("name, student_number, role")
     .eq("id", user.id)
     .single();
 
   return (
-    <div className="flex items-center gap-3">
-      <p className="text-sm">
-        {profile?.name}
-        {profile?.student_number && ` (${profile.student_number})`}님, 안녕하세요.
-      </p>
-      <form action={logOut}>
-        <Button type="submit" variant="outline" size="sm">
-          로그아웃
+    <>
+      <div className="flex items-center gap-3">
+        <p className="text-sm">
+          {profile?.name}
+          {profile?.student_number && ` (${profile.student_number})`}님, 안녕하세요.
+        </p>
+        <form action={logOut}>
+          <Button type="submit" variant="outline" size="sm">
+            로그아웃
+          </Button>
+        </form>
+      </div>
+      {profile?.role === "professor" && <ProfessorCourses supabase={supabase} userId={user.id} />}
+      {profile?.role === "student" && <StudentCourses supabase={supabase} userId={user.id} />}
+    </>
+  );
+}
+
+async function ProfessorCourses({ supabase, userId }: { supabase: Supabase; userId: string }) {
+  const { data } = await supabase
+    .from("course")
+    .select("id, name, semester, section")
+    .eq("professor_id", userId)
+    .order("created_at", { ascending: false });
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">담당 과목</h2>
+        <Button size="sm" nativeButton={false} render={<Link href="/courses/new" />}>
+          과목 열기
         </Button>
-      </form>
-    </div>
+      </div>
+      <CourseList courses={data ?? []} empty="아직 연 과목이 없어요." />
+    </section>
+  );
+}
+
+async function StudentCourses({ supabase, userId }: { supabase: Supabase; userId: string }) {
+  const { data } = await supabase
+    .from("enrollment")
+    .select("course(id, name, semester, section)")
+    .eq("student_id", userId)
+    .order("created_at", { ascending: false });
+  const courses = (data ?? []).flatMap((row) => (row.course ? [row.course] : []));
+
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-lg font-semibold">내 과목</h2>
+      <CourseList
+        courses={courses}
+        empty="아직 참여한 과목이 없어요. 교수님께 받은 초대 코드를 입력해 주세요."
+      />
+      <JoinCourseForm />
+    </section>
+  );
+}
+
+function CourseList({ courses, empty }: { courses: CourseSummary[]; empty: string }) {
+  if (courses.length === 0) return <p className="text-sm text-muted-foreground">{empty}</p>;
+
+  return (
+    <ul className="flex flex-col divide-y rounded-lg border">
+      {courses.map((course) => (
+        <li key={course.id}>
+          <Link href={`/courses/${course.id}`} className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted">
+            <span className="font-medium">{course.name}</span>
+            <span className="text-xs text-muted-foreground">{courseTerm(course)}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }

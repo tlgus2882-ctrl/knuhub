@@ -64,7 +64,8 @@ const { data } = await student.client.from("...").select();
 ## DB 변경 절차
 
 1. 마이그레이션 만들기: `supabase migration new <이름>` → `supabase/migrations/`에 SQL 작성
-2. 로컬에 적용: `supabase db reset` (로컬 DB를 마이그레이션으로 다시 만든다)
+2. 로컬에 적용: 새 마이그레이션만 적용하려면 `supabase migration up`, 처음부터 다시 만들려면 `supabase db reset`
+   - `db reset` 뒤에는 메일 템플릿이 기본값으로 돌아가 메일 테스트가 실패할 수 있다. 그럴 땐 `supabase stop && supabase start`
 3. 타입 재생성: `npm run db:types` (CI가 최신인지 검사한다)
 4. 테스트 통과 확인 후 PR
 
