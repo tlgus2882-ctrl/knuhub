@@ -169,6 +169,52 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"submission": {
+                  Row: {
+                    "assignment_id": string,"id": string,"student_id": string,"submitted_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assignment_id": string,"id"?: string,"student_id": string,"submitted_at"?: string
+                  }
+                  Update: {
+                    "assignment_id"?: string,"id"?: string,"student_id"?: string,"submitted_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "submission_assignment_id_fkey"
+      columns: ["assignment_id"]
+isOneToOne: false
+      referencedRelation: "assignment"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "submission_student_id_fkey"
+      columns: ["student_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"submission_file": {
+                  Row: {
+                    "id": string,"path": string,"size": number,"storage_path": string,"submission_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id"?: string,"path": string,"size": number,"storage_path": string,"submission_id": string
+                  }
+                  Update: {
+                    "id"?: string,"path"?: string,"size"?: number,"storage_path"?: string,"submission_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "submission_file_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: false
+      referencedRelation: "submission"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
@@ -178,10 +224,25 @@ isOneToOne: true
             "assert_school_email":
 { Args: { "email": string }; Returns: undefined
                            },
+"can_read_submission_object":
+{ Args: { "object_name": string }; Returns: boolean
+                           },
+"can_submit":
+{ Args: { "target_assignment": string }; Returns: boolean
+                           },
+"can_view_submission":
+{ Args: { "target_submission": string }; Returns: boolean
+                           },
+"can_write_submission_object":
+{ Args: { "object_name": string }; Returns: boolean
+                           },
 "course_roster":
 { Args: { "target_course": string }; Returns: {
               "email": string,"is_assistant": boolean,"name": string,"student_id": string,"student_number": string
             }[]
+                           },
+"delete_submission":
+{ Args: { "target_assignment": string }; Returns: (string)[]
                            },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
@@ -194,6 +255,9 @@ isOneToOne: true
                            },
 "is_professor_or_assistant":
 { Args: { "target_course": string }; Returns: boolean
+                           },
+"is_submitted_object":
+{ Args: { "object_name": string }; Returns: boolean
                            },
 "issue_invite_code":
 { Args: { "target_course": string }; Returns: string
@@ -215,6 +279,9 @@ isOneToOne: true
                            },
 "student_number_taken":
 { Args: { "candidate": string }; Returns: boolean
+                           },
+"submit_files":
+{ Args: { "files": Json,"target_assignment": string }; Returns: (string)[]
                            }
           }
           Enums: {

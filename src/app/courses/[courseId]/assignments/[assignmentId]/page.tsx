@@ -6,7 +6,9 @@ import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst, timeLeft } from "@/lib/time";
+import { asCourseRole } from "../../../course-role";
 import { VISIBILITY_HINT, VISIBILITY_LABEL } from "../../../visibility";
+import { MySubmission } from "./my-submission";
 
 export default function AssignmentPage({ params }: PageProps<"/courses/[courseId]/assignments/[assignmentId]">) {
   return (
@@ -32,6 +34,16 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
   if (!assignment) notFound();
 
   const { data: canEdit } = await supabase.rpc("is_professor_or_assistant", { target_course: courseId });
+  const { data: role } = await supabase.rpc("my_course_role", { target_course: courseId });
+  const myRole = asCourseRole(role);
+  const enrolled = myRole === "student" || myRole === "assistant";
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  // Whether submitting is still open comes from the DB (enrolled and before the current 마감일).
+  const { data: canSubmit } = enrolled
+    ? await supabase.rpc("can_submit", { target_assignment: assignmentId })
+    : { data: false };
   await connection();
   const now = new Date();
 
@@ -73,6 +85,8 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
       ) : (
         <p className="text-sm text-muted-foreground">설명이 없어요.</p>
       )}
+
+      {enrolled && user && <MySubmission assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
     </>
   );
 }
