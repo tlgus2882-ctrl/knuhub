@@ -23,7 +23,73 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "profile": {
+            "course": {
+                  Row: {
+                    "created_at": string,"id": string,"name": string,"professor_id": string,"section": string,"semester": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"name": string,"professor_id"?: string,"section": string,"semester": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"name"?: string,"professor_id"?: string,"section"?: string,"semester"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "course_professor_id_fkey"
+      columns: ["professor_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"course_invite": {
+                  Row: {
+                    "course_id": string,"invite_code": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "course_id": string,"invite_code": string
+                  }
+                  Update: {
+                    "course_id"?: string,"invite_code"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "course_invite_course_id_fkey"
+      columns: ["course_id"]
+isOneToOne: true
+      referencedRelation: "course"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"enrollment": {
+                  Row: {
+                    "course_id": string,"created_at": string,"student_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "course_id": string,"created_at"?: string,"student_id": string
+                  }
+                  Update: {
+                    "course_id"?: string,"created_at"?: string,"student_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "enrollment_course_id_fkey"
+      columns: ["course_id"]
+isOneToOne: false
+      referencedRelation: "course"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "enrollment_student_id_fkey"
+      columns: ["student_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"profile": {
                   Row: {
                     "created_at": string,"id": string,"name": string,"role": Database["public"]['Enums']["role"],"student_number": string | null
                   }
@@ -69,8 +135,17 @@ isOneToOne: true
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"is_professor":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"join_course":
+{ Args: { "code": string }; Returns: string
+                           },
 "login_email_for_student_number":
 { Args: { "candidate": string }; Returns: string
+                           },
+"new_invite_code":
+{ Args: Record<PropertyKey, never>; Returns: string
                            },
 "student_number_taken":
 { Args: { "candidate": string }; Returns: boolean
