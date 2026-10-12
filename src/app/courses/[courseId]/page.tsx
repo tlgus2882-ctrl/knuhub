@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
 import { courseTerm } from "../course-term";
+import { regenerateInviteCode } from "../actions";
+import { Roster } from "./roster";
 
 export default function CoursePage({ params }: PageProps<"/courses/[courseId]">) {
   return (
@@ -29,6 +32,8 @@ async function CourseDetail({ courseId }: { courseId: string }) {
 
   if (!course) notFound();
 
+  const { data: myRole } = await supabase.rpc("my_course_role", { target_course: courseId });
+
   // RLS returns the invite code only to the course's professor.
   const { data: invite } = await supabase
     .from("course_invite")
@@ -42,6 +47,7 @@ async function CourseDetail({ courseId }: { courseId: string }) {
         <h1 className="text-2xl font-semibold tracking-tight">{course.name}</h1>
         <p className="text-sm text-muted-foreground">
           {courseTerm(course)} · 담당 교수 {course.professor?.name}
+          {myRole === "assistant" && " · 나는 이 과목의 조교"}
         </p>
       </header>
 
@@ -52,8 +58,19 @@ async function CourseDetail({ courseId }: { courseId: string }) {
           <p className="mt-2 text-xs text-muted-foreground">
             학생들에게 이 코드를 알려 주세요. 코드를 입력하면 바로 수강생이 돼요.
           </p>
+          <form action={regenerateInviteCode} className="mt-3">
+            <input type="hidden" name="course_id" value={courseId} />
+            <Button type="submit" size="sm" variant="outline">
+              새 코드 발급
+            </Button>
+          </form>
+          <p className="mt-1 text-xs text-muted-foreground">
+            새 코드를 발급하면 이전 코드로는 참여할 수 없어요. 이미 참여한 수강생은 그대로예요.
+          </p>
         </section>
       )}
+
+      {myRole === "professor" && <Roster courseId={courseId} />}
     </>
   );
 }

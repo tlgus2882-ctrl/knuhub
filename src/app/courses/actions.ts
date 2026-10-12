@@ -1,5 +1,6 @@
 "use server";
 
+import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -50,4 +51,37 @@ export async function joinCourse(_prev: CourseFormState, form: FormData): Promis
   }
 
   redirect(`/courses/${courseId}`);
+}
+
+// Roster management for the course's professor. RLS and the DB functions
+// refuse anyone else, so these only pass the request through.
+export async function removeStudent(form: FormData) {
+  const courseId = String(form.get("course_id"));
+  const studentId = String(form.get("student_id"));
+
+  const supabase = await createServerSupabase();
+  await supabase.from("enrollment").delete().eq("course_id", courseId).eq("student_id", studentId);
+  refresh();
+}
+
+export async function setAssistant(form: FormData) {
+  const courseId = String(form.get("course_id"));
+  const userId = String(form.get("user_id"));
+  const makeAssistant = form.get("assistant") === "true";
+
+  const supabase = await createServerSupabase();
+  if (makeAssistant) {
+    await supabase.from("course_assistant").insert({ course_id: courseId, user_id: userId });
+  } else {
+    await supabase.from("course_assistant").delete().eq("course_id", courseId).eq("user_id", userId);
+  }
+  refresh();
+}
+
+export async function regenerateInviteCode(form: FormData) {
+  const courseId = String(form.get("course_id"));
+
+  const supabase = await createServerSupabase();
+  await supabase.rpc("regenerate_invite_code", { target_course: courseId });
+  refresh();
 }

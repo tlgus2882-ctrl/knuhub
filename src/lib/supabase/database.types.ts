@@ -43,6 +43,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"course_assistant": {
+                  Row: {
+                    "course_id": string,"created_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "course_id": string,"created_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "course_id"?: string,"created_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "course_assistant_course_id_user_id_fkey"
+      columns: ["course_id","user_id"]
+isOneToOne: true
+      referencedRelation: "enrollment"
+      referencedColumns: ["course_id","student_id"]
+    }
+                  ]
                 },"course_invite": {
                   Row: {
                     "course_id": string,"invite_code": string
@@ -132,11 +152,22 @@ isOneToOne: true
             "assert_school_email":
 { Args: { "email": string }; Returns: undefined
                            },
+"course_roster":
+{ Args: { "target_course": string }; Returns: {
+              "email": string,"is_assistant": boolean,"joined_at": string,"name": string,"student_id": string,"student_number": string
+            }[]
+                           },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"is_course_professor":
+{ Args: { "target_course": string }; Returns: boolean
+                           },
 "is_professor":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"issue_invite_code":
+{ Args: { "target_course": string }; Returns: string
                            },
 "join_course":
 { Args: { "code": string }; Returns: string
@@ -144,8 +175,14 @@ isOneToOne: true
 "login_email_for_student_number":
 { Args: { "candidate": string }; Returns: string
                            },
+"my_course_role":
+{ Args: { "target_course": string }; Returns: string
+                           },
 "new_invite_code":
 { Args: Record<PropertyKey, never>; Returns: string
+                           },
+"regenerate_invite_code":
+{ Args: { "target_course": string }; Returns: string
                            },
 "student_number_taken":
 { Args: { "candidate": string }; Returns: boolean
