@@ -9,7 +9,7 @@ export default function CheckEmailPage() {
         <CardDescription>학교 메일로 인증 링크를 보냈어요.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
-        <p>링크를 누르면 가입이 끝나고 바로 로그인돼요. 가입한 브라우저에서 열어 주세요.</p>
+        <p>링크를 누르면 가입이 끝나고 바로 로그인돼요. 휴대폰에서 열어도 돼요.</p>
         <p>
           인증을 마쳤다면{" "}
           <Link href="/login" className="underline">
