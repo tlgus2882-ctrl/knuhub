@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { NO_CONTACT_SETTINGS } from "./contact-visibility";
 import { ProfileForm } from "./profile-form";
 
 export default function ProfilePage() {
@@ -45,7 +46,7 @@ async function MyProfile() {
       <ProfileForm
         email={user.email ?? ""}
         name={profile?.name ?? ""}
-        contact={contact ?? { show_email: false, open_chat_url: null, github: null, contact_visibility: "private" }}
+        contact={contact ?? NO_CONTACT_SETTINGS}
       />
     </>
   );

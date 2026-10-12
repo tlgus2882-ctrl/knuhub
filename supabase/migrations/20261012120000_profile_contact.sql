@@ -18,7 +18,8 @@ create table public.profile_contact (
   -- 학교 메일(가입 메일)을 연락 수단으로 보일지
   show_email boolean not null default false,
   open_chat_url text check (open_chat_url ~ '^https://open\.kakao\.com/[A-Za-z0-9/_-]+$'),
-  github text check (github ~ '^[A-Za-z0-9](-?[A-Za-z0-9]){0,38}$'),
+  -- GitHub 아이디 규칙: 영문·숫자·하이픈, 하이픈으로 시작·끝나거나 연달아 쓸 수 없고 39자까지
+  github text check (github ~ '^[A-Za-z0-9](-?[A-Za-z0-9]){0,38}$' and length(github) <= 39),
   contact_visibility public.contact_visibility not null default 'private'
 );
 
@@ -61,8 +62,8 @@ as $$
   );
 $$;
 
-revoke execute on function public.shares_course_with(uuid) from public, anon;
-grant execute on function public.shares_course_with(uuid) to authenticated;
+-- 직접 부르면 아무 사용자 id로 같은 과목인지 떠볼 수 있으므로 author_contacts()만 쓴다.
+revoke execute on function public.shares_course_with(uuid) from public, anon, authenticated;
 
 -- 작성자 카드에 보일 연락 수단. 공개 범위가 허용하지 않으면 행이 없다.
 -- 전체: 모든 사용자 / 수강생: 같은 과목 수강생·교수·조교 / 비공개: 본인만
@@ -89,3 +90,34 @@ $$;
 
 revoke execute on function public.author_contacts(uuid) from public, anon;
 grant execute on function public.author_contacts(uuid) to authenticated;
+
+-- 프로필 화면의 저장: 이름과 연락 수단을 한 번에(한 트랜잭션으로) 바꾼다.
+-- 권한은 호출한 사용자의 것(security invoker)이라 위의 RLS와 열 권한이 그대로 적용된다.
+create function public.update_my_profile(
+  new_name text,
+  show_email boolean,
+  contact_visibility public.contact_visibility,
+  -- 비워 두면(null) 그 연락 수단을 지운다
+  open_chat_url text default null,
+  github text default null
+)
+returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  update public.profile set name = new_name where id = (select auth.uid());
+
+  insert into public.profile_contact (id, show_email, open_chat_url, github, contact_visibility)
+  values ((select auth.uid()), show_email, open_chat_url, github, contact_visibility)
+  on conflict (id) do update set
+    show_email = excluded.show_email,
+    open_chat_url = excluded.open_chat_url,
+    github = excluded.github,
+    contact_visibility = excluded.contact_visibility;
+end;
+$$;
+
+revoke execute on function public.update_my_profile(text, boolean, public.contact_visibility, text, text) from public, anon;
+grant execute on function public.update_my_profile(text, boolean, public.contact_visibility, text, text) to authenticated;

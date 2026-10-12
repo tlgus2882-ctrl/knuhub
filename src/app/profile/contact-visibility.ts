@@ -1,6 +1,19 @@
-import type { Database } from "@/lib/supabase/database.types";
+import type { Database, Tables } from "@/lib/supabase/database.types";
 
 export type ContactVisibility = Database["public"]["Enums"]["contact_visibility"];
+
+/** My contact methods and who may see them, as stored in profile_contact. */
+export type ContactSettings = Pick<
+  Tables<"profile_contact">,
+  "show_email" | "open_chat_url" | "github" | "contact_visibility"
+>;
+
+export const NO_CONTACT_SETTINGS: ContactSettings = {
+  show_email: false,
+  open_chat_url: null,
+  github: null,
+  contact_visibility: "private",
+};
 
 // 연락처 공개 범위 (GLOSSARY.md): who sees my contact methods on my 작성자 카드.
 export const CONTACT_VISIBILITY_LABEL: Record<ContactVisibility, string> = {

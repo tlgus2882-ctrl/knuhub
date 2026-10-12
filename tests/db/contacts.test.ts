@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { enrollInTestCourse, openTestCourse } from "../support/courses";
+import type { ContactVisibility } from "../../src/app/profile/contact-visibility";
 import { createTestUser, type TestUser } from "../support/supabase";
-
-type ContactVisibility = "public" | "course" | "private";
 
 /** An owner enrolled in a course, with viewers around them. */
 async function contactSetup(visibility: ContactVisibility) {
@@ -28,6 +27,10 @@ async function contactSetup(visibility: ContactVisibility) {
   if (error) throw error;
 
   const viewers = { owner, professor, assistant, classmate, outsider, otherProfessor };
+  const removeFromCourse = async (student: TestUser) => {
+    const { error } = await professor.client.from("enrollment").delete().eq("course_id", course.id).eq("student_id", student.id);
+    if (error) throw error;
+  };
   /** Names of the viewers who get the owner's contact methods from the DB. */
   const whoSeesContacts = async () => {
     const names: string[] = [];
@@ -38,7 +41,7 @@ async function contactSetup(visibility: ContactVisibility) {
     }
     return names;
   };
-  return { ...viewers, whoSeesContacts };
+  return { ...viewers, whoSeesContacts, removeFromCourse };
 }
 
 async function contactsOf(viewer: TestUser, owner: TestUser) {
@@ -52,10 +55,12 @@ describe("프로필 수정", () => {
 
     const rename = await user.client.from("profile").update({ name: "새 이름" }).eq("id", user.id).select("name");
     const number = await user.client.from("profile").update({ student_number: "999999999" }).eq("id", user.id);
+    const role = await user.client.from("profile").update({ role: "professor" }).eq("id", user.id);
     const phone = await user.client.from("profile_private").update({ phone: "010-0000-0000" }).eq("id", user.id);
 
     expect(rename.data).toEqual([{ name: "새 이름" }]);
     expect(number.error).not.toBeNull();
+    expect(role.error).not.toBeNull();
     expect(phone.error).not.toBeNull();
   });
 
@@ -75,10 +80,32 @@ describe("프로필 수정", () => {
     const blank = await user.client.from("profile").update({ name: "  " }).eq("id", user.id);
     const badLink = await user.client.from("profile_contact").upsert({ id: user.id, open_chat_url: "https://evil.example/x" });
     const badGithub = await user.client.from("profile_contact").upsert({ id: user.id, github: "not a name!" });
+    const longGithub = await user.client.from("profile_contact").upsert({ id: user.id, github: "a-".repeat(20) + "b" });
 
     expect(blank.error).not.toBeNull();
     expect(badLink.error).not.toBeNull();
     expect(badGithub.error).not.toBeNull();
+    expect(longGithub.error).not.toBeNull();
+  });
+});
+
+describe("프로필 저장", () => {
+  it("이름과 연락 수단을 한 번에 저장하고, 하나라도 잘못되면 아무것도 바뀌지 않는다", async () => {
+    const user = await createTestUser();
+    const save = (fields: { new_name: string; github: string }) =>
+      user.client.rpc("update_my_profile", { ...fields, show_email: false, contact_visibility: "public" });
+
+    expect((await save({ new_name: "바뀐 이름", github: "knu-dev" })).error).toBeNull();
+    expect((await save({ new_name: "또 바뀐 이름", github: "not a name!" })).error).not.toBeNull();
+
+    const { data: profile } = await user.client.from("profile").select("name").eq("id", user.id).single();
+    const { data: contact } = await user.client.from("profile_contact").select("github").eq("id", user.id).single();
+    expect(profile?.name).toBe("바뀐 이름");
+    expect(contact?.github).toBe("knu-dev");
+
+    await user.client.rpc("update_my_profile", { new_name: "바뀐 이름", show_email: false, contact_visibility: "public" });
+    const { data: cleared } = await user.client.from("profile_contact").select("github").eq("id", user.id).single();
+    expect(cleared?.github).toBeNull();
   });
 });
 
@@ -96,6 +123,22 @@ describe("연락처 공개 범위", () => {
     const { whoSeesContacts } = await contactSetup("course");
 
     expect(await whoSeesContacts()).toEqual(["owner", "professor", "assistant", "classmate"]);
+  });
+
+  it("과목에서 내보내진 학생에게는 수강생 공개 연락처가 더는 보이지 않는다", async () => {
+    const { classmate, removeFromCourse, whoSeesContacts } = await contactSetup("course");
+
+    await removeFromCourse(classmate);
+
+    expect(await whoSeesContacts()).toEqual(["owner", "professor", "assistant"]);
+  });
+
+  it("누가 나와 같은 과목인지 직접 물어볼 수는 없다 (수강생 명단이 새지 않게)", async () => {
+    const { owner, classmate } = await contactSetup("course");
+
+    const { error } = await classmate.client.rpc("shares_course_with", { other: owner.id });
+
+    expect(error).not.toBeNull();
   });
 
   it("비공개면 본인 말고는 아무에게도 보이지 않는다", async () => {

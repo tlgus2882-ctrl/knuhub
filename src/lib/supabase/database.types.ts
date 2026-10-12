@@ -359,6 +359,9 @@ isOneToOne: false
                            },
 "submit_files":
 { Args: { "files": Json,"target_assignment": string }; Returns: (string)[]
+                           },
+"update_my_profile":
+{ Args: { "contact_visibility": Database["public"]['Enums']["contact_visibility"],"github"?: string,"new_name": string,"open_chat_url"?: string,"show_email": boolean }; Returns: undefined
                            }
           }
           Enums: {

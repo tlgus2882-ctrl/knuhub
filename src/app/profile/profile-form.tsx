@@ -8,6 +8,7 @@ import { saveProfile, type ProfileFormState } from "./actions";
 import {
   CONTACT_VISIBILITY_HINT,
   CONTACT_VISIBILITY_LABEL,
+  type ContactSettings,
   type ContactVisibility,
 } from "./contact-visibility";
 
@@ -16,7 +17,7 @@ const initial: ProfileFormState = { error: null };
 type Props = {
   email: string;
   name: string;
-  contact: { show_email: boolean; open_chat_url: string | null; github: string | null; contact_visibility: ContactVisibility };
+  contact: ContactSettings;
 };
 
 export function ProfileForm({ email, name, contact }: Props) {

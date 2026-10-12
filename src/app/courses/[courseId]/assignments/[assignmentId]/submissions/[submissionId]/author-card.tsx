@@ -7,7 +7,7 @@ type Props = { authorId: string; name: string; studentNumber: string | null };
 export async function AuthorCard({ authorId, name, studentNumber }: Props) {
   const supabase = await createServerSupabase();
   const { data } = await supabase.rpc("author_contacts", { target: authorId });
-  const contact = data?.[0];
+  const visibleContacts = data?.[0];
 
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-xl border p-4">
@@ -20,26 +20,26 @@ export async function AuthorCard({ authorId, name, studentNumber }: Props) {
           <span className="text-sm text-muted-foreground">{studentNumber ?? "학번 없음"}</span>
         </div>
       </div>
-      {contact && (contact.email || contact.open_chat_url || contact.github) && (
+      {visibleContacts && (visibleContacts.email || visibleContacts.open_chat_url || visibleContacts.github) && (
         <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          {contact.email && (
+          {visibleContacts.email && (
             <li>
-              <a href={`mailto:${contact.email}`} className="underline">
-                {contact.email}
+              <a href={`mailto:${visibleContacts.email}`} className="underline">
+                {visibleContacts.email}
               </a>
             </li>
           )}
-          {contact.open_chat_url && (
+          {visibleContacts.open_chat_url && (
             <li>
-              <a href={contact.open_chat_url} target="_blank" rel="noopener noreferrer" className="underline">
+              <a href={visibleContacts.open_chat_url} target="_blank" rel="noopener noreferrer" className="underline">
                 오픈채팅
               </a>
             </li>
           )}
-          {contact.github && (
+          {visibleContacts.github && (
             <li>
-              <a href={`https://github.com/${contact.github}`} target="_blank" rel="noopener noreferrer" className="underline">
-                GitHub @{contact.github}
+              <a href={`https://github.com/${visibleContacts.github}`} target="_blank" rel="noopener noreferrer" className="underline">
+                GitHub @{visibleContacts.github}
               </a>
             </li>
           )}
