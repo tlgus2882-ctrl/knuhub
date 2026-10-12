@@ -97,4 +97,58 @@ describe("과제 첨부파일", () => {
       .eq("assignment_id", assignmentId);
     expect(data).toEqual([{ name: "안내.txt", storage_path: storagePath }]);
   });
+
+  it("담당 교수가 첨부파일을 지우면 목록과 파일이 모두 사라진다", async () => {
+    const { professor, student, assignmentId } = await attachmentSetup();
+    const { fileId, storagePath } = await attachFile(professor, assignmentId, "안내.txt", "x");
+
+    const { data: removedPath } = await professor.client.rpc("detach_assignment_file", { target_file: fileId! });
+    const { data: removed } = await professor.client.storage.from(ASSIGNMENT_FILE_BUCKET).remove([removedPath!]);
+
+    expect(removed).toHaveLength(1);
+    expect(await attachmentsSeenBy(student, assignmentId)).toEqual([]);
+    expect(await downloadAttachment(professor, storagePath)).toBeNull();
+  });
+
+  it("이미 첨부된 파일이나 같은 과목의 다른 과제 파일을 다시 첨부할 수 없고, 원래 첨부는 그대로다", async () => {
+    const { professor, student, course, assignmentId } = await attachmentSetup();
+    const otherAssignmentId = await postTestAssignment(professor, course.id);
+    const { storagePath } = await attachFile(professor, assignmentId, "안내.txt", "원본");
+
+    const again = await professor.client.rpc("attach_assignment_file", {
+      target_assignment: assignmentId,
+      storage_path: storagePath,
+      name: "또.txt",
+    });
+    const elsewhere = await professor.client.rpc("attach_assignment_file", {
+      target_assignment: otherAssignmentId,
+      storage_path: storagePath,
+      name: "옮김.txt",
+    });
+
+    expect(again.error).not.toBeNull();
+    expect(elsewhere.error).not.toBeNull();
+    expect(await attachmentsSeenBy(student, assignmentId)).toEqual([{ name: "안내.txt", size: 6 }]);
+    expect(await downloadAttachment(student, storagePath)).toBe("원본");
+  });
+
+  it("과목에서 내보내진 학생은 첨부파일을 더 볼 수 없다", async () => {
+    const { professor, student, course, assignmentId } = await attachmentSetup();
+    const { storagePath } = await attachFile(professor, assignmentId, "안내.txt", "x");
+
+    await professor.client.from("enrollment").delete().eq("course_id", course.id).eq("student_id", student.id);
+
+    expect(await attachmentsSeenBy(student, assignmentId)).toEqual([]);
+    expect(await downloadAttachment(student, storagePath)).toBeNull();
+  });
+
+  it("조교가 탈퇴해도 그 조교가 올린 첨부파일은 수업 자료로 남는다", async () => {
+    const { assistant, student, assignmentId } = await attachmentSetup();
+    const { storagePath } = await attachFile(assistant, assignmentId, "예제.txt", "예제");
+
+    await withdrawUser({ userClient: assistant.client, adminClient: adminClient() });
+
+    expect(await attachmentsSeenBy(student, assignmentId)).toEqual([{ name: "예제.txt", size: 6 }]);
+    expect(await downloadAttachment(student, storagePath)).toBe("예제");
+  });
 });

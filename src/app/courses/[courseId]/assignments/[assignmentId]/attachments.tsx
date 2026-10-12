@@ -1,5 +1,6 @@
 import { ASSIGNMENT_FILE_BUCKET } from "@/lib/assignments/storage";
 import { formatBytes } from "@/lib/format-bytes";
+import { downloadUrl } from "@/lib/storage-download";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { AttachmentUpload } from "./attachment-upload";
 import { DetachButton } from "./detach-button";
@@ -34,8 +35,7 @@ export async function Attachments({ assignmentId, canEdit }: Props) {
         <ul className="flex flex-col gap-1 text-sm">
           {files.map((file, i) => {
             const url = signed?.[i]?.signedUrl;
-            // supabase-js's `download` option encodes the name twice, so Korean names come out garbled.
-            const href = url && `${url}&download=${encodeURIComponent(file.name)}`;
+            const href = url && downloadUrl(url, file.name);
             return (
               <li key={file.id} className="flex items-center gap-2">
                 {href ? (

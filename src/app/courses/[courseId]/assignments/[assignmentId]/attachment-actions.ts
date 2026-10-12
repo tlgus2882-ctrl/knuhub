@@ -14,6 +14,7 @@ const ATTACHMENT_ERRORS: Record<string, string> = {
 const UNKNOWN_ERROR = "처리하지 못했어요. 잠시 뒤에 다시 해 주세요.";
 
 // The browser has already uploaded the file to Storage (docs/adr/0002); this makes it a 첨부파일.
+// If it fails, the browser removes the object it just uploaded (only it knows the path is its own).
 export async function attachAssignmentFile(
   assignmentId: string,
   storagePath: string,
@@ -25,11 +26,7 @@ export async function attachAssignmentFile(
     storage_path: storagePath,
     name,
   });
-  if (error) {
-    // Not attached, so the uploaded object is useless; best-effort clean-up.
-    await supabase.storage.from(ASSIGNMENT_FILE_BUCKET).remove([storagePath]);
-    return failed("attachAssignmentFile", error);
-  }
+  if (error) return failed("attachAssignmentFile", error);
   refresh();
   return { error: null };
 }
