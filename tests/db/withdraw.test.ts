@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { withdrawUser } from "../../src/lib/account/withdraw-user";
+import { withdrawUser } from "../../src/lib/withdrawal/withdraw-user";
 import { SUBMISSION_BUCKET } from "../../src/lib/submissions/storage";
 import { enrollInTestCourse, openTestCourse, postTestAssignment } from "../support/courses";
 import { submitFiles, uploadAttempt } from "../support/submissions";
@@ -26,7 +26,7 @@ async function rowsOf(table: keyof typeof USER_COLUMN, userId: string) {
 }
 
 async function withdraw(user: TestUser) {
-  return withdrawUser({ userClient: user.client, adminClient: adminClient(), userId: user.id });
+  return withdrawUser({ userClient: user.client, adminClient: adminClient() });
 }
 
 describe("탈퇴", () => {
@@ -82,7 +82,7 @@ describe("탈퇴", () => {
 
     const { error } = await withdraw(student);
 
-    expect(error?.code).toBe("KH007");
+    expect(error?.code).toBe("KH006");
     expect(await rowsOf("profile", student.id)).toBe(1);
   });
 
@@ -125,21 +125,49 @@ describe("탈퇴", () => {
     expect(await stillStored(storagePaths[0])).toBe(true);
   });
 
-  it("보관된 과목의 학생이 나중에 탈퇴하면 보관된 그 학생의 제출물과 파일도 지워진다", async () => {
+  it("보관된 과목의 학생이 나중에 탈퇴하면 보관된 그 학생의 제출물·파일·리뷰도 지워진다", async () => {
     const professor = await createTestUser({ role: "professor" });
     const course = await openTestCourse(professor);
-    const student = await createTestUser();
-    await enrollInTestCourse(student, professor, course.id);
+    const [student, reviewer] = await Promise.all([createTestUser(), createTestUser()]);
+    for (const user of [student, reviewer]) await enrollInTestCourse(user, professor, course.id);
+    await professor.client.from("course_assistant").insert({ course_id: course.id, user_id: reviewer.id });
     const assignmentId = await postTestAssignment(professor, course.id);
     const { storagePaths } = await submitFiles(student, assignmentId, [{ path: "a.txt", body: "a" }]);
+    const { data: theirs } = await reviewer.client.from("submission").select("id").eq("student_id", student.id).single();
+    await reviewer.client.from("review").insert({ submission_id: theirs!.id, body: "조교 리뷰" });
     await withdraw(professor);
 
     const { error } = await withdraw(student);
 
     expect(error).toBeNull();
-    const { data } = await adminClient().from("archived_submission").select("id").eq("student_id", student.id);
-    expect(data).toEqual([]);
+    const admin = adminClient();
+    const { data: submissions } = await admin.from("archived_submission").select("id").eq("student_id", student.id);
+    const { data: files } = await admin.from("archived_submission_file").select("id").eq("submission_id", theirs!.id);
+    const { data: reviews } = await admin.from("archived_review").select("body").eq("submission_id", theirs!.id);
+    expect(submissions).toEqual([]);
+    expect(files).toEqual([]);
+    expect(reviews).toEqual([]);
     expect(await stillStored(storagePaths[0])).toBe(false);
+  });
+
+  it("보관된 과목에 리뷰를 남긴 사람이 나중에 탈퇴하면 보관된 그 리뷰도 지워진다", async () => {
+    const professor = await createTestUser({ role: "professor" });
+    const course = await openTestCourse(professor);
+    const [student, assistant] = await Promise.all([createTestUser(), createTestUser()]);
+    for (const user of [student, assistant]) await enrollInTestCourse(user, professor, course.id);
+    await professor.client.from("course_assistant").insert({ course_id: course.id, user_id: assistant.id });
+    const assignmentId = await postTestAssignment(professor, course.id);
+    await submitFiles(student, assignmentId, [{ path: "a.txt", body: "a" }]);
+    const { data: submission } = await student.client.from("submission").select("id").eq("student_id", student.id).single();
+    await assistant.client.from("review").insert({ submission_id: submission!.id, body: "조교 리뷰" });
+    await withdraw(professor);
+
+    await withdraw(assistant);
+
+    const { data } = await adminClient().from("archived_review").select("body").eq("submission_id", submission!.id);
+    expect(data).toEqual([]);
+    const { data: kept } = await adminClient().from("archived_submission").select("id").eq("id", submission!.id);
+    expect(kept).toHaveLength(1);
   });
 
   it("보관 테이블은 사용자가 읽을 수 없다 (관리자만 대시보드에서 본다)", async () => {

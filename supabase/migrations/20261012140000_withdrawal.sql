@@ -8,7 +8,7 @@
 -- 보관 테이블은 관리자만 대시보드에서 본다. 학생들의 제출 파일은 Storage에 남고
 -- 보관 테이블이 그 위치를 기억한다.
 --
--- 오류 코드: KH007 파일을 올리는 중 (올렸지만 아직 제출하지 않은 파일이 최근에 있다)
+-- 오류 코드: KH006 파일을 올리는 중 (올렸지만 아직 제출하지 않은 파일이 최근에 있다)
 
 -- 보관 테이블 ----------------------------------------------------------------
 -- 원래 id를 그대로 쓰고, 사용자는 지워져도 남도록 이름·학번을 함께 적어 둔다.
@@ -76,7 +76,7 @@ revoke all on public.archived_course, public.archived_assignment, public.archive
 -- 1. 그 사람이 담당 교수인 과목을 보관한다. 그 사람이 쓴 리뷰는 보관하지 않는다 (탈퇴 시 리뷰 삭제).
 -- 2. 이미 보관된 데이터 중 그 사람의 제출물과 리뷰를 지운다.
 -- 이 트리거가 끝난 뒤 외래 키가 원래 과목을 지운다. 모두 한 트랜잭션이다.
-create function public.archive_before_profile_delete()
+create function public.handle_profile_deleted()
 returns trigger
 language plpgsql
 security definer
@@ -126,11 +126,11 @@ begin
 end;
 $$;
 
-revoke execute on function public.archive_before_profile_delete() from public, anon, authenticated;
+revoke execute on function public.handle_profile_deleted() from public, anon, authenticated;
 
-create trigger profile_archive_before_delete
+create trigger on_profile_deleted
   before delete on public.profile
-  for each row execute function public.archive_before_profile_delete();
+  for each row execute function public.handle_profile_deleted();
 
 -- 탈퇴 준비 ----------------------------------------------------------------
 -- 내 제출 폴더({assignment_id}/{내 id}/...)의 모든 객체를 돌려준다. 보관된 과목의 내 파일과
@@ -155,7 +155,7 @@ begin
       and not exists (select 1 from public.submission_file f where f.storage_path = o.name)
       and not exists (select 1 from public.archived_submission_file f where f.storage_path = o.name)
   ) then
-    raise exception '파일을 올리는 중이에요. 제출을 마친 뒤 다시 시도해 주세요.' using errcode = 'KH007';
+    raise exception '파일을 올리는 중이에요. 제출을 마친 뒤 다시 시도해 주세요.' using errcode = 'KH006';
   end if;
 
   return coalesce(
