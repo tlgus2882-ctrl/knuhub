@@ -3,7 +3,11 @@
 import { refresh } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-export type ReviewFormState = { error: string | null; saved?: number };
+export type ReviewFormState = {
+  error: string | null;
+  /** When the review was last saved; tells the form to reset or close. */
+  savedAt?: number;
+};
 
 // Who may write, edit and delete reviews is decided by RLS (docs/adr/0002).
 export async function createReview(_prev: ReviewFormState, form: FormData): Promise<ReviewFormState> {
@@ -15,7 +19,7 @@ export async function createReview(_prev: ReviewFormState, form: FormData): Prom
   if (error) return failed("createReview", error, "이 제출물에는 리뷰를 쓸 수 없어요.");
 
   refresh();
-  return { error: null, saved: Date.now() };
+  return { error: null, savedAt: Date.now() };
 }
 
 export async function updateReview(_prev: ReviewFormState, form: FormData): Promise<ReviewFormState> {
@@ -31,7 +35,7 @@ export async function updateReview(_prev: ReviewFormState, form: FormData): Prom
   if (error || !data?.length) return failed("updateReview", error, "내가 쓴 리뷰만 고칠 수 있어요.");
 
   refresh();
-  return { error: null, saved: Date.now() };
+  return { error: null, savedAt: Date.now() };
 }
 
 export async function deleteReview(_prev: ReviewFormState, form: FormData): Promise<ReviewFormState> {

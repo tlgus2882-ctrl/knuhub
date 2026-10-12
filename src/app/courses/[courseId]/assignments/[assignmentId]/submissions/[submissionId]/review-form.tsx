@@ -16,10 +16,10 @@ export function ReviewForm({ submissionId, review, onDone }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (!state.saved) return;
+    if (!state.savedAt) return;
     if (review) onDone();
     else formRef.current?.reset();
-  }, [state.saved, review, onDone]);
+  }, [state.savedAt, review, onDone]);
 
   return (
     <form ref={formRef} action={action} className="flex flex-col gap-2">

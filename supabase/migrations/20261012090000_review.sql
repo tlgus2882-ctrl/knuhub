@@ -7,7 +7,8 @@ create table public.review (
   submission_id uuid not null references public.submission (id) on delete cascade,
   -- 탈퇴하면 리뷰도 지운다 (스펙: 탈퇴 시 프로필, 제출물, 리뷰 삭제)
   author_id uuid not null default auth.uid() references public.profile (id) on delete cascade,
-  body text not null check (length(btrim(body)) between 1 and 10000),
+  -- 공백·줄바꿈만 있는 리뷰는 받지 않는다
+  body text not null check (body ~ '[^[:space:]]' and length(body) <= 10000),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -41,7 +42,51 @@ $$;
 revoke execute on function public.is_submission_course_professor(uuid) from public, anon;
 grant execute on function public.is_submission_course_professor(uuid) to authenticated;
 
--- 자기 리뷰는 제출물이 다시 숨겨져도 보여야 고치거나 지울 수 있다.
+-- 리뷰 작성자는 언제든 고친다 (스펙). 버튼 표시용 계산 열 can_edit도 이 함수를 쓴다.
+create function public.can_edit_review(review_author uuid)
+returns boolean
+language sql
+stable
+set search_path = ''
+as $$
+  select review_author = (select auth.uid());
+$$;
+
+-- 리뷰 작성자와 담당 교수는 지운다. 버튼 표시용 계산 열 can_delete도 이 함수를 쓴다.
+create function public.can_delete_review(review_author uuid, target_submission uuid)
+returns boolean
+language sql
+stable
+set search_path = ''
+as $$
+  select review_author = (select auth.uid()) or public.is_submission_course_professor(target_submission);
+$$;
+
+-- PostgREST 계산 열: select("can_edit, can_delete")
+create function public.can_edit(public.review)
+returns boolean
+language sql
+stable
+set search_path = ''
+as $$
+  select public.can_edit_review($1.author_id);
+$$;
+
+create function public.can_delete(public.review)
+returns boolean
+language sql
+stable
+set search_path = ''
+as $$
+  select public.can_delete_review($1.author_id, $1.submission_id);
+$$;
+
+revoke execute on function public.can_edit_review(uuid), public.can_delete_review(uuid, uuid),
+  public.can_edit(public.review), public.can_delete(public.review) from public, anon;
+grant execute on function public.can_edit_review(uuid), public.can_delete_review(uuid, uuid),
+  public.can_edit(public.review), public.can_delete(public.review) to authenticated;
+
+-- 자기 리뷰는 제출물이 다시 숨겨져도(마감 연장 등) 보여야 언제든 고치거나 지울 수 있다.
 create policy "제출물을 볼 수 있으면 리뷰도 읽는다"
   on public.review for select to authenticated
   using (public.can_view_submission(submission_id) or author_id = (select auth.uid()));
@@ -52,12 +97,12 @@ create policy "볼 수 있는 제출물에 내 이름으로 리뷰를 쓴다"
 
 create policy "리뷰 작성자는 언제든 고친다"
   on public.review for update to authenticated
-  using (author_id = (select auth.uid()))
-  with check (author_id = (select auth.uid()));
+  using (public.can_edit_review(author_id))
+  with check (public.can_edit_review(author_id));
 
 create policy "리뷰 작성자와 담당 교수는 지운다"
   on public.review for delete to authenticated
-  using (author_id = (select auth.uid()) or public.is_submission_course_professor(submission_id));
+  using (public.can_delete_review(author_id, submission_id));
 
 create trigger review_touch_updated_at
   before update on public.review

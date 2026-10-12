@@ -7,17 +7,12 @@ import { ReviewItem } from "./review-item";
 // may also write one; RLS decides what is listed and allowed (docs/adr/0002).
 export async function Reviews({ submissionId }: { submissionId: string }) {
   const supabase = await createServerSupabase();
-  const [{ data: reviews }, { data: auth }, { data: isProfessor }] = await Promise.all([
-    supabase
-      .from("review")
-      .select("id, body, author_id, created_at, updated_at, profile(name)")
-      .eq("submission_id", submissionId)
-      .order("created_at"),
-    supabase.auth.getUser(),
-    // Buttons only: RLS lets the course's professor delete any review here.
-    supabase.rpc("is_submission_course_professor", { target_submission: submissionId }),
-  ]);
-  const me = auth.user?.id;
+  // can_edit / can_delete come from the same DB functions the RLS policies use.
+  const { data: reviews } = await supabase
+    .from("review")
+    .select("id, body, created_at, updated_at, can_edit, can_delete, profile(name)")
+    .eq("submission_id", submissionId)
+    .order("created_at");
   const rows = reviews ?? [];
 
   return (
@@ -35,10 +30,10 @@ export async function Reviews({ submissionId }: { submissionId: string }) {
                 body: r.body,
                 authorName: r.profile?.name ?? "알 수 없음",
                 writtenAt: formatKst(r.created_at),
-                edited: r.updated_at > r.created_at,
+                edited: Date.parse(r.updated_at) > Date.parse(r.created_at),
               }}
-              canEdit={r.author_id === me}
-              canDelete={r.author_id === me || Boolean(isProfessor)}
+              canEdit={Boolean(r.can_edit)}
+              canDelete={Boolean(r.can_delete)}
             />
           ))}
         </ul>

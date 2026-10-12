@@ -171,9 +171,9 @@ isOneToOne: true
                   ]
                 },"review": {
                   Row: {
-                    "author_id": string,"body": string,"created_at": string,"id": string,"submission_id": string,"updated_at": string
+                    "author_id": string,"body": string,"created_at": string,"id": string,"submission_id": string,"updated_at": string,"can_delete": boolean | null,"can_edit": boolean | null
                   }
-                  ComputedFields: never
+                  ComputedFields: "can_delete" | "can_edit"
                   Insert: {
                     "author_id"?: string,"body": string,"created_at"?: string,"id"?: string,"submission_id": string,"updated_at"?: string
                   }
@@ -249,6 +249,18 @@ isOneToOne: false
           Functions: {
             "assert_school_email":
 { Args: { "email": string }; Returns: undefined
+                           },
+"can_delete":
+{ Args: { "": Database["public"]['Tables']["review"]['Row'] }; Returns: { error: true } & "the function public.can_delete with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+                           },
+"can_delete_review":
+{ Args: { "review_author": string,"target_submission": string }; Returns: boolean
+                           },
+"can_edit":
+{ Args: { "": Database["public"]['Tables']["review"]['Row'] }; Returns: { error: true } & "the function public.can_edit with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+                           },
+"can_edit_review":
+{ Args: { "review_author": string }; Returns: boolean
                            },
 "can_read_submission_object":
 { Args: { "object_name": string }; Returns: boolean

@@ -72,6 +72,15 @@ describe("리뷰 쓰기", () => {
     expect(error).toBeNull();
   });
 
+  it("빈 리뷰나 공백·줄바꿈만 있는 리뷰는 쓸 수 없다", async () => {
+    const { professor, submissionId } = await reviewSetup();
+
+    for (const body of ["", "   ", "\n\t\r\n"]) {
+      const { error } = await writeReview(professor, submissionId, body);
+      expect(error, JSON.stringify(body)).not.toBeNull();
+    }
+  });
+
   it("다른 사람을 작성자로 내세워 리뷰를 쓸 수 없다", async () => {
     const { professor, author, submissionId } = await reviewSetup();
 
@@ -85,15 +94,55 @@ describe("리뷰 쓰기", () => {
 
 describe("리뷰 고치기·지우기", () => {
   it("리뷰 작성자만 자기 리뷰를 고칠 수 있다", async () => {
-    const { professor, assistant, submissionId } = await reviewSetup();
+    const { professor, assistant, classmate, submissionId, closeDeadline } = await reviewSetup("course");
     const { data: review } = await writeReview(assistant, submissionId, "처음 쓴 리뷰");
+    await closeDeadline(); // the classmate can see the review now, but still may not edit it
 
     const byProfessor = await professor.client.from("review").update({ body: "교수가 고침" }).eq("id", review!.id).select("id");
+    const byClassmate = await classmate.client.from("review").update({ body: "동기가 고침" }).eq("id", review!.id).select("id");
+    expect(byClassmate.data).toEqual([]);
     const byAuthor = await assistant.client.from("review").update({ body: "고친 리뷰" }).eq("id", review!.id).select("id");
 
     expect(byProfessor.data).toEqual([]);
     expect(byAuthor.data).toHaveLength(1);
     expect(await reviewsSeenBy(professor, submissionId)).toEqual(["고친 리뷰"]);
+  });
+
+  it("리뷰를 다른 제출물로 옮길 수 없다", async () => {
+    const { professor, submissionId } = await reviewSetup();
+    const other = await reviewSetup();
+    const { data: review } = await writeReview(professor, submissionId);
+
+    const { error } = await professor.client
+      .from("review")
+      .update({ submission_id: other.submissionId })
+      .eq("id", review!.id);
+
+    expect(error).not.toBeNull();
+  });
+
+  it("다른 과목의 교수는 리뷰를 지울 수 없다", async () => {
+    const { author, submissionId } = await reviewSetup();
+    const otherProfessor = await createTestUser({ role: "professor" });
+    const { data: review } = await writeReview(author, submissionId);
+
+    const { data } = await otherProfessor.client.from("review").delete().eq("id", review!.id).select("id");
+
+    expect(data).toEqual([]);
+    expect(await reviewsSeenBy(author, submissionId)).toHaveLength(1);
+  });
+
+  it("고치기·지우기 가능 여부를 리뷰와 함께 알려 준다", async () => {
+    const { professor, author, submissionId } = await reviewSetup();
+    await writeReview(author, submissionId);
+
+    const flags = async (user: TestUser) => {
+      const { data } = await user.client.from("review").select("can_edit, can_delete").eq("submission_id", submissionId).single();
+      return data;
+    };
+
+    expect(await flags(author)).toEqual({ can_edit: true, can_delete: true });
+    expect(await flags(professor)).toEqual({ can_edit: false, can_delete: true });
   });
 
   it("리뷰 작성자와 담당 교수는 지울 수 있고, 다른 사람은 지울 수 없다", async () => {
