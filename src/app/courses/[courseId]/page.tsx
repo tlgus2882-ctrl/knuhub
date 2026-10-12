@@ -36,6 +36,7 @@ async function CourseDetail({ courseId }: { courseId: string }) {
 
   const { data: role } = await supabase.rpc("my_course_role", { target_course: courseId });
   const myRole = asCourseRole(role);
+  const { data: canPost } = await supabase.rpc("is_professor_or_assistant", { target_course: courseId });
 
   // RLS returns the invite code only to the course's professor.
   const { data: invite } = await supabase
@@ -73,7 +74,7 @@ async function CourseDetail({ courseId }: { courseId: string }) {
         </section>
       )}
 
-      <AssignmentList courseId={courseId} canPost={myRole === "professor" || myRole === "assistant"} />
+      <AssignmentList courseId={courseId} canPost={canPost === true} />
 
       {myRole === "professor" && <Roster courseId={courseId} />}
     </>

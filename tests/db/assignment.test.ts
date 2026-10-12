@@ -100,6 +100,35 @@ describe("과제 고치기", () => {
     expect(new Date(data!.due_at).toISOString()).toBe(newDue);
   });
 
+  it("그 과목의 조교도 과제를 고칠 수 있다", async () => {
+    const { professor, course, student } = await courseSetup();
+    await professor.client.from("course_assistant").insert({ course_id: course.id, user_id: student.id });
+    const { data: assignment } = await postAssignment(professor, course.id);
+
+    const { data } = await student.client
+      .from("assignment")
+      .update({ title: "조교가 고침" })
+      .eq("id", assignment!.id)
+      .select("title");
+
+    expect(data).toEqual([{ title: "조교가 고침" }]);
+  });
+
+  it("마감이 지난 뒤에도 마감일과 공개 범위를 바꿀 수 있다", async () => {
+    const { professor, course } = await courseSetup();
+    const { data: assignment } = await postAssignment(professor, course.id, {
+      due_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+    });
+
+    const { data } = await professor.client
+      .from("assignment")
+      .update({ due_at: nextWeek(), visibility: "private" })
+      .eq("id", assignment!.id)
+      .select("visibility");
+
+    expect(data).toEqual([{ visibility: "private" }]);
+  });
+
   it("학생은 과제를 고칠 수 없다", async () => {
     const { professor, course, student } = await courseSetup();
     const { data: assignment } = await postAssignment(professor, course.id);

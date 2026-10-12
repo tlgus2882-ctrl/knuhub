@@ -189,11 +189,11 @@ isOneToOne: true
 "is_course_professor":
 { Args: { "target_course": string }; Returns: boolean
                            },
-"is_course_staff":
-{ Args: { "target_course": string }; Returns: boolean
-                           },
 "is_professor":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_professor_or_assistant":
+{ Args: { "target_course": string }; Returns: boolean
                            },
 "issue_invite_code":
 { Args: { "target_course": string }; Returns: string

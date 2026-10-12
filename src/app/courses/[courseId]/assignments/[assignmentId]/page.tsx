@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,9 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
 
   if (!assignment) notFound();
 
-  const { data: isStaff } = await supabase.rpc("is_course_staff", { target_course: courseId });
+  const { data: canEdit } = await supabase.rpc("is_professor_or_assistant", { target_course: courseId });
+  await connection();
+  const now = new Date();
 
   return (
     <>
@@ -41,7 +44,7 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
       <header className="flex flex-col gap-2">
         <div className="flex items-start justify-between gap-4">
           <h1 className="text-2xl font-semibold tracking-tight">{assignment.title}</h1>
-          {isStaff && (
+          {canEdit && (
             <Button
               size="sm"
               variant="outline"
@@ -55,7 +58,7 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
           <dt className="text-muted-foreground">마감</dt>
           <dd>
-            {formatKst(assignment.due_at)} <span className="font-medium">({timeLeft(assignment.due_at, new Date())})</span>
+            {formatKst(assignment.due_at)} <span className="font-medium">({timeLeft(assignment.due_at, now)})</span>
           </dd>
           <dt className="text-muted-foreground">공개 범위</dt>
           <dd>

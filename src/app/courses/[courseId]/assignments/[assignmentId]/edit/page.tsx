@@ -10,7 +10,11 @@ export default function EditAssignmentPage({
 }: PageProps<"/courses/[courseId]/assignments/[assignmentId]/edit">) {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
-      <Suspense>{params.then((p) => <EditAssignment {...p} />)}</Suspense>
+      <Suspense fallback={<p className="text-sm text-muted-foreground">불러오는 중…</p>}>
+        {params.then((p) => (
+          <EditAssignment {...p} />
+        ))}
+      </Suspense>
     </main>
   );
 }
@@ -25,6 +29,18 @@ async function EditAssignment({ courseId, assignmentId }: { courseId: string; as
     .maybeSingle();
 
   if (!assignment) notFound();
+
+  const { data: canEdit } = await supabase.rpc("is_professor_or_assistant", { target_course: courseId });
+  if (!canEdit) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        이 과목의 담당 교수나 조교만 과제를 고칠 수 있어요.{" "}
+        <Link href={`/courses/${courseId}/assignments/${assignmentId}`} className="underline">
+          과제로 돌아가기
+        </Link>
+      </p>
+    );
+  }
 
   return (
     <>

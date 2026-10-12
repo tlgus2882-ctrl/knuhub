@@ -7,6 +7,8 @@ import { VISIBILITY_LABEL, type Visibility } from "../../visibility";
 
 export type AssignmentFormState = { error: string | null };
 
+const NOT_ALLOWED = "이 과목의 담당 교수나 조교만 과제를 공지하고 고칠 수 있어요.";
+
 type AssignmentFields = {
   title: string;
   description: string;
@@ -20,11 +22,13 @@ function readFields(form: FormData): AssignmentFields | { error: string } {
   const due = String(form.get("due_at") ?? "");
   const visibility = String(form.get("visibility") ?? "course");
 
-  if (!title) return { error: "제목을 입력해 주세요." };
-  if (!due) return { error: "마감일을 정해 주세요." };
-  if (!(visibility in VISIBILITY_LABEL)) return { error: "공개 범위를 골라 주세요." };
+  const dueAt = fromKstInputValue(due);
 
-  return { title, description, due_at: fromKstInputValue(due), visibility: visibility as Visibility };
+  if (!title) return { error: "제목을 입력해 주세요." };
+  if (!dueAt) return { error: "마감일을 정해 주세요." };
+  if (!Object.hasOwn(VISIBILITY_LABEL, visibility)) return { error: "공개 범위를 골라 주세요." };
+
+  return { title, description, due_at: dueAt, visibility: visibility as Visibility };
 }
 
 // Only the course's professor and assistants may write; RLS enforces it (docs/adr/0002).
@@ -43,7 +47,7 @@ export async function createAssignment(
     .select("id")
     .single();
 
-  if (error) return { error: "과제를 만들지 못했어요. 이 과목의 교수나 조교인지 확인해 주세요." };
+  if (error) return { error: NOT_ALLOWED };
 
   redirect(`/courses/${courseId}/assignments/${data.id}`);
 }
@@ -62,11 +66,10 @@ export async function updateAssignment(
     .from("assignment")
     .update(fields)
     .eq("id", assignmentId)
+    .eq("course_id", courseId)
     .select("id");
 
-  if (error || !data?.length) {
-    return { error: "과제를 고치지 못했어요. 이 과목의 교수나 조교인지 확인해 주세요." };
-  }
+  if (error || !data?.length) return { error: NOT_ALLOWED };
 
   redirect(`/courses/${courseId}/assignments/${assignmentId}`);
 }

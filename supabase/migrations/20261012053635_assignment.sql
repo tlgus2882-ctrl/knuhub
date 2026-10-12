@@ -27,8 +27,8 @@ grant select on public.assignment to authenticated;
 grant insert (course_id, title, description, due_at, visibility) on public.assignment to authenticated;
 grant update (title, description, due_at, visibility) on public.assignment to authenticated;
 
--- 담당 교수 또는 그 과목의 조교
-create function public.is_course_staff(target_course uuid)
+-- 그 과목의 담당 교수 또는 조교인가
+create function public.is_professor_or_assistant(target_course uuid)
 returns boolean
 language sql
 stable
@@ -42,8 +42,8 @@ as $$
     );
 $$;
 
-revoke execute on function public.is_course_staff(uuid) from public, anon;
-grant execute on function public.is_course_staff(uuid) to authenticated;
+revoke execute on function public.is_professor_or_assistant(uuid) from public, anon;
+grant execute on function public.is_professor_or_assistant(uuid) to authenticated;
 
 -- 과제 목록은 로그인한 누구나 본다 (학기 → 과목 → 과제 탐색, #15).
 -- 제출물을 누가 보는지는 공개 범위와 마감일이 따로 정한다 (#9, #12).
@@ -53,12 +53,12 @@ create policy "로그인한 사용자는 과제를 읽는다"
 
 create policy "담당 교수와 조교는 과제를 만든다"
   on public.assignment for insert to authenticated
-  with check (public.is_course_staff(course_id));
+  with check (public.is_professor_or_assistant(course_id));
 
 create policy "담당 교수와 조교는 과제를 고친다"
   on public.assignment for update to authenticated
-  using (public.is_course_staff(course_id))
-  with check (public.is_course_staff(course_id));
+  using (public.is_professor_or_assistant(course_id))
+  with check (public.is_professor_or_assistant(course_id));
 
 create function public.touch_updated_at()
 returns trigger

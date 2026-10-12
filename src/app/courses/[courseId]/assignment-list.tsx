@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { Button } from "@/components/ui/button";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst, timeLeft } from "@/lib/time";
@@ -10,6 +11,7 @@ export async function AssignmentList({ courseId, canPost }: { courseId: string; 
     .select("id, title, due_at")
     .eq("course_id", courseId)
     .order("due_at", { ascending: true });
+  await connection();
   const now = new Date();
 
   return (

@@ -18,7 +18,7 @@ export function timeLeft(iso: string, now: Date): string {
   const hours = Math.floor((minutes % (24 * 60)) / 60);
   if (days > 0) return `${days}일 ${hours}시간 남음`;
   if (hours > 0) return `${hours}시간 ${minutes % 60}분 남음`;
-  return `${minutes}분 남음`;
+  return minutes > 0 ? `${minutes}분 남음` : "1분 미만 남음";
 }
 
 /** Value for <input type="datetime-local"> in Korean time: "2026-10-20T23:59". */
@@ -34,7 +34,12 @@ export function toKstInputValue(iso: string): string {
   return parts.replace(" ", "T");
 }
 
-/** Reads a datetime-local value as Korean time. */
-export function fromKstInputValue(value: string): string {
-  return new Date(`${value}:00+09:00`).toISOString();
+const DATETIME_LOCAL = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})(:\d{2})?$/;
+
+/** Reads a datetime-local value as Korean time; null if it isn't one. */
+export function fromKstInputValue(value: string): string | null {
+  const match = DATETIME_LOCAL.exec(value);
+  if (!match) return null;
+  const date = new Date(`${match[1]}${match[2] ?? ":00"}+09:00`);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
