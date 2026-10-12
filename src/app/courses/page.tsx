@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { sectionLabel, semesterLabel } from "./course-term";
+import { compareSemestersNewestFirst, sectionLabel, semesterLabel } from "./course-term";
 
 export default function BrowseCoursesPage() {
   return (
@@ -24,7 +24,6 @@ async function CoursesBySemester() {
   const { data, error } = await supabase
     .from("course")
     .select("id, name, semester, section, professor:profile!course_professor_id_fkey(name), assignment(count)")
-    .order("semester", { ascending: false })
     .order("name")
     .order("section");
   if (error) {
@@ -35,11 +34,13 @@ async function CoursesBySemester() {
 
   if (!courses.length) return <p className="text-sm text-muted-foreground">아직 열린 과목이 없어요.</p>;
 
-  const semesters = Map.groupBy(courses, (course) => course.semester);
+  const semesters = [...Map.groupBy(courses, (course) => course.semester)].sort(([a], [b]) =>
+    compareSemestersNewestFirst(a, b),
+  );
 
   return (
     <div className="flex flex-col gap-8">
-      {[...semesters].map(([semester, semesterCourses]) => (
+      {semesters.map(([semester, semesterCourses]) => (
         <section key={semester} className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold">{semesterLabel(semester)}</h2>
           <ul className="flex flex-col divide-y rounded-xl border">

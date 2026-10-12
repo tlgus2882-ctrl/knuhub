@@ -196,3 +196,17 @@ describe("내 과목 목록", () => {
     expect(data).toEqual([{ id: mine.id }]);
   });
 });
+
+describe("학기 형식", () => {
+  it("학기는 연도와 1·여름·2·겨울 중 하나로만 연다", async () => {
+    const professor = await createTestUser({ role: "professor" });
+
+    for (const semester of ["2026-1", "2026-여름", "2026-2", "2026-겨울"]) {
+      await expect(openTestCourse(professor, { semester })).resolves.toMatchObject({ semester });
+    }
+    for (const semester of ["2026 2학기", "2026-2학기", "26-2", "2026-3", ""]) {
+      await expect(openTestCourse(professor, { semester }), semester).rejects.toBeTruthy();
+    }
+  });
+});
+

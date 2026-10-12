@@ -3,6 +3,7 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { semesterOf } from "./course-term";
 
 export type CourseFormState = { error: string | null };
 
@@ -16,12 +17,11 @@ const JOIN_ERRORS: Record<string, string> = {
 // Who may open or join a course is decided by RLS and join_course() (docs/adr/0002).
 export async function openCourse(_prev: CourseFormState, form: FormData): Promise<CourseFormState> {
   const name = String(form.get("name") ?? "").trim();
-  const semester = String(form.get("semester") ?? "").trim();
+  const semester = semesterOf(String(form.get("year") ?? "").trim(), String(form.get("term") ?? ""));
   const section = String(form.get("section") ?? "").trim();
 
-  if (!name || !semester || !section) {
-    return { error: "과목명, 학기, 분반을 모두 입력해 주세요." };
-  }
+  if (!name || !section) return { error: "과목명과 분반을 입력해 주세요." };
+  if (!semester) return { error: "연도(예: 2026)와 학기를 골라 주세요." };
 
   const supabase = await createServerSupabase();
   const { data, error } = await supabase
