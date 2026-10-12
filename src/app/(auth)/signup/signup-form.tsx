@@ -28,7 +28,7 @@ export function SignupForm() {
         name="phone"
         type="tel"
         placeholder="010-0000-0000"
-        hint="관리자만 볼 수 있어요. 학번 중복 같은 문제가 생겼을 때 연락드려요."
+        hint="나와 관리자만 볼 수 있어요. 학번 중복 같은 문제가 생겼을 때 연락드려요."
         required
       />
 
