@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { asCourseRole } from "../course-role";
 import { courseTerm } from "../course-term";
 import { regenerateInviteCode } from "../actions";
+import { AssignmentList } from "./assignment-list";
 import { Roster } from "./roster";
 
 export default function CoursePage({ params }: PageProps<"/courses/[courseId]">) {
@@ -35,6 +36,7 @@ async function CourseDetail({ courseId }: { courseId: string }) {
 
   const { data: role } = await supabase.rpc("my_course_role", { target_course: courseId });
   const myRole = asCourseRole(role);
+  const { data: canPost } = await supabase.rpc("is_professor_or_assistant", { target_course: courseId });
 
   // RLS returns the invite code only to the course's professor.
   const { data: invite } = await supabase
@@ -71,6 +73,8 @@ async function CourseDetail({ courseId }: { courseId: string }) {
           </p>
         </section>
       )}
+
+      <AssignmentList courseId={courseId} canPost={canPost === true} />
 
       {myRole === "professor" && <Roster courseId={courseId} />}
     </>
