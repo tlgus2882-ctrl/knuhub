@@ -1,3 +1,4 @@
+import { formatBytes } from "@/lib/format-bytes";
 import type { Tables } from "@/lib/supabase/database.types";
 import type { ServerSupabase } from "@/lib/supabase/server";
 import { SUBMISSION_BUCKET } from "@/lib/submissions/storage";
@@ -51,8 +52,3 @@ export function SubmissionFileList({ files, links }: { files: SubmissionFile[]; 
   );
 }
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-}

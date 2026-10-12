@@ -2,9 +2,10 @@
 
 import { refresh } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
+import type { FileKind } from "@/lib/submissions/prepare-upload";
 import { SUBMISSION_BUCKET } from "@/lib/submissions/storage";
 
-export type UploadedFile = { path: string; storage_path: string };
+export type UploadedFile = { path: string; storage_path: string; kind: FileKind };
 export type SubmissionActionState = { error: string | null };
 
 // Raised by submit_files() / delete_submission() (supabase/migrations/*_submission.sql).

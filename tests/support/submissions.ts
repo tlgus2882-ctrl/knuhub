@@ -4,19 +4,19 @@ import type { TestUser } from "./supabase";
 
 export { SUBMISSION_BUCKET };
 
-export type UploadFile = { path: string; body: string };
+export type UploadFile = { path: string; body: string; kind?: "text" | "binary" };
 
 /** Uploads files the way the browser does: one fresh folder per attempt, objects named by index. */
 export async function uploadAttempt(student: TestUser, assignmentId: string, files: UploadFile[]) {
   const attempt = randomUUID();
-  const uploaded: { path: string; storage_path: string }[] = [];
+  const uploaded: { path: string; storage_path: string; kind: "text" | "binary" }[] = [];
   for (const [index, file] of files.entries()) {
     const storagePath = submissionObjectName(assignmentId, student.id, attempt, index);
     const { error } = await student.client.storage
       .from(SUBMISSION_BUCKET)
       .upload(storagePath, new Blob([file.body], { type: "text/plain" }));
     if (error) return { files: uploaded, error };
-    uploaded.push({ path: file.path, storage_path: storagePath });
+    uploaded.push({ path: file.path, storage_path: storagePath, kind: file.kind ?? "text" });
   }
   return { files: uploaded, error: null };
 }
