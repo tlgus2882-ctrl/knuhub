@@ -43,6 +43,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"archived_assignment_file": {
+                  Row: {
+                    "assignment_id": string,"created_at": string,"id": string,"name": string,"size": number,"storage_path": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assignment_id": string,"created_at": string,"id": string,"name": string,"size": number,"storage_path": string
+                  }
+                  Update: {
+                    "assignment_id"?: string,"created_at"?: string,"id"?: string,"name"?: string,"size"?: number,"storage_path"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "archived_assignment_file_assignment_id_fkey"
+      columns: ["assignment_id"]
+isOneToOne: false
+      referencedRelation: "archived_assignment"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"archived_course": {
                   Row: {
                     "archived_at": string,"id": string,"name": string,"professor_id": string,"professor_name": string,"section": string,"semester": string
@@ -140,6 +160,26 @@ isOneToOne: false
       columns: ["created_by"]
 isOneToOne: false
       referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"assignment_file": {
+                  Row: {
+                    "assignment_id": string,"created_at": string,"id": string,"name": string,"size": number,"storage_path": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assignment_id": string,"created_at"?: string,"id"?: string,"name": string,"size": number,"storage_path": string
+                  }
+                  Update: {
+                    "assignment_id"?: string,"created_at"?: string,"id"?: string,"name"?: string,"size"?: number,"storage_path"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "assignment_file_assignment_id_fkey"
+      columns: ["assignment_id"]
+isOneToOne: false
+      referencedRelation: "assignment"
       referencedColumns: ["id"]
     }
                   ]
@@ -364,6 +404,12 @@ isOneToOne: false
             "assert_school_email":
 { Args: { "email": string }; Returns: undefined
                            },
+"assignment_file_course":
+{ Args: { "object_name": string }; Returns: string
+                           },
+"attach_assignment_file":
+{ Args: { "name": string,"storage_path": string,"target_assignment": string }; Returns: string
+                           },
 "author_contacts":
 { Args: { "target": string }; Returns: {
               "email": string,"github": string,"open_chat_url": string
@@ -401,8 +447,14 @@ isOneToOne: false
 "delete_submission":
 { Args: { "target_assignment": string }; Returns: (string)[]
                            },
+"detach_assignment_file":
+{ Args: { "target_file": string }; Returns: string
+                           },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_course_member":
+{ Args: { "target_course": string }; Returns: boolean
                            },
 "is_course_professor":
 { Args: { "target_course": string }; Returns: boolean

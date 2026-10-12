@@ -8,6 +8,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst, timeLeft } from "@/lib/time";
 import { asCourseRole } from "../../../course-role";
 import { VISIBILITY_HINT, VISIBILITY_LABEL } from "../../../visibility";
+import { Attachments } from "./attachments";
 import { MySubmission } from "./my-submission";
 import { SubmissionList } from "./submission-list";
 import { SubmissionStatus } from "./submission-status";
@@ -87,6 +88,8 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
       ) : (
         <p className="text-sm text-muted-foreground">설명이 없어요.</p>
       )}
+
+      <Attachments assignmentId={assignmentId} canEdit={Boolean(canEdit)} />
 
       {enrolled && user && <MySubmission courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
 
