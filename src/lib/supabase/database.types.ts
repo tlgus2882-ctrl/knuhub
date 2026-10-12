@@ -169,6 +169,32 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"review": {
+                  Row: {
+                    "author_id": string,"body": string,"created_at": string,"id": string,"submission_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_id"?: string,"body": string,"created_at"?: string,"id"?: string,"submission_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "author_id"?: string,"body"?: string,"created_at"?: string,"id"?: string,"submission_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "review_author_id_fkey"
+      columns: ["author_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "review_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: false
+      referencedRelation: "submission"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"submission": {
                   Row: {
                     "assignment_id": string,"id": string,"student_id": string,"submitted_at": string
@@ -258,6 +284,9 @@ isOneToOne: false
                            },
 "is_professor_or_assistant":
 { Args: { "target_course": string }; Returns: boolean
+                           },
+"is_submission_course_professor":
+{ Args: { "target_submission": string }; Returns: boolean
                            },
 "is_submitted_object":
 { Args: { "object_name": string }; Returns: boolean
