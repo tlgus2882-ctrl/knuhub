@@ -6,7 +6,7 @@ import { supabasePublishableKey, supabaseUrl } from "./env";
 
 // Supabase client for Server Components and Server Actions, acting as the
 // signed-in user (RLS applies). See docs/adr/0002.
-export async function createClient() {
+export async function createServerSupabase() {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(supabaseUrl(), supabasePublishableKey(), {

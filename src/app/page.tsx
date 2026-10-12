@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { createServerSupabase } from "@/lib/supabase/server";
 
 export default function Home() {
   return (
@@ -14,7 +14,7 @@ export default function Home() {
 }
 
 async function SessionStatus() {
-  const supabase = await createClient();
+  const supabase = await createServerSupabase();
   const { data } = await supabase.auth.getUser();
 
   return (
