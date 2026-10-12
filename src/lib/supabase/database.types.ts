@@ -250,6 +250,9 @@ isOneToOne: false
 "is_course_professor":
 { Args: { "target_course": string }; Returns: boolean
                            },
+"is_enrolled":
+{ Args: { "target_course": string }; Returns: boolean
+                           },
 "is_professor":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },

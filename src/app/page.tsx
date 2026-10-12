@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, type ServerSupabase as Supabase } from "@/lib/supabase/server";
 import { logOut } from "./(auth)/actions";
 import { courseTerm } from "./courses/course-term";
 import { JoinCourseForm } from "./courses/join-course-form";
@@ -20,7 +20,6 @@ export default function Home() {
   );
 }
 
-type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
 type CourseSummary = { id: string; name: string; semester: string; section: string };
 
 async function SignedInHome() {

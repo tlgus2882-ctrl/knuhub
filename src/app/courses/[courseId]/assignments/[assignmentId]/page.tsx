@@ -9,6 +9,7 @@ import { formatKst, timeLeft } from "@/lib/time";
 import { asCourseRole } from "../../../course-role";
 import { VISIBILITY_HINT, VISIBILITY_LABEL } from "../../../visibility";
 import { MySubmission } from "./my-submission";
+import { SubmissionList } from "./submission-list";
 
 export default function AssignmentPage({ params }: PageProps<"/courses/[courseId]/assignments/[assignmentId]">) {
   return (
@@ -87,6 +88,8 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
       )}
 
       {enrolled && user && <MySubmission assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
+
+      <SubmissionList assignmentId={assignmentId} viewerId={enrolled ? user?.id : undefined} />
     </>
   );
 }
