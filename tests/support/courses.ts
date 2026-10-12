@@ -32,3 +32,14 @@ export async function inviteCodeOf(professor: TestUser, courseId: string): Promi
   if (error) throw error;
   return data.invite_code;
 }
+
+/** Signs `student` up to the course with its invite code. */
+export async function enrollInTestCourse(
+  student: TestUser,
+  professor: TestUser,
+  courseId: string,
+): Promise<void> {
+  const code = await inviteCodeOf(professor, courseId);
+  const { error } = await student.client.rpc("join_course", { code });
+  if (error) throw error;
+}
