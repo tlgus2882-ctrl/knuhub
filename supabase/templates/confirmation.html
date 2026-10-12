@@ -1,0 +1,20 @@
+<div style="max-width:480px;margin:0 auto;padding:32px 24px;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#171717;line-height:1.6">
+  <h1 style="font-size:20px;margin:0 0 16px">knuhub 가입을 마무리해 주세요</h1>
+  <p style="margin:0 0 24px">
+    강남대 과제 공유 &amp; 리뷰 플랫폼 knuhub에 가입해 주셔서 고마워요.
+    아래 버튼을 누르면 메일 인증이 끝나고 바로 로그인돼요.
+  </p>
+  <p style="margin:0 0 24px">
+    <a href="{{ .ConfirmationURL }}"
+       style="display:inline-block;padding:12px 20px;background:#171717;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600">
+      메일 인증하기
+    </a>
+  </p>
+  <p style="margin:0 0 8px;font-size:13px;color:#737373">
+    가입한 브라우저에서 열어 주세요. 버튼이 안 눌리면 아래 주소를 복사해 열어도 돼요.
+  </p>
+  <p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="{{ .ConfirmationURL }}" style="color:#737373">{{ .ConfirmationURL }}</a></p>
+  <p style="margin:0;font-size:13px;color:#737373">
+    직접 가입하지 않았다면 이 메일은 무시하세요. 인증하지 않으면 가입되지 않아요.
+  </p>
+</div>

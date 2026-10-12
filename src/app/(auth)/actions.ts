@@ -60,6 +60,7 @@ export async function signUp(_prev: AuthFormState, form: FormData): Promise<Auth
   });
 
   if (error) {
+    console.error("signUp failed", { code: error.code, status: error.status, message: error.message });
     return { error: "가입하지 못했습니다. 입력값을 확인하거나 관리자에게 문의하세요." };
   }
 
