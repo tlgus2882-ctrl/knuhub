@@ -29,6 +29,7 @@ npm run dev                  # http://localhost:3000
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | 공개 | Supabase Project URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | 공개 | Publishable key (`sb_publishable_…`) |
+| `NEXT_PUBLIC_SITE_URL` | 공개 | 가입 인증 링크가 돌아올 주소. 로컬은 `http://localhost:3000`, 배포는 Vercel 주소 (끝에 `/` 없이) |
 | `SUPABASE_SECRET_KEY` | **비밀** | Secret key (`sb_secret_…`). RLS를 우회하므로 서버의 관리자 작업에만 쓴다. 채팅·코드·커밋에 절대 넣지 않는다 |
 
 값은 Supabase 대시보드 → Project Settings → API Keys에 있다.
@@ -88,16 +89,19 @@ supabase db push                                 # 아직 적용 안 된 마이�
 | 학번 정정 | `profile.student_number`를 고친다 (다른 사용자와 겹칠 수 없다) |
 | 전화번호 확인 | `profile_private.phone` |
 
-사용자 본인은 역할과 학번을 바꿀 수 없다. 가입 규칙(강남대 메일, 개인정보 동의, 학번 중복 금지)은 DB 트리거가 검사한다.
+사용자 본인은 역할과 학번을 바꿀 수 없다. 가입 규칙(강남대 메일, 개인정보 동의, 학번 중복 금지)은 DB 트리거가 검사한다. 학번은 메일 인증을 마친 순간 프로필에 붙으므로, 인증하지 않은 가입은 학번을 차지하지 못하고 같은 학번이면 먼저 인증한 사람이 갖는다. 인증 전 학번은 `profile_private.pending_student_number`에 있다.
 
 ## 배포 (Vercel)
 
 1. vercel.com에서 GitHub 레포 `tlgus2882-ctrl/knuhub`를 Import
 2. Framework는 Next.js, Node.js Version은 24.x
-3. Environment Variables에 위 환경변수 3개를 입력
+3. Environment Variables에 위 환경변수 4개를 입력 (`NEXT_PUBLIC_SITE_URL`은 Vercel 주소)
 4. 이후 `main`에 머지하면 자동으로 배포된다
 
-배포 후 Supabase 대시보드 → Authentication → URL Configuration의 Site URL을 Vercel 주소로 바꿔야 인증 메일 링크가 올바른 곳으로 간다.
+배포 후 Supabase 대시보드 → Authentication → URL Configuration에서 다음을 해야 인증 메일 링크가 올바른 곳으로 간다.
+
+- **Site URL**: Vercel 주소
+- **Redirect URLs**: `https://<Vercel 주소>/**`와 `http://localhost:3000/**` 추가
 
 ## CI
 

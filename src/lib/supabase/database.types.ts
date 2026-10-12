@@ -39,14 +39,14 @@ export type Database = {
                   ]
                 },"profile_private": {
                   Row: {
-                    "id": string,"phone": string,"privacy_consented_at": string
+                    "id": string,"pending_student_number": string | null,"phone": string,"privacy_consented_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "id": string,"phone": string,"privacy_consented_at": string
+                    "id": string,"pending_student_number"?: string | null,"phone": string,"privacy_consented_at": string
                   }
                   Update: {
-                    "id"?: string,"phone"?: string,"privacy_consented_at"?: string
+                    "id"?: string,"pending_student_number"?: string | null,"phone"?: string,"privacy_consented_at"?: string
                   }
                   Relationships: [
                     {
@@ -63,7 +63,10 @@ isOneToOne: true
             [_ in never]: never
           }
           Functions: {
-            "is_admin":
+            "assert_school_email":
+{ Args: { "email": string }; Returns: undefined
+                           },
+"is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
 "student_number_taken":

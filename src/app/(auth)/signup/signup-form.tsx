@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signUp, type FormState } from "../actions";
+import { signUp, type AuthFormState } from "../actions";
 
-const initial: FormState = { error: null };
+const initial: AuthFormState = { error: null };
 
 export function SignupForm() {
   const [state, action, pending] = useActionState(signUp, initial);

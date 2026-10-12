@@ -2,16 +2,17 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import type { SignupMetadata } from "@/lib/auth/signup-metadata";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-export type FormState = { error: string | null };
+export type AuthFormState = { error: string | null };
 
 const SCHOOL_DOMAIN = "@kangnam.ac.kr";
 
 // The DB trigger is the real guard for these rules (docs/adr/0002). These
 // checks only exist to show a clear message before calling Supabase.
-export async function signUp(_prev: FormState, form: FormData): Promise<FormState> {
-  const email = String(form.get("email") ?? "").trim().toLowerCase();
+export async function signUp(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
+  const email = normalizedEmail(form);
   const password = String(form.get("password") ?? "");
   const name = String(form.get("name") ?? "").trim();
   const studentNumber = String(form.get("student_number") ?? "").trim();
@@ -25,7 +26,7 @@ export async function signUp(_prev: FormState, form: FormData): Promise<FormStat
     return { error: "이름, 전화번호, 비밀번호를 모두 입력해 주세요." };
   }
   if (studentNumber && !/^[0-9]{6,12}$/.test(studentNumber)) {
-    return { error: "학번은 숫자만 입력해 주세요." };
+    return { error: "학번은 숫자 6~12자리로 입력해 주세요." };
   }
   if (!consent) {
     return { error: "개인정보 수집에 동의해야 가입할 수 있습니다." };
@@ -42,18 +43,19 @@ export async function signUp(_prev: FormState, form: FormData): Promise<FormStat
     }
   }
 
-  const origin = (await headers()).get("origin") ?? "";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? (await headers()).get("origin");
+  const metadata: SignupMetadata = {
+    name,
+    student_number: studentNumber || null,
+    phone,
+    privacy_consent: true,
+  };
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/confirm`,
-      data: {
-        name,
-        student_number: studentNumber || null,
-        phone,
-        privacy_consent: true,
-      },
+      emailRedirectTo: `${siteUrl}/auth/confirm`,
+      data: metadata,
     },
   });
 
@@ -64,8 +66,8 @@ export async function signUp(_prev: FormState, form: FormData): Promise<FormStat
   redirect("/signup/check-email");
 }
 
-export async function logIn(_prev: FormState, form: FormData): Promise<FormState> {
-  const email = String(form.get("email") ?? "").trim().toLowerCase();
+export async function logIn(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
+  const email = normalizedEmail(form);
   const password = String(form.get("password") ?? "");
 
   const supabase = await createServerSupabase();
@@ -85,4 +87,8 @@ export async function logOut() {
   const supabase = await createServerSupabase();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+function normalizedEmail(form: FormData): string {
+  return String(form.get("email") ?? "").trim().toLowerCase();
 }
