@@ -146,3 +146,21 @@
 .markdown table { @apply my-3 w-full border-collapse text-sm; }
 .markdown th, .markdown td { @apply border px-2 py-1 text-left; }
 .markdown > :first-child { @apply mt-0; }
+
+/* Submission code viewer: Shiki output with CSS line numbers */
+.code-view pre {
+  @apply overflow-x-auto rounded-lg border py-3 text-[13px] leading-6;
+}
+.code-view code {
+  counter-reset: line;
+}
+.code-view .line::before {
+  counter-increment: line;
+  content: counter(line);
+  @apply mr-4 inline-block w-10 pr-2 text-right text-muted-foreground select-none;
+}
+.dark .code-view .shiki,
+.dark .code-view .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}

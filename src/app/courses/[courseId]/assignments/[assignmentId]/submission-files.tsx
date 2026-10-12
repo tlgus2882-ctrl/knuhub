@@ -1,9 +1,10 @@
+import Link from "next/link";
 import { formatBytes } from "@/lib/format-bytes";
 import type { Tables } from "@/lib/supabase/database.types";
 import type { ServerSupabase } from "@/lib/supabase/server";
 import { SUBMISSION_BUCKET } from "@/lib/submissions/storage";
 
-export type SubmissionFile = Pick<Tables<"submission_file">, "path" | "size" | "storage_path">;
+export type SubmissionFile = Pick<Tables<"submission_file">, "path" | "size" | "storage_path" | "kind">;
 
 const DOWNLOAD_LINK_SECONDS = 60 * 5;
 
@@ -30,25 +31,18 @@ export async function signDownloadLinks(
   return links;
 }
 
-export function SubmissionFileList({ files, links }: { files: SubmissionFile[]; links: Map<string, string> }) {
+/** The 제출물's files, each opening the code viewer at that file. */
+export function SubmissionFileList({ files, hrefFor }: { files: SubmissionFile[]; hrefFor: (path: string) => string }) {
   return (
     <ul className="flex flex-col gap-1 text-sm">
-      {files.map((file) => {
-        const link = links.get(file.storage_path);
-        return (
-          <li key={file.storage_path}>
-            {link ? (
-              <a href={link} className="underline">
-                {file.path}
-              </a>
-            ) : (
-              file.path
-            )}{" "}
-            <span className="text-muted-foreground">({formatBytes(file.size)})</span>
-          </li>
-        );
-      })}
+      {files.map((file) => (
+        <li key={file.storage_path}>
+          <Link href={hrefFor(file.path)} className="underline">
+            {file.path}
+          </Link>{" "}
+          <span className="text-muted-foreground">({formatBytes(file.size)})</span>
+        </li>
+      ))}
     </ul>
   );
 }
-

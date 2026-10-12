@@ -87,9 +87,9 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
         <p className="text-sm text-muted-foreground">설명이 없어요.</p>
       )}
 
-      {enrolled && user && <MySubmission assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
+      {enrolled && user && <MySubmission courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
 
-      <SubmissionList assignmentId={assignmentId} viewerId={enrolled ? user?.id : undefined} />
+      <SubmissionList courseId={courseId} assignmentId={assignmentId} viewerId={enrolled ? user?.id : undefined} />
     </>
   );
 }

@@ -1,8 +1,11 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
-import { SubmissionFileList, signDownloadLinks } from "./submission-files";
+import Link from "next/link";
+import { SubmissionFileList } from "./submission-files";
+import { submissionHref } from "./submissions/submission-href";
 
 type Props = {
+  courseId: string;
   assignmentId: string;
   /** Left out of the list because "내 제출물" already shows it. */
   viewerId?: string;
@@ -10,20 +13,16 @@ type Props = {
 
 // Every 제출물 of the assignment the viewer may see. Which ones that is
 // (마감일, 공개 범위, role) is decided by RLS alone (docs/adr/0002).
-export async function SubmissionList({ assignmentId, viewerId }: Props) {
+export async function SubmissionList({ courseId, assignmentId, viewerId }: Props) {
   const supabase = await createServerSupabase();
   let query = supabase
     .from("submission")
-    .select("id, submitted_at, profile(name, student_number), submission_file(path, size, storage_path)")
+    .select("id, submitted_at, profile(name, student_number), submission_file(path, size, storage_path, kind)")
     .eq("assignment_id", assignmentId);
   if (viewerId) query = query.neq("student_id", viewerId);
   const { data: submissions } = await query.order("submitted_at");
 
   const rows = submissions ?? [];
-  const links = await signDownloadLinks(
-    supabase,
-    rows.flatMap((s) => s.submission_file),
-  );
 
   return (
     <section className="flex flex-col gap-4">
@@ -35,12 +34,17 @@ export async function SubmissionList({ assignmentId, viewerId }: Props) {
           {rows.map((submission) => (
             <li key={submission.id} className="flex flex-col gap-2 p-4">
               <p className="text-sm">
-                <span className="font-medium">{submission.profile?.name}</span>{" "}
+                <Link href={submissionHref(courseId, assignmentId, submission.id)} className="font-medium underline">
+                  {submission.profile?.name}
+                </Link>{" "}
                 <span className="text-muted-foreground">
                   {submission.profile?.student_number ?? "학번 없음"} · {formatKst(submission.submitted_at)}
                 </span>
               </p>
-              <SubmissionFileList files={submission.submission_file} links={links} />
+              <SubmissionFileList
+                files={submission.submission_file}
+                hrefFor={(path) => submissionHref(courseId, assignmentId, submission.id, path)}
+              />
             </li>
           ))}
         </ul>
