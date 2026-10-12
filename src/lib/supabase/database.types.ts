@@ -324,6 +324,11 @@ isOneToOne: false
 "student_number_taken":
 { Args: { "candidate": string }; Returns: boolean
                            },
+"submission_status":
+{ Args: { "target_assignment": string }; Returns: {
+              "name": string,"student_id": string,"student_number": string,"submission_id": string,"submitted_at": string
+            }[]
+                           },
 "submit_files":
 { Args: { "files": Json,"target_assignment": string }; Returns: (string)[]
                            }
