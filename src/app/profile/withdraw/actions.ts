@@ -10,7 +10,7 @@ export type WithdrawFormState = { error: string | null };
 
 // Raised by prepare_withdrawal() (supabase/migrations/*_withdrawal.sql).
 const WITHDRAW_ERRORS: Record<string, string> = {
-  KH006: "과목을 연 교수는 스스로 탈퇴할 수 없어요. 과목과 학생들의 제출물이 함께 지워지기 때문이에요. 관리자에게 문의해 주세요.",
+  KH007: "파일을 올리는 중이에요. 제출을 마친 뒤(또는 10분 뒤) 다시 시도해 주세요.",
 };
 
 export async function withdraw(_prev: WithdrawFormState, form: FormData): Promise<WithdrawFormState> {

@@ -23,7 +23,101 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "assignment": {
+            "archived_assignment": {
+                  Row: {
+                    "course_id": string,"created_at": string,"description": string,"due_at": string,"id": string,"title": string,"visibility": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "course_id": string,"created_at": string,"description": string,"due_at": string,"id": string,"title": string,"visibility": string
+                  }
+                  Update: {
+                    "course_id"?: string,"created_at"?: string,"description"?: string,"due_at"?: string,"id"?: string,"title"?: string,"visibility"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "archived_assignment_course_id_fkey"
+      columns: ["course_id"]
+isOneToOne: false
+      referencedRelation: "archived_course"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"archived_course": {
+                  Row: {
+                    "archived_at": string,"id": string,"name": string,"professor_id": string,"professor_name": string,"section": string,"semester": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string,"id": string,"name": string,"professor_id": string,"professor_name": string,"section": string,"semester": string
+                  }
+                  Update: {
+                    "archived_at"?: string,"id"?: string,"name"?: string,"professor_id"?: string,"professor_name"?: string,"section"?: string,"semester"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"archived_review": {
+                  Row: {
+                    "author_id": string,"author_name": string,"body": string,"created_at": string,"id": string,"submission_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_id": string,"author_name": string,"body": string,"created_at": string,"id": string,"submission_id": string
+                  }
+                  Update: {
+                    "author_id"?: string,"author_name"?: string,"body"?: string,"created_at"?: string,"id"?: string,"submission_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "archived_review_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: false
+      referencedRelation: "archived_submission"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"archived_submission": {
+                  Row: {
+                    "assignment_id": string,"id": string,"student_id": string,"student_name": string,"student_number": string | null,"submitted_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assignment_id": string,"id": string,"student_id": string,"student_name": string,"student_number"?: string | null,"submitted_at": string
+                  }
+                  Update: {
+                    "assignment_id"?: string,"id"?: string,"student_id"?: string,"student_name"?: string,"student_number"?: string | null,"submitted_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "archived_submission_assignment_id_fkey"
+      columns: ["assignment_id"]
+isOneToOne: false
+      referencedRelation: "archived_assignment"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"archived_submission_file": {
+                  Row: {
+                    "id": string,"kind": string,"path": string,"size": number,"storage_path": string,"submission_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id": string,"kind": string,"path": string,"size": number,"storage_path": string,"submission_id": string
+                  }
+                  Update: {
+                    "id"?: string,"kind"?: string,"path"?: string,"size"?: number,"storage_path"?: string,"submission_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "archived_submission_file_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: false
+      referencedRelation: "archived_submission"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"assignment": {
                   Row: {
                     "course_id": string,"created_at": string,"created_by": string | null,"description": string,"due_at": string,"id": string,"title": string,"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
                   }

@@ -16,6 +16,10 @@ export default function WithdrawPage() {
           <li>내가 쓴 리뷰와 내 제출물에 달린 리뷰</li>
           <li>수강 중인 과목과 조교 지정</li>
         </ul>
+        <p className="text-muted-foreground">
+          교수님이 연 과목은 지우지 않고 보관해요. 과목, 과제, 학생들의 제출물과 리뷰가 관리자만 볼 수 있는
+          보관함으로 옮겨지고, 서비스 화면에서는 사라져요.
+        </p>
         <p className="text-muted-foreground">탈퇴한 뒤에는 이 학교 메일과 학번으로 로그인할 수 없어요.</p>
       </section>
       <WithdrawForm />
