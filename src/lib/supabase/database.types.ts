@@ -69,6 +69,9 @@ isOneToOne: true
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"login_email_for_student_number":
+{ Args: { "candidate": string }; Returns: string
+                           },
 "student_number_taken":
 { Args: { "candidate": string }; Returns: boolean
                            }

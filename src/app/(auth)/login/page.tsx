@@ -8,7 +8,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
     <Card>
       <CardHeader>
         <CardTitle>로그인</CardTitle>
-        <CardDescription>학교 메일과 비밀번호로 로그인해요.</CardDescription>
+        <CardDescription>학번(교수님은 학교 메일)과 비밀번호로 로그인해요.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <Suspense>

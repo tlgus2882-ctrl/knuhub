@@ -30,7 +30,7 @@ npm run dev                  # http://localhost:3000
 | `NEXT_PUBLIC_SUPABASE_URL` | 공개 | Supabase Project URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | 공개 | Publishable key (`sb_publishable_…`) |
 | `NEXT_PUBLIC_SITE_URL` | 공개 | 가입 인증 링크가 돌아올 주소. 로컬은 `http://localhost:3000`, 배포는 Vercel 주소 (끝에 `/` 없이) |
-| `SUPABASE_SECRET_KEY` | **비밀** | Secret key (`sb_secret_…`). RLS를 우회하므로 서버의 관리자 작업에만 쓴다. 채팅·코드·커밋에 절대 넣지 않는다 |
+| `SUPABASE_SECRET_KEY` | **비밀** | Secret key (`sb_secret_…`). RLS를 우회하므로 서버에서만 쓴다 (학번 로그인 조회 등, ADR-0002). 없으면 학번 로그인과 비밀번호 재설정이 동작하지 않는다. 채팅·코드·커밋에 절대 넣지 않는다 |
 
 값은 Supabase 대시보드 → Project Settings → API Keys에 있다.
 

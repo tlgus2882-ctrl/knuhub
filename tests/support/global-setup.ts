@@ -3,7 +3,7 @@ import type { TestProject } from "vitest/node";
 
 declare module "vitest" {
   export interface ProvidedContext {
-    supabase: { url: string; publishableKey: string; secretKey: string };
+    supabase: { url: string; publishableKey: string; secretKey: string; mailpitUrl: string };
   }
 }
 
@@ -32,5 +32,6 @@ export default function setup(project: TestProject) {
     url: env.API_URL,
     publishableKey: env.PUBLISHABLE_KEY,
     secretKey: env.SECRET_KEY,
+    mailpitUrl: env.MAILPIT_URL,
   });
 }
