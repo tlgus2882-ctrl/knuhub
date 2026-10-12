@@ -204,6 +204,24 @@ describe("조교", () => {
     expect(data).toBe("student");
   });
 
+  it("조교와 다른 교수는 조교를 해제할 수 없다", async () => {
+    const { professor, course, students } = await courseWithStudents(2);
+    await professor.client.from("course_assistant").insert({ course_id: course.id, user_id: students[0].id });
+    await professor.client.from("course_assistant").insert({ course_id: course.id, user_id: students[1].id });
+    const otherProfessor = await createTestUser({ role: "professor" });
+
+    for (const actor of [students[0], otherProfessor]) {
+      await actor.client
+        .from("course_assistant")
+        .delete()
+        .eq("course_id", course.id)
+        .eq("user_id", students[1].id);
+    }
+
+    const { data } = await students[1].client.rpc("my_course_role", { target_course: course.id });
+    expect(data).toBe("assistant");
+  });
+
   it("담당 교수에게 과목 역할은 professor다", async () => {
     const { professor, course } = await courseWithStudents(0);
 

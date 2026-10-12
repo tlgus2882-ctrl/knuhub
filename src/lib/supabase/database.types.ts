@@ -154,7 +154,7 @@ isOneToOne: true
                            },
 "course_roster":
 { Args: { "target_course": string }; Returns: {
-              "email": string,"is_assistant": boolean,"joined_at": string,"name": string,"student_id": string,"student_number": string
+              "email": string,"is_assistant": boolean,"name": string,"student_id": string,"student_number": string
             }[]
                            },
 "is_admin":

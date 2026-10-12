@@ -55,33 +55,52 @@ export async function joinCourse(_prev: CourseFormState, form: FormData): Promis
 
 // Roster management for the course's professor. RLS and the DB functions
 // refuse anyone else, so these only pass the request through.
-export async function removeStudent(form: FormData) {
-  const courseId = String(form.get("course_id"));
-  const studentId = String(form.get("student_id"));
+function rosterTarget(form: FormData) {
+  return { courseId: String(form.get("course_id")), studentId: String(form.get("student_id")) };
+}
 
+function logIfFailed(action: string, error: { message: string } | null) {
+  if (error) console.error(`${action} failed`, error.message);
+}
+
+export async function removeStudent(form: FormData) {
+  const { courseId, studentId } = rosterTarget(form);
   const supabase = await createServerSupabase();
-  await supabase.from("enrollment").delete().eq("course_id", courseId).eq("student_id", studentId);
+  const { error } = await supabase
+    .from("enrollment")
+    .delete()
+    .eq("course_id", courseId)
+    .eq("student_id", studentId);
+  logIfFailed("removeStudent", error);
   refresh();
 }
 
-export async function setAssistant(form: FormData) {
-  const courseId = String(form.get("course_id"));
-  const userId = String(form.get("user_id"));
-  const makeAssistant = form.get("assistant") === "true";
-
+export async function assignAssistant(form: FormData) {
+  const { courseId, studentId } = rosterTarget(form);
   const supabase = await createServerSupabase();
-  if (makeAssistant) {
-    await supabase.from("course_assistant").insert({ course_id: courseId, user_id: userId });
-  } else {
-    await supabase.from("course_assistant").delete().eq("course_id", courseId).eq("user_id", userId);
-  }
+  const { error } = await supabase
+    .from("course_assistant")
+    .insert({ course_id: courseId, user_id: studentId });
+  logIfFailed("assignAssistant", error);
+  refresh();
+}
+
+export async function unassignAssistant(form: FormData) {
+  const { courseId, studentId } = rosterTarget(form);
+  const supabase = await createServerSupabase();
+  const { error } = await supabase
+    .from("course_assistant")
+    .delete()
+    .eq("course_id", courseId)
+    .eq("user_id", studentId);
+  logIfFailed("unassignAssistant", error);
   refresh();
 }
 
 export async function regenerateInviteCode(form: FormData) {
   const courseId = String(form.get("course_id"));
-
   const supabase = await createServerSupabase();
-  await supabase.rpc("regenerate_invite_code", { target_course: courseId });
+  const { error } = await supabase.rpc("regenerate_invite_code", { target_course: courseId });
+  logIfFailed("regenerateInviteCode", error);
   refresh();
 }

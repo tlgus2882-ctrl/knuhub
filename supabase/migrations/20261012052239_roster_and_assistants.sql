@@ -88,7 +88,6 @@ returns table (
   name text,
   student_number text,
   email text,
-  joined_at timestamptz,
   is_assistant boolean
 )
 language plpgsql
@@ -107,7 +106,6 @@ begin
       p.name,
       p.student_number,
       u.email::text,
-      e.created_at,
       exists (
         select 1 from public.course_assistant a
         where a.course_id = e.course_id and a.user_id = e.student_id

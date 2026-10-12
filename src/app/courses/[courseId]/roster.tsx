@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { removeStudent, setAssistant } from "../actions";
+import { assignAssistant, removeStudent, unassignAssistant } from "../actions";
 
 // Shown only to the course's professor; course_roster() refuses everyone else.
 export async function Roster({ courseId }: { courseId: string }) {
@@ -33,10 +33,9 @@ export async function Roster({ courseId }: { courseId: string }) {
                   <td className="px-3 py-2 font-mono">{student.student_number}</td>
                   <td className="px-3 py-2">{student.email}</td>
                   <td className="px-3 py-2">
-                    <form action={setAssistant}>
+                    <form action={student.is_assistant ? unassignAssistant : assignAssistant}>
                       <input type="hidden" name="course_id" value={courseId} />
-                      <input type="hidden" name="user_id" value={student.student_id} />
-                      <input type="hidden" name="assistant" value={String(!student.is_assistant)} />
+                      <input type="hidden" name="student_id" value={student.student_id} />
                       <Button type="submit" size="sm" variant={student.is_assistant ? "default" : "outline"}>
                         {student.is_assistant ? "조교 해제" : "조교로 지정"}
                       </Button>

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { asCourseRole } from "../course-role";
 import { courseTerm } from "../course-term";
 import { regenerateInviteCode } from "../actions";
 import { Roster } from "./roster";
@@ -32,7 +33,8 @@ async function CourseDetail({ courseId }: { courseId: string }) {
 
   if (!course) notFound();
 
-  const { data: myRole } = await supabase.rpc("my_course_role", { target_course: courseId });
+  const { data: role } = await supabase.rpc("my_course_role", { target_course: courseId });
+  const myRole = asCourseRole(role);
 
   // RLS returns the invite code only to the course's professor.
   const { data: invite } = await supabase
