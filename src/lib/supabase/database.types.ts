@@ -256,6 +256,9 @@ isOneToOne: false
 "is_professor_or_assistant":
 { Args: { "target_course": string }; Returns: boolean
                            },
+"is_submitted_object":
+{ Args: { "object_name": string }; Returns: boolean
+                           },
 "issue_invite_code":
 { Args: { "target_course": string }; Returns: string
                            },

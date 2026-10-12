@@ -1,8 +1,7 @@
-import { Button } from "@/components/ui/button";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { SUBMISSION_BUCKET } from "@/lib/submissions/storage";
 import { formatKst } from "@/lib/time";
-import { deleteSubmission } from "./submission-actions";
+import { DeleteSubmissionForm } from "./delete-submission-form";
 import { SubmitFileForm } from "./submit-file-form";
 
 type Props = { assignmentId: string; studentId: string; open: boolean };
@@ -65,14 +64,7 @@ export async function MySubmission({ assignmentId, studentId, open }: Props) {
       {open ? (
         <>
           <SubmitFileForm assignmentId={assignmentId} studentId={studentId} resubmit={Boolean(submission)} />
-          {submission && (
-            <form action={deleteSubmission}>
-              <input type="hidden" name="assignment_id" value={assignmentId} />
-              <Button type="submit" size="sm" variant="outline">
-                제출 취소 (삭제)
-              </Button>
-            </form>
-          )}
+          {submission && <DeleteSubmissionForm assignmentId={assignmentId} />}
         </>
       ) : (
         <p className="text-sm text-muted-foreground">마감이 지나서 제출하거나 고칠 수 없어요.</p>

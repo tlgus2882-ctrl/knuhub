@@ -4,6 +4,9 @@
 -- 브라우저가 파일을 {assignment_id}/{student_id}/{attempt}/{번호} 이름으로 올리고,
 -- submit_files()가 그 묶음을 제출물로 확정한다. 원래 파일 경로는 DB에만 둔다
 -- (Storage 객체 이름에는 한글 파일명을 쓸 수 없다).
+--
+-- 오류 코드: KH003 지금 제출할 수 없음(수강생이 아니거나 마감 후),
+--           KH004 제출할 파일 목록이 잘못됨, KH005 20MB 초과
 
 insert into storage.buckets (id, name, public, file_size_limit)
 values ('submissions', 'submissions', false, 20971520);
@@ -95,7 +98,7 @@ declare
   parts text[] := string_to_array(object_name, '/');
 begin
   if array_length(parts, 1) < 3
-    or parts[1] !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    or parts[1] !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
     or parts[2] <> (select auth.uid())::text
   then
     return false;
@@ -124,13 +127,32 @@ $$;
 revoke execute on function public.can_read_submission_object(text) from public, anon;
 grant execute on function public.can_read_submission_object(text) to authenticated;
 
+-- 지금 어떤 제출물에 들어 있는 객체인가
+create function public.is_submitted_object(object_name text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (select 1 from public.submission_file where storage_path = object_name);
+$$;
+
+revoke execute on function public.is_submitted_object(text) from public, anon;
+grant execute on function public.is_submitted_object(text) to authenticated;
+
 create policy "수강생은 마감 전에 자기 제출 폴더에 올린다"
   on storage.objects for insert to authenticated
   with check (bucket_id = 'submissions' and public.can_write_submission_object(name));
 
-create policy "수강생은 마감 전에 자기 제출 폴더에서 지운다"
+-- 제출물에 들어 있는 파일은 submit_files()나 delete_submission()으로 빠진 뒤에만 지운다.
+create policy "수강생은 마감 전에 자기 제출 폴더에서 제출물에 없는 파일을 지운다"
   on storage.objects for delete to authenticated
-  using (bucket_id = 'submissions' and public.can_write_submission_object(name));
+  using (
+    bucket_id = 'submissions'
+    and public.can_write_submission_object(name)
+    and not public.is_submitted_object(name)
+  );
 
 -- Storage는 지울 때도 읽기 권한을 확인하므로, 지울 수 있는 객체는 읽을 수도 있다.
 create policy "볼 수 있는 제출물의 파일을 읽는다"
@@ -157,31 +179,38 @@ declare
   replaced text[];
   file_count int;
   found_count int;
+  distinct_objects int;
+  distinct_paths int;
   total_size bigint;
   in_my_folder boolean;
 begin
   if not public.can_submit(target_assignment) then
     raise exception '이 과제에 제출할 수 없어요 (수강생이 아니거나 마감이 지났어요)'
-      using errcode = '42501';
+      using errcode = 'KH003';
   end if;
 
   if jsonb_typeof(files) is distinct from 'array' or jsonb_array_length(files) = 0 then
-    raise exception '제출할 파일이 없어요' using errcode = '22023';
+    raise exception '제출할 파일이 없어요' using errcode = 'KH004';
   end if;
 
-  select count(*), count(o.name), coalesce(sum((o.metadata ->> 'size')::bigint), 0),
+  -- 모든 항목이 내 폴더에 실제로 올라간 서로 다른 객체이고 경로도 겹치지 않아야 한다.
+  select count(*), count(o.metadata ->> 'size'),
+         count(distinct f.storage_path), count(distinct f.path),
+         coalesce(sum((o.metadata ->> 'size')::bigint), 0),
          coalesce(bool_and(left(f.storage_path, length(prefix)) = prefix), false)
-  into file_count, found_count, total_size, in_my_folder
+  into file_count, found_count, distinct_objects, distinct_paths, total_size, in_my_folder
   from jsonb_to_recordset(files) as f(path text, storage_path text)
   left join storage.objects o
     on o.bucket_id = 'submissions' and o.name = f.storage_path;
 
-  if found_count < file_count or not in_my_folder then
-    raise exception '올리지 않은 파일은 제출할 수 없어요' using errcode = '22023';
+  if found_count < file_count or not in_my_folder
+    or distinct_objects < file_count or distinct_paths < file_count
+  then
+    raise exception '올리지 않았거나 겹치는 파일은 제출할 수 없어요' using errcode = 'KH004';
   end if;
 
   if total_size > 20971520 then
-    raise exception '제출물은 20MB를 넘을 수 없어요' using errcode = '22023';
+    raise exception '제출물은 20MB를 넘을 수 없어요' using errcode = 'KH005';
   end if;
 
   insert into public.submission (assignment_id, student_id)
@@ -189,21 +218,22 @@ begin
   on conflict (assignment_id, student_id) do update set submitted_at = now()
   returning id into target_submission;
 
+  -- 파일 목록을 통째로 바꾼다. 새 목록에 없는 이전 파일은 호출한 쪽이 Storage에서 지운다.
   with removed as (
     delete from public.submission_file
     where submission_id = target_submission
-      and storage_path not in (
-        select f.storage_path from jsonb_to_recordset(files) as f(path text, storage_path text)
-      )
     returning storage_path
   )
-  select coalesce(array_agg(storage_path), '{}') into replaced from removed;
+  select coalesce(array_agg(storage_path), '{}') into replaced
+  from removed
+  where storage_path not in (
+    select f.storage_path from jsonb_to_recordset(files) as f(path text, storage_path text)
+  );
 
   insert into public.submission_file (submission_id, path, size, storage_path)
   select target_submission, f.path, (o.metadata ->> 'size')::bigint, f.storage_path
   from jsonb_to_recordset(files) as f(path text, storage_path text)
-  join storage.objects o on o.bucket_id = 'submissions' and o.name = f.storage_path
-  on conflict (storage_path) do nothing;
+  join storage.objects o on o.bucket_id = 'submissions' and o.name = f.storage_path;
 
   return replaced;
 end;
@@ -220,19 +250,25 @@ security definer
 set search_path = ''
 as $$
 declare
+  target_submission uuid;
   removed text[];
 begin
   if not public.can_submit(target_assignment) then
-    raise exception '마감이 지나서 제출물을 지울 수 없어요' using errcode = '42501';
+    raise exception '마감이 지나서 제출물을 지울 수 없어요' using errcode = 'KH003';
   end if;
 
-  select coalesce(array_agg(f.storage_path), '{}') into removed
-  from public.submission s
-  join public.submission_file f on f.submission_id = s.id
-  where s.assignment_id = target_assignment and s.student_id = (select auth.uid());
+  -- 같은 순간의 재제출이 파일 목록을 바꾸지 못하게 제출물을 먼저 잠근다.
+  select id into target_submission
+  from public.submission
+  where assignment_id = target_assignment and student_id = (select auth.uid())
+  for update;
 
-  delete from public.submission
-  where assignment_id = target_assignment and student_id = (select auth.uid());
+  with gone as (
+    delete from public.submission_file where submission_id = target_submission returning storage_path
+  )
+  select coalesce(array_agg(storage_path), '{}') into removed from gone;
+
+  delete from public.submission where id = target_submission;
 
   return removed;
 end;

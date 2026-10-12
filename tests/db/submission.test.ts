@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { enrollInTestCourse, openTestCourse } from "../support/courses";
 import { download, SUBMISSION_BUCKET, submitFiles, uploadAttempt } from "../support/submissions";
-import { adminClient } from "../support/supabase";
-import { createTestUser, type TestUser } from "../support/supabase";
+import { adminClient, createTestUser, type TestUser } from "../support/supabase";
 
 async function moveDue(professor: TestUser, assignmentId: string, dueAt: string) {
   const { error } = await professor.client.from("assignment").update({ due_at: dueAt }).eq("id", assignmentId);
@@ -143,10 +142,46 @@ describe("파일 하나 제출", () => {
 
     for (const user of [outsider, professor]) {
       const upload = await uploadAttempt(user, assignmentId, [{ path: "a.txt", body: "a" }]);
-      const submit = await user.client.rpc("submit_files", { target_assignment: assignmentId, files: [] });
+      // Even with a file already in their folder (put there with the secret key), submitting is refused.
+      const storagePath = `${assignmentId}/${user.id}/planted/0`;
+      await adminClient().storage.from(SUBMISSION_BUCKET).upload(storagePath, new Blob(["a"]));
+      const submit = await user.client.rpc("submit_files", {
+        target_assignment: assignmentId,
+        files: [{ path: "a.txt", storage_path: storagePath }],
+      });
       expect(upload.error).not.toBeNull();
-      expect(submit.error).not.toBeNull();
+      expect(submit.error?.code).toBe("KH003");
     }
+  });
+
+  it("제출한 파일은 제출물을 지우거나 다시 제출하지 않고는 Storage에서 따로 지울 수 없다", async () => {
+    const { student, assignmentId } = await assignmentSetup();
+    const { storagePaths } = await submitFiles(student, assignmentId, [{ path: "a.txt", body: "a" }]);
+
+    const { data: removed } = await student.client.storage.from(SUBMISSION_BUCKET).remove(storagePaths);
+
+    expect(removed).toEqual([]);
+    expect(await download(student, storagePaths[0])).toBe("a");
+  });
+
+  it("같은 파일이나 같은 경로를 두 번 넣으면 제출이 거부된다", async () => {
+    const { student, assignmentId } = await assignmentSetup();
+    const { files } = await uploadAttempt(student, assignmentId, [
+      { path: "a.txt", body: "a" },
+      { path: "b.txt", body: "b" },
+    ]);
+
+    const sameObject = await student.client.rpc("submit_files", {
+      target_assignment: assignmentId,
+      files: [files[0], { path: "c.txt", storage_path: files[0].storage_path }],
+    });
+    const samePath = await student.client.rpc("submit_files", {
+      target_assignment: assignmentId,
+      files: [files[0], { path: "a.txt", storage_path: files[1].storage_path }],
+    });
+
+    expect(sameObject.error?.code).toBe("KH004");
+    expect(samePath.error?.code).toBe("KH004");
   });
 
   it("다른 학생 폴더에 올리거나 남이 올린 파일을 내 제출물로 낼 수 없다", async () => {
