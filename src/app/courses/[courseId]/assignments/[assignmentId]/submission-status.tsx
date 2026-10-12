@@ -19,7 +19,11 @@ type StatusRow = {
 export async function SubmissionStatus({ courseId, assignmentId }: Props) {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.rpc("submission_status", { target_assignment: assignmentId });
-  if (error) return null;
+  if (error) {
+    // 42501: not this course's professor or assistant (the page hides the section then anyway).
+    if (error.code !== "42501") console.error("submission_status failed", error.message);
+    return null;
+  }
 
   const rows = data as StatusRow[];
   const submitted = rows.filter((r) => r.submitted_at).length;
@@ -47,7 +51,7 @@ export async function SubmissionStatus({ courseId, assignmentId }: Props) {
               {rows.map((row) => (
                 <tr key={row.student_id}>
                   <td className="px-4 py-2">{row.name}</td>
-                  <td className="px-4 py-2 text-muted-foreground">{row.student_number ?? "-"}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{row.student_number ?? "학번 없음"}</td>
                   <td className="px-4 py-2">
                     {row.submission_id ? (
                       <Link href={submissionHref(courseId, assignmentId, row.submission_id)} className="underline">
