@@ -125,7 +125,7 @@ describe("파일 하나 제출", () => {
     const { storagePaths } = await submitFiles(student, assignmentId, [{ path: "a.txt", body: "비밀" }]);
 
     const { data: rows } = await classmate.client.from("submission").select("id").eq("assignment_id", assignmentId);
-    const { data: files } = await classmate.client.from("submission_file").select("id");
+    const { data: files } = await classmate.client.from("submission_file").select("id").in("storage_path", storagePaths);
     const { data: listed } = await classmate.client.storage
       .from(SUBMISSION_BUCKET)
       .list(`${assignmentId}/${student.id}`);
