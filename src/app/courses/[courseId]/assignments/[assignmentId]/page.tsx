@@ -10,6 +10,7 @@ import { asCourseRole } from "../../../course-role";
 import { VISIBILITY_HINT, VISIBILITY_LABEL } from "../../../visibility";
 import { MySubmission } from "./my-submission";
 import { SubmissionList } from "./submission-list";
+import { SubmissionStatus } from "./submission-status";
 
 export default function AssignmentPage({ params }: PageProps<"/courses/[courseId]/assignments/[assignmentId]">) {
   return (
@@ -88,6 +89,8 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
       )}
 
       {enrolled && user && <MySubmission courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
+
+      {canEdit && <SubmissionStatus courseId={courseId} assignmentId={assignmentId} />}
 
       <SubmissionList courseId={courseId} assignmentId={assignmentId} viewerId={enrolled ? user?.id : undefined} />
     </>
