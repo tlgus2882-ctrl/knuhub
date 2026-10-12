@@ -346,6 +346,11 @@ isOneToOne: false
 "regenerate_invite_code":
 { Args: { "target_course": string }; Returns: string
                            },
+"search":
+{ Args: { "query": string }; Returns: {
+              "assignment_id": string,"course_id": string,"detail": string,"kind": string,"submission_id": string,"title": string
+            }[]
+                           },
 "shares_course_with":
 { Args: { "other": string }; Returns: boolean
                            },

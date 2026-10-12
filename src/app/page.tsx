@@ -5,6 +5,7 @@ import { createServerSupabase, type ServerSupabase as Supabase } from "@/lib/sup
 import { logOut } from "./(auth)/actions";
 import { courseTerm } from "./courses/course-term";
 import { JoinCourseForm } from "./courses/join-course-form";
+import { SearchBox } from "./search/search-box";
 
 export default function Home() {
   return (
@@ -66,6 +67,7 @@ async function SignedInHome() {
           프로필
         </Link>
       </div>
+      <SearchBox />
       {profile?.role === "professor" && <ProfessorCourses supabase={supabase} userId={user.id} />}
       {profile?.role === "student" && <StudentCourses supabase={supabase} userId={user.id} />}
     </>
