@@ -14,7 +14,8 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
-    "admin:test-professor": "node --env-file=.env.local scripts/create-test-professor.mjs"
+    "admin:test-professor": "node --env-file=.env.local scripts/create-test-user.mjs --role professor",
+    "admin:test-admin": "node --env-file=.env.local scripts/create-test-user.mjs --role admin"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
