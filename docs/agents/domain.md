@@ -62,6 +62,7 @@ Code (tables, columns, types, variables) uses these English names for the `GLOSS
 | 조교 | `course_assistant` |
 | 과제 | `assignment` |
 | 마감일 | `due_at` |
+| 과제 공개 | `published` (`true` = 공개, `false` = 비공개) |
 | 공개 범위 | `visibility`: `private` / `course` / `campus` |
 | 제출물 | `submission` |
 | 제출 파일 | `submission_file` |

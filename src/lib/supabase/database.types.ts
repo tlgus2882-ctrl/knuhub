@@ -139,14 +139,14 @@ isOneToOne: false
                   ]
                 },"assignment": {
                   Row: {
-                    "course_id": string,"created_at": string,"created_by": string | null,"description": string,"due_at": string,"id": string,"title": string,"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
+                    "course_id": string,"created_at": string,"created_by": string | null,"description": string,"due_at": string,"id": string,"published": boolean,"title": string,"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "course_id": string,"created_at"?: string,"created_by"?: string | null,"description"?: string,"due_at": string,"id"?: string,"title": string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
+                    "course_id": string,"created_at"?: string,"created_by"?: string | null,"description"?: string,"due_at": string,"id"?: string,"published"?: boolean,"title": string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
                   }
                   Update: {
-                    "course_id"?: string,"created_at"?: string,"created_by"?: string | null,"description"?: string,"due_at"?: string,"id"?: string,"title"?: string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
+                    "course_id"?: string,"created_at"?: string,"created_by"?: string | null,"description"?: string,"due_at"?: string,"id"?: string,"published"?: boolean,"title"?: string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
                   }
                   Relationships: [
                     {
@@ -426,6 +426,9 @@ isOneToOne: false
                            },
 "can_edit_review":
 { Args: { "review_author": string }; Returns: boolean
+                           },
+"can_read_assignment_file":
+{ Args: { "object_name": string }; Returns: boolean
                            },
 "can_read_submission_object":
 { Args: { "object_name": string }; Returns: boolean

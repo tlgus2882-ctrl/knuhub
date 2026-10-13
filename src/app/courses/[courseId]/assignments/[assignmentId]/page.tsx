@@ -29,7 +29,7 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
   const supabase = await createServerSupabase();
   const { data: assignment } = await supabase
     .from("assignment")
-    .select("id, title, description, due_at, visibility, course(name)")
+    .select("id, title, description, due_at, visibility, published, course(name)")
     .eq("id", assignmentId)
     .eq("course_id", courseId)
     .maybeSingle();
@@ -75,6 +75,14 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
           <dd>
             {formatKst(assignment.due_at)} <span className="font-medium">({timeLeft(assignment.due_at, now)})</span>
           </dd>
+          {!assignment.published && (
+            <>
+              <dt className="text-muted-foreground">과제 공개</dt>
+              <dd>
+                비공개 <span className="text-muted-foreground">· 담당 교수와 조교만 봐요. 고치기에서 공개로 바꿀 수 있어요.</span>
+              </dd>
+            </>
+          )}
           <dt className="text-muted-foreground">공개 범위</dt>
           <dd>
             {VISIBILITY_LABEL[assignment.visibility]}{" "}

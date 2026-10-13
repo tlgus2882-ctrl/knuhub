@@ -23,7 +23,7 @@ async function EditAssignment({ courseId, assignmentId }: { courseId: string; as
   const supabase = await createServerSupabase();
   const { data: assignment } = await supabase
     .from("assignment")
-    .select("id, title, description, due_at, visibility")
+    .select("id, title, description, due_at, visibility, published")
     .eq("id", assignmentId)
     .eq("course_id", courseId)
     .maybeSingle();
@@ -56,6 +56,7 @@ async function EditAssignment({ courseId, assignmentId }: { courseId: string; as
           description: assignment.description,
           dueInput: toKstInputValue(assignment.due_at),
           visibility: assignment.visibility,
+          published: assignment.published,
         }}
       />
     </>
