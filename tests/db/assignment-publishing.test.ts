@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { attachFile, downloadAttachment } from "../support/assignment-files";
-import { enrollInTestCourse, openTestCourse, postTestAssignment } from "../support/courses";
-import { submitFiles, uploadAttempt } from "../support/submissions";
+import { enrollInTestCourse, inDays, moveDeadline, openTestCourse, postTestAssignment } from "../support/courses";
+import { download, submitFiles, uploadAttempt } from "../support/submissions";
 import { anonClient, createTestUser, type TestUser } from "../support/supabase";
 
 async function publishingSetup(published: boolean) {
@@ -39,7 +39,7 @@ describe("과제 공개 여부", () => {
     expect(await sees(outsider, assignmentId)).toBe(false);
   });
 
-  it("공개로 바꾸면 수강생과 다른 사용자에게 보이고, 다시 비공개로 바꾸면 숨겨진다", async () => {
+  it("공개로 바꾸면 수강생과 다른 사용자에게 보이고, 다시 비공개로 바꾸면 보이지 않는다", async () => {
     const { professor, student, outsider, assignmentId } = await publishingSetup(false);
 
     await professor.client.from("assignment").update({ published: true }).eq("id", assignmentId);
@@ -91,6 +91,24 @@ describe("과제 공개 여부", () => {
     expect((results ?? []).filter((r) => r.assignment_id === assignmentId)).toEqual([]);
     const { data: professorResults } = await professor.client.rpc("search", { query: student.studentNumber! });
     expect((professorResults ?? []).some((r) => r.assignment_id === assignmentId)).toBe(true);
+  });
+
+  it("마감 후 전체 공개였던 과제를 비공개로 바꾸면 다른 사람은 제출물과 파일을 볼 수 없다", async () => {
+    const { professor, student, assistant, outsider, assignmentId } = await publishingSetup(true);
+    const { storagePaths } = await submitFiles(student, assignmentId, [{ path: "a.txt", body: "제출한 코드" }]);
+    await moveDeadline(professor, assignmentId, inDays(-1));
+    const submissionsSeenBy = async (user: TestUser) => {
+      const { data } = await user.client.from("submission").select("id").eq("assignment_id", assignmentId);
+      return (data ?? []).length;
+    };
+    expect(await submissionsSeenBy(outsider)).toBe(1);
+
+    await professor.client.from("assignment").update({ published: false }).eq("id", assignmentId);
+
+    expect(await submissionsSeenBy(outsider)).toBe(0);
+    expect(await download(outsider, storagePaths[0])).toBeNull();
+    expect(await submissionsSeenBy(assistant)).toBe(1);
+    expect(await download(professor, storagePaths[0])).toBe("제출한 코드");
   });
 
   it("로그인하지 않으면 공개 과제도 볼 수 없다", async () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { attachFiles, OVERSIZED_MESSAGE, oversizedFiles } from "../attach-files";
+import { attachFiles, oversizedMessage, oversizedFiles } from "../attach-files";
 
 export function AttachmentUpload({ assignmentId }: { assignmentId: string }) {
   const [error, setError] = useState<string | null>(null);
@@ -9,7 +9,7 @@ export function AttachmentUpload({ assignmentId }: { assignmentId: string }) {
 
   function attach(files: File[]) {
     const tooLarge = oversizedFiles(files);
-    if (tooLarge.length) return setError(OVERSIZED_MESSAGE(tooLarge));
+    if (tooLarge.length) return setError(oversizedMessage(tooLarge));
 
     startTransition(async () => {
       setError(null);

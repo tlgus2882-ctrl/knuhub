@@ -33,28 +33,55 @@ as $$
   );
 $$;
 
--- 첨부파일 읽기: 그 과목 사람이고, 과제가 공개됐거나 내가 담당 교수·조교일 때
-create function public.can_read_assignment_file(object_name text)
+-- 비공개 과제의 제출물은 마감 후 공개 범위와 상관없이 작성자 본인과 담당 교수·조교만 본다.
+-- (리뷰와 제출 파일도 이 함수를 따른다.)
+create or replace function public.can_view_submission(target_submission uuid)
 returns boolean
-language plpgsql
+language sql
 stable
 security definer
 set search_path = ''
 as $$
-declare
-  folder text := split_part(object_name, '/', 1);
-  target public.assignment;
-begin
-  if folder !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then
-    return false;
-  end if;
-  select * into target from public.assignment where id = folder::uuid;
-  if not found then
-    return false;
-  end if;
-  return public.is_course_member(target.course_id)
-    and (target.published or public.is_professor_or_assistant(target.course_id));
-end;
+  select exists (
+    select 1
+    from public.submission s
+    join public.assignment a on a.id = s.assignment_id
+    where s.id = target_submission
+      and (
+        -- 작성자 본인
+        s.student_id = (select auth.uid())
+        -- 그 과목의 담당 교수·조교는 마감 전에도 본다
+        or public.is_professor_or_assistant(a.course_id)
+        -- 공개 과제는 마감 후 공개 범위에 따라
+        or (
+          a.published
+          and now() >= a.due_at
+          and (
+            a.visibility = 'campus'
+            or (a.visibility = 'course' and public.is_enrolled(a.course_id))
+          )
+        )
+      )
+  );
+$$;
+
+-- 첨부파일 읽기: 그 과목 사람이고, 과제가 공개됐거나 내가 담당 교수·조교일 때
+create function public.can_read_assignment_file(object_name text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.assignment a
+    where a.id = case
+        when split_part(object_name, '/', 1) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        then split_part(object_name, '/', 1)::uuid
+      end
+      and public.is_course_member(a.course_id)
+      and (a.published or public.is_professor_or_assistant(a.course_id))
+  );
 $$;
 
 revoke execute on function public.can_read_assignment_file(text) from public, anon;

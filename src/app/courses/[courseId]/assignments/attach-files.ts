@@ -11,8 +11,11 @@ export function oversizedFiles(files: File[]): File[] {
   return files.filter((file) => file.size > ASSIGNMENT_FILE_MAX_BYTES);
 }
 
-export const OVERSIZED_MESSAGE = (files: File[]) =>
-  `첨부파일은 하나에 20MB까지예요: ${files.map((f) => f.name).join(", ")}`;
+export const ASSIGNMENT_FILE_LIMIT_LABEL = `${ASSIGNMENT_FILE_MAX_BYTES / 1024 / 1024}MB`;
+
+export function oversizedMessage(files: File[]): string {
+  return `첨부파일은 하나에 ${ASSIGNMENT_FILE_LIMIT_LABEL}까지예요: ${files.map((f) => f.name).join(", ")}`;
+}
 
 /**
  * Attaches the files one by one. Stops at the first failure and says which file

@@ -6,10 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { VISIBILITY_HINT, VISIBILITY_LABEL, type Visibility } from "../../visibility";
-import { createAssignment, updateAssignment, type AssignmentFormState } from "./actions";
-import { attachFiles, OVERSIZED_MESSAGE, oversizedFiles } from "./attach-files";
-
-const initial: AssignmentFormState = { error: null };
+import { createAssignment, updateAssignment } from "./actions";
+import { ASSIGNMENT_FILE_LIMIT_LABEL, attachFiles, oversizedFiles, oversizedMessage } from "./attach-files";
 
 type Props = {
   courseId: string;
@@ -36,18 +34,18 @@ export function AssignmentForm({ courseId, assignment }: Props) {
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const tooLarge = oversizedFiles(files);
-    if (tooLarge.length) return setError(OVERSIZED_MESSAGE(tooLarge));
+    if (tooLarge.length) return setError(oversizedMessage(tooLarge));
     const form = new FormData(event.currentTarget);
 
     startTransition(async () => {
       setError(null);
-      const saved = await (assignment ? updateAssignment : createAssignment)(initial, form);
+      const saved = await (assignment ? updateAssignment : createAssignment)(form);
       if (saved.error || !saved.assignmentId) return setError(saved.error);
 
       const attachError = files.length ? await attachFiles(saved.assignmentId, files) : null;
       if (attachError) {
         setSavedId(saved.assignmentId);
-        setError(`과제는 저장했지만 첨부하지 못한 파일이 있어요. ${attachError}`);
+        setError(`과제는 저장했지만 첨부하지 못한 파일이 있어요. 과제 화면에서 다시 첨부해 주세요. ${attachError}`);
         return;
       }
       router.push(`/courses/${courseId}/assignments/${saved.assignmentId}`);
@@ -135,7 +133,7 @@ export function AssignmentForm({ courseId, assignment }: Props) {
           onChange={(event) => setFiles(Array.from(event.currentTarget.files ?? []))}
         />
         <p className="text-xs text-muted-foreground">
-          파일 하나에 20MB까지. {assignment ? "이미 첨부한 파일은 과제 화면에서 지울 수 있어요." : "과제를 저장하면 함께 첨부돼요."}
+          파일 하나에 {ASSIGNMENT_FILE_LIMIT_LABEL}까지. {assignment ? "이미 첨부한 파일은 과제 화면에서 지울 수 있어요." : "과제를 저장하면 함께 첨부돼요."}
         </p>
       </div>
 
@@ -150,7 +148,8 @@ export function AssignmentForm({ courseId, assignment }: Props) {
         </p>
       )}
 
-      <Button type="submit" disabled={pending}>
+      {/* Once saved, submitting again would save a second 과제; the rest is attached from the 과제 화면. */}
+      <Button type="submit" disabled={pending || savedId !== null}>
         {pending ? "저장 중…" : assignment ? "고친 내용 저장" : "과제 공지하기"}
       </Button>
     </form>

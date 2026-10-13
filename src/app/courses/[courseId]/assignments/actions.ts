@@ -35,10 +35,7 @@ function readFields(form: FormData): AssignmentFields | { error: string } {
 }
 
 // Only the course's professor and assistants may write; RLS enforces it (docs/adr/0002).
-export async function createAssignment(
-  _prev: AssignmentFormState,
-  form: FormData,
-): Promise<AssignmentFormState> {
+export async function createAssignment(form: FormData): Promise<AssignmentFormState> {
   const courseId = String(form.get("course_id"));
   const fields = readFields(form);
   if ("error" in fields) return fields;
@@ -55,10 +52,7 @@ export async function createAssignment(
   return { error: null, assignmentId: data.id };
 }
 
-export async function updateAssignment(
-  _prev: AssignmentFormState,
-  form: FormData,
-): Promise<AssignmentFormState> {
+export async function updateAssignment(form: FormData): Promise<AssignmentFormState> {
   const courseId = String(form.get("course_id"));
   const assignmentId = String(form.get("assignment_id"));
   const fields = readFields(form);
