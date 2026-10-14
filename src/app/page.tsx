@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { createServerSupabase, type ServerSupabase as Supabase } from "@/lib/supabase/server";
-import { logOut } from "./(auth)/actions";
 import { courseTerm } from "./courses/course-term";
 import { JoinCourseForm } from "./courses/join-course-form";
 import { SearchBox } from "./search/search-box";
@@ -10,10 +9,6 @@ import { SearchBox } from "./search/search-box";
 export default function Home({ searchParams }: PageProps<"/">) {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-16">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-3xl font-semibold tracking-tight">knuhub</h1>
-        <p className="text-muted-foreground">강남대 과제 공유 & 리뷰 플랫폼</p>
-      </header>
       <Suspense>
         {searchParams.then(({ withdrawn }) =>
           withdrawn === "1" ? (
@@ -58,21 +53,13 @@ async function SignedInHome() {
   return (
     <>
       <div className="flex items-center gap-3">
-        <p className="text-sm">
+        <p className="text-base">
           {profile?.name}
           {profile?.student_number && ` (${profile.student_number})`}님, 안녕하세요.
         </p>
-        <form action={logOut}>
-          <Button type="submit" variant="outline" size="sm">
-            로그아웃
-          </Button>
-        </form>
-        <Link href="/courses" className="text-sm text-primary underline">
+        <Button size="lg" className="px-6" nativeButton={false} render={<Link href="/courses" />}>
           과목 둘러보기
-        </Link>
-        <Link href="/profile" className="text-sm text-primary underline">
-          프로필
-        </Link>
+        </Button>
       </div>
       <SearchBox />
       {profile?.role === "professor" && <ProfessorCourses supabase={supabase} userId={user.id} />}
