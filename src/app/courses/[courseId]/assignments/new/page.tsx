@@ -8,7 +8,7 @@ export default function NewAssignmentPage({ params }: PageProps<"/courses/[cours
       <Suspense>
         {params.then(({ courseId }) => (
           <>
-            <Link href={`/courses/${courseId}`} className="text-sm text-muted-foreground underline">
+            <Link href={`/courses/${courseId}`} className="text-sm text-muted-foreground underline hover:text-primary">
               ← 과목으로
             </Link>
             <h1 className="text-2xl font-semibold tracking-tight">과제 공지</h1>

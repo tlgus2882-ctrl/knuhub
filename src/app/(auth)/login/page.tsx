@@ -17,7 +17,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
         <LoginForm />
         <p className="text-sm text-muted-foreground">
           처음인가요?{" "}
-          <Link href="/signup" className="underline">
+          <Link href="/signup" className="text-primary underline">
             가입하기
           </Link>
         </p>

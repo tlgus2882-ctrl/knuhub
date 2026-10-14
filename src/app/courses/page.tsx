@@ -7,7 +7,7 @@ import { compareSemestersNewestFirst, sectionLabel, semesterLabel } from "./cour
 export default function BrowseCoursesPage() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-16">
-      <Link href="/" className="text-sm text-muted-foreground underline">
+      <Link href="/" className="text-sm text-muted-foreground underline hover:text-primary">
         ← 처음으로
       </Link>
       <h1 className="text-2xl font-semibold tracking-tight">과목 둘러보기</h1>

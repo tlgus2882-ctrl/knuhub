@@ -4,7 +4,7 @@ import { WithdrawForm } from "./withdraw-form";
 export default function WithdrawPage() {
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-16">
-      <Link href="/profile" className="text-sm text-muted-foreground underline">
+      <Link href="/profile" className="text-sm text-muted-foreground underline hover:text-primary">
         ← 프로필
       </Link>
       <h1 className="text-2xl font-semibold tracking-tight">탈퇴</h1>

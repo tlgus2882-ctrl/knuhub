@@ -35,7 +35,7 @@ async function EditAssignment({ courseId, assignmentId }: { courseId: string; as
     return (
       <p className="text-sm text-muted-foreground">
         이 과목의 담당 교수나 조교만 과제를 고칠 수 있어요.{" "}
-        <Link href={`/courses/${courseId}/assignments/${assignmentId}`} className="underline">
+        <Link href={`/courses/${courseId}/assignments/${assignmentId}`} className="text-primary underline">
           과제로 돌아가기
         </Link>
       </p>
@@ -44,7 +44,7 @@ async function EditAssignment({ courseId, assignmentId }: { courseId: string; as
 
   return (
     <>
-      <Link href={`/courses/${courseId}/assignments/${assignmentId}`} className="text-sm text-muted-foreground underline">
+      <Link href={`/courses/${courseId}/assignments/${assignmentId}`} className="text-sm text-muted-foreground underline hover:text-primary">
         ← 과제로
       </Link>
       <h1 className="text-2xl font-semibold tracking-tight">과제 고치기</h1>

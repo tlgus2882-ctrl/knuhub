@@ -39,7 +39,7 @@ export async function Attachments({ assignmentId, canEdit }: Props) {
             return (
               <li key={file.id} className="flex items-center gap-2">
                 {href ? (
-                  <a href={href} className="underline">
+                  <a href={href} className="text-primary underline">
                     {file.name}
                   </a>
                 ) : (

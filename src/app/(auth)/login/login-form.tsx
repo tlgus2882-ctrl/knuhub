@@ -21,7 +21,7 @@ export function LoginForm() {
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <Label htmlFor="password">비밀번호</Label>
-          <Link href="/forgot-password" className="text-xs text-muted-foreground underline">
+          <Link href="/forgot-password" className="text-xs text-muted-foreground underline hover:text-primary">
             비밀번호를 잊었나요?
           </Link>
         </div>

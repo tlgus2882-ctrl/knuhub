@@ -7,7 +7,7 @@ import { ProfileForm } from "./profile-form";
 export default function ProfilePage() {
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-16">
-      <Link href="/" className="text-sm text-muted-foreground underline">
+      <Link href="/" className="text-sm text-muted-foreground underline hover:text-primary">
         ← 처음으로
       </Link>
       <h1 className="text-2xl font-semibold tracking-tight">프로필</h1>
@@ -48,7 +48,7 @@ async function MyProfile() {
         name={profile?.name ?? ""}
         contact={contact ?? NO_CONTACT_SETTINGS}
       />
-      <Link href="/profile/withdraw" className="self-start text-sm text-muted-foreground underline">
+      <Link href="/profile/withdraw" className="self-start text-sm text-muted-foreground underline hover:text-primary">
         탈퇴하기
       </Link>
     </>

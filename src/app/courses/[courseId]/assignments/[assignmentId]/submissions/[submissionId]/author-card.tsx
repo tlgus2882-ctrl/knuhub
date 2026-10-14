@@ -24,21 +24,21 @@ export async function AuthorCard({ authorId, name, studentNumber }: Props) {
         <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
           {visibleContacts.email && (
             <li>
-              <a href={`mailto:${visibleContacts.email}`} className="underline">
+              <a href={`mailto:${visibleContacts.email}`} className="text-primary underline">
                 {visibleContacts.email}
               </a>
             </li>
           )}
           {visibleContacts.open_chat_url && (
             <li>
-              <a href={visibleContacts.open_chat_url} target="_blank" rel="noopener noreferrer" className="underline">
+              <a href={visibleContacts.open_chat_url} target="_blank" rel="noopener noreferrer" className="text-primary underline">
                 오픈채팅
               </a>
             </li>
           )}
           {visibleContacts.github && (
             <li>
-              <a href={`https://github.com/${visibleContacts.github}`} target="_blank" rel="noopener noreferrer" className="underline">
+              <a href={`https://github.com/${visibleContacts.github}`} target="_blank" rel="noopener noreferrer" className="text-primary underline">
                 GitHub @{visibleContacts.github}
               </a>
             </li>

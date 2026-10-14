@@ -34,7 +34,7 @@ export async function SubmissionList({ courseId, assignmentId, viewerId }: Props
           {rows.map((submission) => (
             <li key={submission.id} className="flex flex-col gap-2 p-4">
               <p className="text-sm">
-                <Link href={submissionHref(courseId, assignmentId, submission.id)} className="font-medium underline">
+                <Link href={submissionHref(courseId, assignmentId, submission.id)} className="font-medium text-primary underline">
                   {submission.profile?.name}
                 </Link>{" "}
                 <span className="text-muted-foreground">

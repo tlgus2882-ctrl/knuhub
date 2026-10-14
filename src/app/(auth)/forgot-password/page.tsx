@@ -11,7 +11,7 @@ export default function ForgotPasswordPage() {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <ForgotPasswordForm />
-        <Link href="/login" className="text-sm text-muted-foreground underline">
+        <Link href="/login" className="text-sm text-muted-foreground underline hover:text-primary">
           로그인으로 돌아가기
         </Link>
       </CardContent>

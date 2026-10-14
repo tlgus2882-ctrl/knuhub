@@ -12,7 +12,7 @@ export default function CheckEmailPage() {
         <p>링크를 누르면 가입이 끝나고 바로 로그인돼요. 휴대폰에서 열어도 돼요.</p>
         <p>
           인증을 마쳤다면{" "}
-          <Link href="/login" className="underline">
+          <Link href="/login" className="text-primary underline">
             로그인
           </Link>
           하세요.

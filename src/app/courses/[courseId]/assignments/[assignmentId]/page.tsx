@@ -52,7 +52,7 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
 
   return (
     <>
-      <Link href={`/courses/${courseId}`} className="text-sm text-muted-foreground underline">
+      <Link href={`/courses/${courseId}`} className="text-sm text-muted-foreground underline hover:text-primary">
         ← {assignment.course?.name}
       </Link>
 

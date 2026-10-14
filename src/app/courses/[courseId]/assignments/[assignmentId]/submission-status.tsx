@@ -54,7 +54,7 @@ export async function SubmissionStatus({ courseId, assignmentId }: Props) {
                   <td className="px-4 py-2 text-muted-foreground">{row.student_number ?? "학번 없음"}</td>
                   <td className="px-4 py-2">
                     {row.submission_id ? (
-                      <Link href={submissionHref(courseId, assignmentId, row.submission_id)} className="underline">
+                      <Link href={submissionHref(courseId, assignmentId, row.submission_id)} className="text-primary underline">
                         제출함
                       </Link>
                     ) : (

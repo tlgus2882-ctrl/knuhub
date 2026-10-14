@@ -13,7 +13,7 @@ export default function SignupPage() {
         <SignupForm />
         <p className="text-sm text-muted-foreground">
           이미 가입했나요?{" "}
-          <Link href="/login" className="underline">
+          <Link href="/login" className="text-primary underline">
             로그인
           </Link>
         </p>

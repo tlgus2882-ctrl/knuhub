@@ -48,7 +48,7 @@ async function SubmissionView({ courseId, assignmentId, submissionId, file }: Pa
     .maybeSingle();
 
   const backLink = (
-    <Link href={`/courses/${courseId}/assignments/${assignmentId}`} className="text-sm text-muted-foreground underline">
+    <Link href={`/courses/${courseId}/assignments/${assignmentId}`} className="text-sm text-muted-foreground underline hover:text-primary">
       ← {submission?.assignment.title ?? "과제로"}
     </Link>
   );
@@ -128,7 +128,7 @@ async function FileContent({ supabase, file }: { supabase: ServerSupabase; file:
         <span className="flex shrink-0 items-center gap-3 text-muted-foreground">
           {formatBytes(file.size)}
           {download && (
-            <a href={download} className="underline">
+            <a href={download} className="text-primary underline">
               내려받기
             </a>
           )}

@@ -67,10 +67,10 @@ async function SignedInHome() {
             로그아웃
           </Button>
         </form>
-        <Link href="/courses" className="text-sm underline">
+        <Link href="/courses" className="text-sm text-primary underline">
           과목 둘러보기
         </Link>
-        <Link href="/profile" className="text-sm underline">
+        <Link href="/profile" className="text-sm text-primary underline">
           프로필
         </Link>
       </div>

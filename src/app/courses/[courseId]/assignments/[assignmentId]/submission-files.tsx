@@ -10,7 +10,7 @@ export function SubmissionFileList({ files, hrefFor }: { files: SubmissionFile[]
     <ul className="flex flex-col gap-1 text-sm">
       {files.map((file) => (
         <li key={file.storage_path}>
-          <Link href={hrefFor(file.path)} className="underline">
+          <Link href={hrefFor(file.path)} className="text-primary underline">
             {file.path}
           </Link>{" "}
           <span className="text-muted-foreground">({formatBytes(file.size)})</span>

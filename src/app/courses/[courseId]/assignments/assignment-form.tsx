@@ -141,7 +141,7 @@ export function AssignmentForm({ courseId, assignment }: Props) {
         <p className="text-sm text-destructive">
           {error}{" "}
           {savedId && (
-            <a href={`/courses/${courseId}/assignments/${savedId}`} className="underline">
+            <a href={`/courses/${courseId}/assignments/${savedId}`} className="text-primary underline">
               과제로 가기
             </a>
           )}

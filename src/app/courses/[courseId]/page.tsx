@@ -12,7 +12,7 @@ import { Roster } from "./roster";
 export default function CoursePage({ params }: PageProps<"/courses/[courseId]">) {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-16">
-      <Link href="/" className="text-sm text-muted-foreground underline">
+      <Link href="/" className="text-sm text-muted-foreground underline hover:text-primary">
         ← 내 과목
       </Link>
       <Suspense fallback={<p className="text-sm text-muted-foreground">불러오는 중…</p>}>

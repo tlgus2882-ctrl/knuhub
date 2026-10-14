@@ -27,7 +27,7 @@ async function ResetPasswordGate() {
     return (
       <p className="text-sm text-muted-foreground">
         재설정 링크로 들어와야 비밀번호를 바꿀 수 있어요.{" "}
-        <Link href="/forgot-password" className="underline">
+        <Link href="/forgot-password" className="text-primary underline">
           재설정 링크 받기
         </Link>
       </p>
