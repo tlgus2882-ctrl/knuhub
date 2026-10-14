@@ -56,9 +56,6 @@ async function SignedInHome() {
         {profile?.name}
         {profile?.student_number && ` (${profile.student_number})`}님, 안녕하세요.
       </p>
-      <Button size="lg" className="w-full" nativeButton={false} render={<Link href="/courses" />}>
-        과목 둘러보기
-      </Button>
       <SearchBox />
       {profile?.role === "professor" && <ProfessorCourses supabase={supabase} userId={user.id} />}
       {profile?.role === "student" && <StudentCourses supabase={supabase} userId={user.id} />}
@@ -77,9 +74,12 @@ async function ProfessorCourses({ supabase, userId }: { supabase: Supabase; user
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">담당 과목</h2>
-        <Button size="sm" nativeButton={false} render={<Link href="/courses/new" />}>
-          과목 열기
-        </Button>
+        <div className="flex gap-2">
+          <BrowseCoursesButton />
+          <Button size="sm" nativeButton={false} render={<Link href="/courses/new" />}>
+            과목 열기
+          </Button>
+        </div>
       </div>
       <CourseList courses={data ?? []} empty="아직 연 과목이 없어요." />
     </section>
@@ -96,13 +96,24 @@ async function StudentCourses({ supabase, userId }: { supabase: Supabase; userId
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-semibold">내 과목</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">내 과목</h2>
+        <BrowseCoursesButton />
+      </div>
       <CourseList
         courses={courses}
         empty="아직 참여한 과목이 없어요. 교수님께 받은 초대 코드를 입력해 주세요."
       />
       <JoinCourseForm />
     </section>
+  );
+}
+
+function BrowseCoursesButton() {
+  return (
+    <Button size="sm" nativeButton={false} render={<Link href="/courses" />}>
+      전체 과목 둘러보기 →
+    </Button>
   );
 }
 
