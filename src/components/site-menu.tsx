@@ -3,6 +3,8 @@
 import { Menu } from "@base-ui/react/menu";
 import { MenuIcon } from "lucide-react";
 import Link from "next/link";
+import { useTransition } from "react";
+import { logOut } from "@/app/(auth)/actions";
 import { buttonVariants } from "@/components/ui/button";
 
 const ITEMS = [
@@ -12,7 +14,12 @@ const ITEMS = [
   { href: "/profile", label: "내 프로필" },
 ];
 
+const ITEM_CLASS =
+  "flex w-full cursor-pointer rounded-md px-3 py-2 text-left outline-none data-highlighted:bg-accent data-highlighted:text-accent-foreground";
+
 export function SiteMenu() {
+  const [loggingOut, startLogOut] = useTransition();
+
   return (
     <Menu.Root>
       <Menu.Trigger aria-label="메뉴" className={buttonVariants({ variant: "outline", size: "icon-lg" })}>
@@ -26,11 +33,19 @@ export function SiteMenu() {
                 key={item.href}
                 closeOnClick
                 render={<Link href={item.href} />}
-                className="flex cursor-pointer rounded-md px-3 py-2 outline-none data-highlighted:bg-accent data-highlighted:text-accent-foreground"
+                className={ITEM_CLASS}
               >
                 {item.label}
               </Menu.LinkItem>
             ))}
+            {/* The header shows 로그아웃 as a button from sm up; on phones it lives here. */}
+            <Menu.Item
+              disabled={loggingOut}
+              onClick={() => startLogOut(() => logOut())}
+              className={`${ITEM_CLASS} text-destructive sm:hidden`}
+            >
+              {loggingOut ? "로그아웃 중…" : "로그아웃"}
+            </Menu.Item>
           </Menu.Popup>
         </Menu.Positioner>
       </Menu.Portal>
