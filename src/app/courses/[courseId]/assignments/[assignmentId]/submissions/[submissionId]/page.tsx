@@ -9,7 +9,7 @@ import type { Tables } from "@/lib/supabase/database.types";
 import { createServerSupabase, type ServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
 import { submissionFileHrefs } from "../submission-href";
-import { AuthorCard } from "./author-card";
+import { AuthorCard } from "@/components/author-card";
 import { FileTree } from "./file-tree";
 import { Reviews } from "./reviews";
 

@@ -4,7 +4,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import { supabasePublishableKey, supabaseUrl } from "@/lib/supabase/env";
 
 /** Pages that make no sense signed out; visitors without a session go to /login. */
-const SIGNED_IN_ONLY = ["/courses", "/profile", "/search"];
+const SIGNED_IN_ONLY = ["/courses", "/profile", "/search", "/users"];
 
 // Refreshes the auth session cookie on every request so Server Components
 // always see a valid session, and sends signed-out visitors of SIGNED_IN_ONLY

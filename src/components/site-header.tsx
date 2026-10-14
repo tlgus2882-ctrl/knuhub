@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { logOut } from "@/app/(auth)/actions";
+import { SiteMenu } from "@/components/site-menu";
 import { Button } from "@/components/ui/button";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -48,6 +49,7 @@ async function AccountActions() {
           로그아웃
         </Button>
       </form>
+      <SiteMenu />
     </div>
   );
 }

@@ -10,7 +10,7 @@ export async function Reviews({ submissionId }: { submissionId: string }) {
   // can_edit / can_delete come from the same DB functions the RLS policies use.
   const { data: reviews } = await supabase
     .from("review")
-    .select("id, body, created_at, updated_at, can_edit, can_delete, profile(name)")
+    .select("id, body, created_at, updated_at, can_edit, can_delete, author_id, profile(name)")
     .eq("submission_id", submissionId)
     .order("created_at");
   const rows = reviews ?? [];
@@ -28,6 +28,7 @@ export async function Reviews({ submissionId }: { submissionId: string }) {
               review={{
                 id: r.id,
                 body: r.body,
+                authorId: r.author_id,
                 authorName: r.profile?.name ?? "알 수 없음",
                 writtenAt: formatKst(r.created_at),
                 edited: Date.parse(r.updated_at) > Date.parse(r.created_at),

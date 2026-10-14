@@ -8,7 +8,7 @@ import { SearchBox } from "./search/search-box";
 
 export default function Home({ searchParams }: PageProps<"/">) {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-16">
+    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 pt-6 pb-16">
       <Suspense>
         {searchParams.then(({ withdrawn }) =>
           withdrawn === "1" ? (
@@ -52,15 +52,13 @@ async function SignedInHome() {
 
   return (
     <>
-      <div className="flex items-center gap-3">
-        <p className="text-base">
-          {profile?.name}
-          {profile?.student_number && ` (${profile.student_number})`}님, 안녕하세요.
-        </p>
-        <Button size="lg" className="px-6" nativeButton={false} render={<Link href="/courses" />}>
-          과목 둘러보기
-        </Button>
-      </div>
+      <p className="text-base">
+        {profile?.name}
+        {profile?.student_number && ` (${profile.student_number})`}님, 안녕하세요.
+      </p>
+      <Button size="lg" className="w-full" nativeButton={false} render={<Link href="/courses" />}>
+        과목 둘러보기
+      </Button>
       <SearchBox />
       {profile?.role === "professor" && <ProfessorCourses supabase={supabase} userId={user.id} />}
       {profile?.role === "student" && <StudentCourses supabase={supabase} userId={user.id} />}

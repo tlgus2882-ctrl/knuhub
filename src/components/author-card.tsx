@@ -1,10 +1,17 @@
+import { UserLink } from "@/components/user-link";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-type Props = { authorId: string; name: string; studentNumber: string | null };
+type Props = {
+  authorId: string;
+  name: string;
+  studentNumber: string | null;
+  /** False on the author's own profile page, where the name would link to itself. */
+  linkName?: boolean;
+};
 
 // 작성자 카드 (GLOSSARY.md): name and 학번 are always shown; contact methods only as far as
 // the author's 연락처 공개 범위 allows, which author_contacts() decides (docs/adr/0002).
-export async function AuthorCard({ authorId, name, studentNumber }: Props) {
+export async function AuthorCard({ authorId, name, studentNumber, linkName = true }: Props) {
   const supabase = await createServerSupabase();
   const { data } = await supabase.rpc("author_contacts", { target: authorId });
   const visibleContacts = data?.[0];
@@ -16,7 +23,7 @@ export async function AuthorCard({ authorId, name, studentNumber }: Props) {
           {name.slice(0, 1)}
         </div>
         <div className="flex flex-col">
-          <span className="font-medium">{name}</span>
+          {linkName ? <UserLink userId={authorId} name={name} /> : <span className="font-medium">{name}</span>}
           <span className="text-sm text-muted-foreground">{studentNumber ?? "학번 없음"}</span>
         </div>
       </div>

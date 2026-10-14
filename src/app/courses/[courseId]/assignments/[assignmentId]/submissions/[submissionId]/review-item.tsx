@@ -2,13 +2,14 @@
 
 import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { UserLink } from "@/components/user-link";
 import { deleteReview, type ReviewFormState } from "./review-actions";
 import { ReviewForm } from "./review-form";
 
 const initial: ReviewFormState = { error: null };
 
 type Props = {
-  review: { id: string; body: string; authorName: string; writtenAt: string; edited: boolean };
+  review: { id: string; body: string; authorId: string; authorName: string; writtenAt: string; edited: boolean };
   canEdit: boolean;
   canDelete: boolean;
 };
@@ -20,7 +21,7 @@ export function ReviewItem({ review, canEdit, canDelete }: Props) {
   return (
     <li className="flex flex-col gap-2 p-4">
       <p className="text-sm">
-        <span className="font-medium">{review.authorName}</span>{" "}
+        <UserLink userId={review.authorId} name={review.authorName} />{" "}
         <span className="text-muted-foreground">
           · {review.writtenAt}
           {review.edited && " (고침)"}

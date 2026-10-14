@@ -1,6 +1,7 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
 import Link from "next/link";
+import { UserLink } from "@/components/user-link";
 import { SubmissionFileList } from "./submission-files";
 import { submissionFileHrefs, submissionHref } from "./submissions/submission-href";
 
@@ -17,7 +18,7 @@ export async function SubmissionList({ courseId, assignmentId, viewerId }: Props
   const supabase = await createServerSupabase();
   let query = supabase
     .from("submission")
-    .select("id, submitted_at, profile(name, student_number), submission_file(path, size, storage_path)")
+    .select("id, submitted_at, student_id, profile(name, student_number), submission_file(path, size, storage_path)")
     .eq("assignment_id", assignmentId);
   if (viewerId) query = query.neq("student_id", viewerId);
   const { data: submissions } = await query.order("submitted_at");
@@ -34,12 +35,13 @@ export async function SubmissionList({ courseId, assignmentId, viewerId }: Props
           {rows.map((submission) => (
             <li key={submission.id} className="flex flex-col gap-2 p-4">
               <p className="text-sm">
-                <Link href={submissionHref(courseId, assignmentId, submission.id)} className="font-medium text-primary underline">
-                  {submission.profile?.name}
-                </Link>{" "}
+                <UserLink userId={submission.student_id} name={submission.profile?.name ?? "알 수 없음"} />{" "}
                 <span className="text-muted-foreground">
                   {submission.profile?.student_number ?? "학번 없음"} · {formatKst(submission.submitted_at)}
-                </span>
+                </span>{" "}
+                <Link href={submissionHref(courseId, assignmentId, submission.id)} className="text-primary underline">
+                  제출물 보기
+                </Link>
               </p>
               <SubmissionFileList
                 files={submission.submission_file}

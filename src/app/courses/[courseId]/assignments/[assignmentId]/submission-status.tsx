@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { UserLink } from "@/components/user-link";
 import { formatKst } from "@/lib/time";
 import { submissionHref } from "./submissions/submission-href";
 
@@ -50,7 +51,9 @@ export async function SubmissionStatus({ courseId, assignmentId }: Props) {
             <tbody className="divide-y">
               {rows.map((row) => (
                 <tr key={row.student_id}>
-                  <td className="px-4 py-2">{row.name}</td>
+                  <td className="px-4 py-2">
+                    <UserLink userId={row.student_id} name={row.name} />
+                  </td>
                   <td className="px-4 py-2 text-muted-foreground">{row.student_number ?? "학번 없음"}</td>
                   <td className="px-4 py-2">
                     {row.submission_id ? (
