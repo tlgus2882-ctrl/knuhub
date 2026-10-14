@@ -10,7 +10,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto grid h-16 w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-6">
-        <Link href="/" aria-label="메인으로" className="ml-4 justify-self-start">
+        <Link href="/" aria-label="메인으로" className="justify-self-start">
           <Image src="/kangnam-logo.jpg" alt="강남대학교" width={173} height={48} className="h-10 w-auto" />
         </Link>
         <div className="flex flex-col items-center text-center">
