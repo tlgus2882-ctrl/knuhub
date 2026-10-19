@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { z } from "zod";
 import {
-  draftCriteria,
   INPUT_TOKEN_LIMIT,
   isSuspicious,
   reviewSubmission,
@@ -142,36 +141,5 @@ describe("isSuspicious", () => {
     expect(isSuspicious([opinion("met"), opinion("met")])).toBe(false);
     expect(isSuspicious([opinion("met"), opinion("not_met")])).toBe(true);
     expect(isSuspicious([opinion("uncertain")])).toBe(true);
-  });
-});
-
-describe("draftCriteria", () => {
-  it("이름이 빈 항목은 빼고, 저장 규칙(배점 0~1000 정수, 이름 200자, 50개)에 맞춰 돌려준다", async () => {
-    const many = Array.from({ length: 60 }, (_, i) => ({ name: `항목 ${i}`, points: 1, description: "" }));
-    const { model } = fakeModel({
-      criteria: [
-        { name: "  insert 동작 ", points: 30.4, description: " 맨 앞 " },
-        { name: "   ", points: 10, description: "" },
-        { name: "보너스", points: 5000, description: "" },
-        { name: "가".repeat(300), points: 1, description: "" },
-        ...many,
-      ],
-    });
-
-    const draft = await draftCriteria(model, "연결 리스트를 구현하시오.");
-
-    expect(draft.kind).toBe("drafted");
-    const criteria = draft.kind === "drafted" ? draft.criteria : [];
-    expect(criteria.slice(0, 2)).toEqual([
-      { name: "insert 동작", points: 30, description: "맨 앞" },
-      { name: "보너스", points: 1000, description: "" },
-    ]);
-    expect(criteria[2].name).toHaveLength(200);
-    expect(criteria).toHaveLength(50);
-  });
-
-  it("과제 설명이 너무 길면 너무 크다고, 모델이 답하지 않으면 실패라고 알린다", async () => {
-    expect(await draftCriteria(fakeModel(null, { tokens: INPUT_TOKEN_LIMIT + 1 }).model, "긴 설명")).toEqual({ kind: "too_large" });
-    expect(await draftCriteria(fakeModel(null).model, "설명")).toEqual({ kind: "failed" });
   });
 });

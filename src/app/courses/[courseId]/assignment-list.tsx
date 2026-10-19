@@ -20,7 +20,7 @@ export async function AssignmentList({ courseId, canPost }: { courseId: string; 
         <h2 className="text-lg font-semibold">과제</h2>
         {canPost && (
           <Button size="sm" nativeButton={false} render={<Link href={`/courses/${courseId}/assignments/new`} />}>
-            과제 공지
+            과제 만들기
           </Button>
         )}
       </div>

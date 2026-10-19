@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { VISIBILITY_HINT, VISIBILITY_LABEL, type Visibility } from "../../visibility";
+import { saveGradingCriteria } from "./[assignmentId]/criteria-actions";
 import { createAssignment, updateAssignment } from "./actions";
 import { ASSIGNMENT_FILE_LIMIT_LABEL, attachFiles, oversizedFiles, oversizedMessage } from "./attach-files";
+import { CriteriaRows, toCriteria, toRows, trimRows } from "./criteria-rows";
 
 type Props = {
   courseId: string;
@@ -23,10 +25,12 @@ type Props = {
   };
 };
 
-// Saves the 과제 first (the 첨부파일 need its id), then attaches the picked files and opens it.
+// Saves the 과제 first (the 채점 항목 and 첨부파일 need its id), then saves the 채점 항목 and
+// attaches the picked files, and opens it. Editing leaves the 채점 항목 to the 과제 화면.
 export function AssignmentForm({ courseId, assignment }: Props) {
   const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
+  const [rows, setRows] = useState(() => toRows([]));
   const [error, setError] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -35,6 +39,11 @@ export function AssignmentForm({ courseId, assignment }: Props) {
     event.preventDefault();
     const tooLarge = oversizedFiles(files);
     if (tooLarge.length) return setError(oversizedMessage(tooLarge));
+    // Blank rows are left out; checked before saving so a bad row never leaves a 과제 without them.
+    const criteria = assignment ? [] : toCriteria(trimRows(rows).filter((r) => r.name || r.description));
+    if (criteria.some((c) => !c.name || !Number.isInteger(c.points) || c.points < 0 || c.points > 1000)) {
+      return setError("채점 항목마다 이름과 0~1000점 정수 배점을 적어 주세요.");
+    }
     const form = new FormData(event.currentTarget);
 
     startTransition(async () => {
@@ -42,6 +51,12 @@ export function AssignmentForm({ courseId, assignment }: Props) {
       const saved = await (assignment ? updateAssignment : createAssignment)(form);
       if (saved.error || !saved.assignmentId) return setError(saved.error);
 
+      const criteriaError = criteria.length ? (await saveGradingCriteria(saved.assignmentId, criteria)).error : null;
+      if (criteriaError) {
+        setSavedId(saved.assignmentId);
+        setError(`과제는 저장했지만 채점 항목을 저장하지 못했어요. 과제 화면에서 다시 정해 주세요. ${criteriaError}`);
+        return;
+      }
       const attachError = files.length ? await attachFiles(saved.assignmentId, files) : null;
       if (attachError) {
         setSavedId(saved.assignmentId);
@@ -69,13 +84,23 @@ export function AssignmentForm({ courseId, assignment }: Props) {
           name="description"
           rows={12}
           defaultValue={assignment?.description}
-          placeholder={"## 요구사항\n- ...\n\n## 채점 기준표\n| 항목 | 배점 |\n|---|---|\n| 기능 | 50 |"}
+          placeholder={"## 요구사항\n- ..."}
           className="rounded-lg border border-input bg-transparent px-3 py-2 font-mono text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
         <p className="text-xs text-muted-foreground">
-          마크다운으로 쓸 수 있어요. 채점 기준표도 여기에 적어 주세요.
+          마크다운으로 쓸 수 있어요.{assignment ? " 채점 항목은 과제 화면에서 고칠 수 있어요." : " 채점 기준표는 아래 채점 항목에 적어 주세요."}
         </p>
       </div>
+
+      {!assignment && (
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 text-sm font-medium">채점 기준표</legend>
+          <p className="text-xs text-muted-foreground">
+            채점 항목마다 이름, 배점, 설명을 적어요. 셀프 점검과 1차 검사가 이 항목으로 검토해요. 비워 두고 나중에 과제 화면에서 정해도 돼요.
+          </p>
+          <CriteriaRows rows={rows} onChange={setRows} />
+        </fieldset>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="due_at">마감일 (한국 시간)</Label>
@@ -150,7 +175,7 @@ export function AssignmentForm({ courseId, assignment }: Props) {
 
       {/* Once saved, submitting again would save a second 과제; the rest is attached from the 과제 화면. */}
       <Button type="submit" disabled={pending || savedId !== null}>
-        {pending ? "저장 중…" : assignment ? "고친 내용 저장" : "과제 공지하기"}
+        {pending ? "저장 중…" : assignment ? "고친 내용 저장" : "과제 만들기"}
       </Button>
     </form>
   );
