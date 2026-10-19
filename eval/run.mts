@@ -4,6 +4,7 @@
 //   npm run eval                       all cases, 3 runs each
 //   npm run eval -- --runs 1 --only calc-01,list-02
 //   npm run eval -- --labels           only check the 정답 라벨 (no model calls)
+//   npm run eval -- --page             write eval/label-page.html, a page for labelling in the browser
 //   npm run eval -- --template 박시현   write a blank label file for one annotator
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -23,7 +24,16 @@ const PRICES: Record<string, { input: number; output: number }> = {
   "claude-haiku-5-5": { input: 0.1, output: 0.5 },
 };
 
-type EvalCase = { id: string; note: string; injection: boolean; intended: Verdict[]; criteria: Criterion[]; files: ReviewFile[] };
+type EvalCase = {
+  id: string;
+  note: string;
+  injection: boolean;
+  intended: Verdict[];
+  title: string;
+  description: string;
+  criteria: Criterion[];
+  files: ReviewFile[];
+};
 type CaseResult = CaseRun & { note: string };
 
 const { values: args } = parseArgs({
@@ -33,6 +43,7 @@ const { values: args } = parseArgs({
     delay: { type: "string", default: "4000" },
     labels: { type: "boolean", default: false },
     template: { type: "string" },
+    page: { type: "boolean", default: false },
   },
 });
 
@@ -42,7 +53,14 @@ if (!Number.isInteger(runs) || runs < 1) throw new Error(`--runs must be a posit
 const cases = loadCases().filter((c) => !args.only || args.only.split(",").includes(c.id));
 const intended = Object.fromEntries(cases.map((c) => [c.id, c.intended]));
 
-if (args.template) {
+if (args.page) {
+  // The page shows the code and the 채점 항목 only: no 출제 의도 or notes, so annotators judge on their own.
+  const data = cases.map(({ id, title, description, criteria, files }) => ({ id, title, description, criteria, files }));
+  const template = readFileSync(path.join(ROOT, "label-page.template.html"), "utf8");
+  const file = path.join(ROOT, "label-page.html");
+  writeFileSync(file, template.replace("__CASES__", () => JSON.stringify(data).replace(/</g, "\\u003c")));
+  console.log(`Wrote ${file}. Open it in a browser, label every case, then put the downloaded JSON in eval/labels/.`);
+} else if (args.template) {
   const file = path.join(ROOT, "labels", `${args.template}.json`);
   if (existsSync(file)) throw new Error(`${file} already exists`);
   writeFileSync(file, JSON.stringify(Object.fromEntries(cases.map((c) => [c.id, []])), null, 2) + "\n");
@@ -108,6 +126,8 @@ function loadCases(): EvalCase[] {
       note: meta.note,
       injection: meta.injection,
       intended: meta.intended,
+      title: assignment.title,
+      description: assignment.description,
       criteria: assignment.criteria,
       files: files.map((p) => ({ path: p, text: readFileSync(path.join(dir, id, p), "utf8") })),
     };
