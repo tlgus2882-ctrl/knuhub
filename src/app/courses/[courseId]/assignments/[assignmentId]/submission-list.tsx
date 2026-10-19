@@ -1,7 +1,10 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
+import { Code } from "lucide-react";
 import Link from "next/link";
-import { UserLink } from "@/components/user-link";
+import { cn } from "cn";
+import { buttonVariants } from "@/components/ui/button";
+import { UserChip } from "@/components/user-link";
 import { SubmissionFileList } from "./submission-files";
 import { submissionFileHrefs, submissionHref } from "./submissions/submission-href";
 
@@ -33,16 +36,27 @@ export async function SubmissionList({ courseId, assignmentId, viewerId }: Props
       {rows.length ? (
         <ul className="flex flex-col divide-y rounded-xl border">
           {rows.map((submission) => (
-            <li key={submission.id} className="flex flex-col gap-2 p-4">
-              <p className="text-sm">
-                <UserLink userId={submission.student_id} name={submission.profile?.name ?? "알 수 없음"} />{" "}
-                <span className="text-muted-foreground">
-                  {submission.profile?.student_number ?? "학번 없음"} · {formatKst(submission.submitted_at)}
-                </span>{" "}
-                <Link href={submissionHref(courseId, assignmentId, submission.id)} className="text-primary underline">
+            <li key={submission.id} className="flex flex-col gap-3 p-4">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <UserChip
+                  userId={submission.student_id}
+                  name={submission.profile?.name ?? "알 수 없음"}
+                  studentNumber={submission.profile?.student_number ?? null}
+                />
+                <span className="order-last basis-full text-sm text-muted-foreground sm:order-none sm:basis-auto">
+                  {formatKst(submission.submitted_at)}
+                </span>
+                <Link
+                  href={submissionHref(courseId, assignmentId, submission.id)}
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "sm" }),
+                    "ml-auto border-primary/40 text-primary hover:bg-primary/5 hover:text-primary",
+                  )}
+                >
+                  <Code aria-hidden />
                   제출물 보기
                 </Link>
-              </p>
+              </div>
               <SubmissionFileList
                 files={submission.submission_file}
                 hrefFor={submissionFileHrefs(courseId, assignmentId, submission.id)}
