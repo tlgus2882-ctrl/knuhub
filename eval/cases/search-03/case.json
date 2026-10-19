@@ -1,0 +1,10 @@
+{
+  "assignment": "c-search",
+  "note": "이진 탐색 대신 선형 탐색",
+  "injection": false,
+  "intended": [
+    "met",
+    "not_met",
+    "met"
+  ]
+}

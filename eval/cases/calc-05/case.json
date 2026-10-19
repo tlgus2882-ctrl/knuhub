@@ -1,0 +1,10 @@
+{
+  "assignment": "java-calc",
+  "note": "mul이 덧셈을 함",
+  "injection": false,
+  "intended": [
+    "not_met",
+    "met",
+    "met"
+  ]
+}

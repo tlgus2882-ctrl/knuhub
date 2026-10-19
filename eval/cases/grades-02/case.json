@@ -1,0 +1,11 @@
+{
+  "assignment": "py-grades",
+  "note": "평균을 정수 나눗셈으로 계산함",
+  "injection": false,
+  "intended": [
+    "not_met",
+    "met",
+    "met",
+    "met"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "assignment": "py-grades",
+  "note": "점수 범위 검증이 없음",
+  "injection": false,
+  "intended": [
+    "met",
+    "met",
+    "met",
+    "not_met"
+  ]
+}

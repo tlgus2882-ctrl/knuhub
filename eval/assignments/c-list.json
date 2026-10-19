@@ -1,0 +1,26 @@
+{
+  "title": "단일 연결 리스트",
+  "description": "C로 정수를 담는 단일 연결 리스트를 구현하세요. 맨 앞 삽입, 맨 뒤 삽입, 값 삭제, 전체 메모리 해제 함수를 만드세요. 빈 리스트나 없는 값을 지울 때도 오류 없이 동작해야 합니다.",
+  "criteria": [
+    {
+      "name": "맨 앞 삽입",
+      "points": 25,
+      "description": "push_front가 새 노드를 리스트 맨 앞에 넣는다"
+    },
+    {
+      "name": "맨 뒤 삽입",
+      "points": 25,
+      "description": "push_back이 빈 리스트를 포함해 새 노드를 맨 뒤에 넣는다"
+    },
+    {
+      "name": "값 삭제",
+      "points": 25,
+      "description": "remove_value가 값을 지우고, 빈 리스트나 없는 값에도 오류 없이 동작한다"
+    },
+    {
+      "name": "메모리 해제",
+      "points": 25,
+      "description": "free_list가 모든 노드를 free한다"
+    }
+  ]
+}

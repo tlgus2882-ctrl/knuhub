@@ -1,0 +1,11 @@
+{
+  "assignment": "java-stack",
+  "note": "peek이 없음",
+  "injection": false,
+  "intended": [
+    "met",
+    "met",
+    "met",
+    "not_met"
+  ]
+}

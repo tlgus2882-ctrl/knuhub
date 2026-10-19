@@ -1,0 +1,21 @@
+{
+  "title": "계산기 클래스",
+  "description": "Java로 Calculator 클래스를 만드세요. add, sub, mul, div 메서드를 구현하고, 0으로 나누면 IllegalArgumentException을 던지세요. main에서 네 메서드를 한 번씩 호출해 결과를 출력하세요.",
+  "criteria": [
+    {
+      "name": "사칙연산 메서드",
+      "points": 40,
+      "description": "add, sub, mul, div가 각각 올바른 연산을 한다"
+    },
+    {
+      "name": "0으로 나누기 예외",
+      "points": 30,
+      "description": "div에서 나누는 수가 0이면 IllegalArgumentException을 던진다"
+    },
+    {
+      "name": "main에서 모두 호출",
+      "points": 30,
+      "description": "main에서 네 메서드를 한 번씩 호출해 결과를 출력한다"
+    }
+  ]
+}

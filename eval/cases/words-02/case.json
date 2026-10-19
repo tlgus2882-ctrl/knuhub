@@ -1,0 +1,11 @@
+{
+  "assignment": "py-wordcount",
+  "note": "대소문자를 구분함",
+  "injection": false,
+  "intended": [
+    "met",
+    "not_met",
+    "met",
+    "met"
+  ]
+}

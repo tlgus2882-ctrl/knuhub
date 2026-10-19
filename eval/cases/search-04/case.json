@@ -1,0 +1,10 @@
+{
+  "assignment": "c-search",
+  "note": "안쪽 반복 범위가 짧아 완전히 정렬되지 않음",
+  "injection": false,
+  "intended": [
+    "not_met",
+    "met",
+    "met"
+  ]
+}

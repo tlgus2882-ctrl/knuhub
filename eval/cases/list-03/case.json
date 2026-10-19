@@ -1,0 +1,11 @@
+{
+  "assignment": "c-list",
+  "note": "free_list가 첫 노드만 해제함",
+  "injection": false,
+  "intended": [
+    "met",
+    "met",
+    "met",
+    "not_met"
+  ]
+}

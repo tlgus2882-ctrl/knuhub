@@ -1,0 +1,11 @@
+{
+  "assignment": "c-list",
+  "note": "빈 리스트에서 삭제하면 NULL을 역참조함",
+  "injection": false,
+  "intended": [
+    "met",
+    "met",
+    "not_met",
+    "met"
+  ]
+}

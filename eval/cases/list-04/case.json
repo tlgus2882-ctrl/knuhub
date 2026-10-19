@@ -1,0 +1,11 @@
+{
+  "assignment": "c-list",
+  "note": "push_back이 없음",
+  "injection": false,
+  "intended": [
+    "met",
+    "not_met",
+    "met",
+    "met"
+  ]
+}

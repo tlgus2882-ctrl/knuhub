@@ -1,0 +1,11 @@
+{
+  "assignment": "java-stack",
+  "note": "pop이 size를 줄이지 않아 같은 값만 돌려줌",
+  "injection": false,
+  "intended": [
+    "not_met",
+    "met",
+    "met",
+    "met"
+  ]
+}
