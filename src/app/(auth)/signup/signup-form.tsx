@@ -35,7 +35,7 @@ export function SignupForm() {
       <div className="flex items-start gap-2">
         <Checkbox id="privacy_consent" name="privacy_consent" />
         <Label htmlFor="privacy_consent" className="text-sm font-normal leading-snug">
-          학번, 이름, 전화번호, 연락처 수집과 이용에 동의합니다. 탈퇴하면 모두 삭제됩니다.
+          학번, 이름, 전화번호, 연락처 수집과 이용에 동의합니다. 학교 메일은 기본으로 다른 사용자에게 공개되며, 프로필에서 바꿀 수 있습니다. 탈퇴하면 모두 삭제됩니다.
         </Label>
       </div>
 
