@@ -55,7 +55,7 @@ export async function draftCriteria(model: ReviewModel, description: string): Pr
     ].join("\n"),
     user: `<assignment>\n${unclose(description, "assignment")}\n</assignment>`,
   };
-  const answer = await ask(model, prompt, DraftSchema);
+  const answer = await ask(model, prompt, DraftSchema, DraftSchema);
   if (answer === "too_large") return { kind: "too_large" };
   if (!answer) return { kind: "failed" };
 
@@ -78,9 +78,10 @@ const OpinionSchema = z.object({
   comment: z.string(),
 });
 
-// The model is held to this schema; each opinion is checked again here so one malformed
-// opinion only makes its own 채점 항목 판단 불가.
-const ReviewSchema = z.object({ opinions: z.array(z.unknown()) });
+// The model is held to ReviewSchema, but the answer is checked against the looser
+// ReviewAnswer and each opinion on its own, so one malformed opinion only makes its own 채점 항목 판단 불가.
+const ReviewSchema = z.object({ opinions: z.array(OpinionSchema) });
+const ReviewAnswer = z.object({ opinions: z.array(z.unknown()) });
 
 type ReviewOptions = {
   /** Text masked out of paths and code before sending, such as the author's name and 학번. */
@@ -112,7 +113,7 @@ export async function reviewSubmission(
       ),
     ].join("\n"),
   };
-  const answer = await ask(model, prompt, ReviewSchema);
+  const answer = await ask(model, prompt, ReviewSchema, ReviewAnswer);
   if (answer === "too_large") return { kind: "too_large" };
   if (!answer) return { kind: "failed" };
 
@@ -148,10 +149,11 @@ export function isSuspicious(opinions: Opinion[]): boolean {
   return opinions.some((o) => o.verdict !== "met");
 }
 
-async function ask<S extends z.ZodType>(model: ReviewModel, prompt: Prompt, schema: S) {
+/** Asks for an answer in `schema` and accepts any answer that fits `check`. */
+async function ask<C extends z.ZodType>(model: ReviewModel, prompt: Prompt, schema: z.ZodType, check: C) {
   try {
     if ((await model.countTokens(prompt)) > INPUT_TOKEN_LIMIT) return "too_large" as const;
-    const parsed = schema.safeParse(await model.generate(prompt, schema));
+    const parsed = check.safeParse(await model.generate(prompt, schema));
     return parsed.success ? parsed.data : null;
   } catch (error) {
     console.error("AI review call failed", error);

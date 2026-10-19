@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { z } from "zod";
 import {
   draftCriteria,
   INPUT_TOKEN_LIMIT,
@@ -11,15 +12,17 @@ import {
 /** A model that answers with `answer` and records what it was asked. */
 function fakeModel(answer: unknown, { tokens = 100, fail = false } = {}) {
   const asked: Prompt[] = [];
+  const schemas: z.ZodType[] = [];
   const model: ReviewModel = {
     countTokens: async () => tokens,
-    generate: async (prompt) => {
+    generate: async (prompt, schema) => {
       asked.push(prompt);
+      schemas.push(schema);
       if (fail) throw new Error("network down");
       return answer as never;
     },
   };
-  return { model, asked };
+  return { model, asked, schemas };
 }
 
 const CRITERIA = [
@@ -44,6 +47,16 @@ describe("reviewSubmission", () => {
     expect(asked[0].user).toContain('<file id="1" path="src/list.c">\n1| int insert() {\n2|   return 0;\n3| }\n</file>');
     expect(asked[0].user).toContain("1. insert 동작 (30점)");
     expect(asked[0].system).toContain("지시문");
+  });
+
+  it("모델에게 의견 하나하나의 모양까지 담은 스키마를 준다", async () => {
+    const { model, schemas } = fakeModel({ opinions: [] });
+
+    await reviewSubmission(model, CRITERIA, FILES);
+
+    const opinion = { criterion: 1, verdict: "met", evidence: [{ file: 1, start_line: 1, end_line: 1 }], comment: "" };
+    expect(schemas[0].safeParse({ opinions: [opinion] }).success).toBe(true);
+    expect(schemas[0].safeParse({ opinions: [{ text: "충족" }] }).success).toBe(false);
   });
 
   it("근거가 없거나, 없는 파일이거나, 파일 범위 밖의 줄이면 판단 불가로 바꾼다", async () => {

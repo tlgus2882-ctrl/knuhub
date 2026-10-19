@@ -2,6 +2,7 @@
 
 import { refresh } from "next/cache";
 import { claudeReviewModel } from "@/lib/ai-review/claude";
+import { geminiReviewModel } from "@/lib/ai-review/gemini";
 import { draftCriteria, type Criterion } from "@/lib/ai-review/review";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -52,7 +53,7 @@ export async function draftGradingCriteria(assignmentId: string): Promise<{ erro
   if (!assignment || !staff) return { error: DRAFT_ERRORS.notStaff };
   if (!assignment.description.trim()) return { error: DRAFT_ERRORS.noDescription };
 
-  const model = claudeReviewModel();
+  const model = geminiReviewModel() ?? claudeReviewModel();
   if (!model) return { error: DRAFT_ERRORS.notConfigured };
   const draft = await draftCriteria(model, assignment.description);
   if (draft.kind === "too_large") return { error: DRAFT_ERRORS.tooLarge };
