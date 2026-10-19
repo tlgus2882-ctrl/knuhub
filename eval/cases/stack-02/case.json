@@ -1,0 +1,11 @@
+{
+  "assignment": "java-stack",
+  "note": "가득 찼을 때 검사가 없음 (ArrayIndexOutOfBoundsException)",
+  "injection": false,
+  "intended": [
+    "met",
+    "not_met",
+    "met",
+    "met"
+  ]
+}

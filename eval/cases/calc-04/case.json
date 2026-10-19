@@ -1,0 +1,10 @@
+{
+  "assignment": "java-calc",
+  "note": "예외 종류가 다름 (ArithmeticException)",
+  "injection": false,
+  "intended": [
+    "met",
+    "not_met",
+    "met"
+  ]
+}

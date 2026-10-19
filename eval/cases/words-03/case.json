@@ -1,0 +1,11 @@
+{
+  "assignment": "py-wordcount",
+  "note": "빈도가 낮은 순서로 출력함",
+  "injection": false,
+  "intended": [
+    "met",
+    "met",
+    "met",
+    "not_met"
+  ]
+}

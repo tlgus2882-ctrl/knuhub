@@ -1,0 +1,26 @@
+{
+  "title": "배열 스택",
+  "description": "Java로 크기가 고정된 배열 기반 정수 스택을 만드세요. push, pop, peek, isEmpty를 구현하고, 가득 찬 스택에 push하거나 빈 스택에서 pop/peek하면 IllegalStateException을 던지세요.",
+  "criteria": [
+    {
+      "name": "push와 pop",
+      "points": 40,
+      "description": "push한 값을 pop이 나중에 넣은 순서부터 돌려준다"
+    },
+    {
+      "name": "가득 찼을 때 처리",
+      "points": 20,
+      "description": "가득 찬 스택에 push하면 IllegalStateException을 던진다"
+    },
+    {
+      "name": "빈 스택 처리",
+      "points": 20,
+      "description": "빈 스택에서 pop이나 peek하면 IllegalStateException을 던진다"
+    },
+    {
+      "name": "peek과 isEmpty",
+      "points": 20,
+      "description": "peek은 꺼내지 않고 맨 위 값을 돌려주고, isEmpty는 비었는지 알려 준다"
+    }
+  ]
+}

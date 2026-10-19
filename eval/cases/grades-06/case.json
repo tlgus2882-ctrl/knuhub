@@ -1,0 +1,11 @@
+{
+  "assignment": "py-grades",
+  "note": "최고점과 최저점을 바꿔서 돌려줌",
+  "injection": false,
+  "intended": [
+    "met",
+    "not_met",
+    "met",
+    "met"
+  ]
+}

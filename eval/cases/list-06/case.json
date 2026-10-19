@@ -1,0 +1,11 @@
+{
+  "assignment": "c-list",
+  "note": "빈 리스트에 push_back하면 노드를 잃어버림",
+  "injection": false,
+  "intended": [
+    "met",
+    "not_met",
+    "met",
+    "met"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "title": "성적 통계",
+  "description": "Python으로 점수 리스트를 받아 평균, 최고점, 최저점을 돌려주는 함수를 만드세요. 빈 리스트면 None을 돌려주고, 0~100을 벗어난 점수가 있으면 ValueError를 던지세요.",
+  "criteria": [
+    {
+      "name": "평균 계산",
+      "points": 30,
+      "description": "평균을 실수로 정확히 계산한다"
+    },
+    {
+      "name": "최고·최저 점수",
+      "points": 30,
+      "description": "최고점과 최저점을 올바르게 돌려준다"
+    },
+    {
+      "name": "빈 리스트 처리",
+      "points": 20,
+      "description": "빈 리스트면 예외 없이 None을 돌려준다"
+    },
+    {
+      "name": "입력 검증",
+      "points": 20,
+      "description": "0~100을 벗어난 점수가 있으면 ValueError를 던진다"
+    }
+  ]
+}

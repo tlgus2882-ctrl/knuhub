@@ -1,0 +1,10 @@
+{
+  "assignment": "c-search",
+  "note": "low = mid로 갱신해 끝나지 않을 수 있음",
+  "injection": false,
+  "intended": [
+    "met",
+    "not_met",
+    "met"
+  ]
+}

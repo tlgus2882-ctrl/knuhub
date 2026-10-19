@@ -1,0 +1,11 @@
+{
+  "assignment": "java-stack",
+  "note": "빈 스택 pop이 예외 대신 -1을 돌려줌",
+  "injection": false,
+  "intended": [
+    "met",
+    "met",
+    "not_met",
+    "met"
+  ]
+}

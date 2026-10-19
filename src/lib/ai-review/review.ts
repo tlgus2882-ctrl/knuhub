@@ -18,6 +18,9 @@ export type ReviewResult = { kind: "too_large" } | { kind: "failed" } | { kind: 
 
 export type Prompt = { system: string; user: string };
 
+/** Tokens one model call used, for cost estimates (정확도 평가). */
+export type TokenUsage = { input: number; output: number };
+
 export type ReviewModel = {
   /** Input tokens the prompt would take. */
   countTokens(prompt: Prompt): Promise<number>;

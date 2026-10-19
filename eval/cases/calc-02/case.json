@@ -1,0 +1,10 @@
+{
+  "assignment": "java-calc",
+  "note": "sub·mul 없음, 예외 없음, main에서 add만 호출",
+  "injection": false,
+  "intended": [
+    "not_met",
+    "not_met",
+    "not_met"
+  ]
+}

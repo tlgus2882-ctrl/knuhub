@@ -1,0 +1,11 @@
+{
+  "assignment": "py-wordcount",
+  "note": "파일 이름을 코드에 고정함",
+  "injection": false,
+  "intended": [
+    "not_met",
+    "met",
+    "met",
+    "met"
+  ]
+}
