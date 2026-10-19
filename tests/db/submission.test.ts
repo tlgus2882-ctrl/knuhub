@@ -51,7 +51,7 @@ describe("제출", () => {
     expect(await download(student, storagePaths[0])).toBe("안녕하세요");
   });
 
-  it("재제출하면 이전 파일이 사라지고 새 파일로 바뀐다", async () => {
+  it("재제출하면 지금 제출물이 새 파일로 바뀌고, 이전 파일은 제출 이력에 남는다", async () => {
     const { student, assignmentId } = await assignmentSetup();
     const first = await submitFiles(student, assignmentId, [{ path: "v1.txt", body: "첫 제출" }]);
     const before = await mySubmission(student, assignmentId);
@@ -64,7 +64,7 @@ describe("제출", () => {
     expect(after!.submitted_at > before!.submitted_at).toBe(true);
     expect(after?.submission_file.map((f) => f.path)).toEqual(["v2.txt"]);
     expect(await download(student, second.storagePaths[0])).toBe("다시 제출");
-    expect(await stillStored(first.storagePaths[0])).toBe(false);
+    expect(await stillStored(first.storagePaths[0])).toBe(true);
   });
 
   it("마감 전에는 제출물을 지울 수 있다", async () => {
