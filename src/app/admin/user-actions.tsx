@@ -3,9 +3,10 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { Database } from "@/lib/supabase/database.types";
 import { promoteToProfessor, setStudentNumber } from "./admin-actions";
 
-type Props = { userId: string; name: string; role: string; studentNumber: string | null };
+type Props = { userId: string; name: string; role: Database["public"]["Enums"]["role"]; studentNumber: string | null };
 
 // One user's admin actions: promote a 학생 to 교수, correct or clear the 학번.
 export function UserActions({ userId, name, role, studentNumber }: Props) {
@@ -47,7 +48,7 @@ export function UserActions({ userId, name, role, studentNumber }: Props) {
             size="sm"
             disabled={pending}
             onClick={() => {
-              if (window.confirm(`${name}님을 교수로 승격할까요? 과목을 열 수 있게 돼요.`)) {
+              if (window.confirm(`${name}님을 교수로 승격할까요? 과목을 열 수 있게 되고, 교수에게는 학번이 없어서 학번은 비워져요.`)) {
                 run(() => promoteToProfessor(userId), "교수로 승격했어요.");
               }
             }}

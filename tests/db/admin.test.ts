@@ -27,10 +27,18 @@ describe("관리자 페이지", () => {
     }
   });
 
-  it("관리자가 아니면 사용자 목록·승격·학번 정정을 못 한다", async () => {
-    const [student, professor, target] = await Promise.all([createTestUser(), createTestUser({ role: "professor" }), createTestUser()]);
+  it("관리자가 아니면(학생·조교·교수) 사용자 목록·승격·학번 정정을 못 한다", async () => {
+    const [student, assistant, professor, target] = await Promise.all([
+      createTestUser(),
+      createTestUser(),
+      createTestUser({ role: "professor" }),
+      createTestUser(),
+    ]);
+    const course = await openTestCourse(professor);
+    await enrollInTestCourse(assistant, professor, course.id);
+    await professor.client.from("course_assistant").insert({ course_id: course.id, user_id: assistant.id });
 
-    for (const user of [student, professor]) {
+    for (const user of [student, assistant, professor]) {
       expect((await list(user, "")).error?.code).toBe("KH011");
       expect((await promote(user, target.id)).error?.code).toBe("KH011");
       expect((await setNumber(user, target.id, randomStudentNumber())).error?.code).toBe("KH011");
@@ -38,12 +46,12 @@ describe("관리자 페이지", () => {
     expect(await profileOf(target.id)).toEqual({ role: "student", student_number: target.studentNumber });
   });
 
-  it("관리자가 학생을 교수로 승격하면 그 사용자가 과목을 열 수 있다", async () => {
+  it("관리자가 학생을 교수로 승격하면 학번이 비워지고 그 사용자가 과목을 열 수 있다", async () => {
     const [admin, student] = await Promise.all([createTestUser({ role: "admin" }), createTestUser()]);
 
     expect((await promote(admin, student.id)).error).toBeNull();
 
-    expect((await profileOf(student.id))?.role).toBe("professor");
+    expect(await profileOf(student.id)).toEqual({ role: "professor", student_number: null });
     const { error } = await student.client.from("course").insert({ name: "새 과목", semester: "2026-2", section: "01" });
     expect(error).toBeNull();
   });
@@ -56,6 +64,14 @@ describe("관리자 페이지", () => {
     ]);
 
     for (const target of [professor, otherAdmin]) expect((await promote(admin, target.id)).error?.code).toBe("KH013");
+  });
+
+  it("없는 사용자를 승격하거나 학번을 정정하면 알려 준다", async () => {
+    const admin = await createTestUser({ role: "admin" });
+    const nobody = "00000000-0000-0000-0000-000000000000";
+
+    expect((await promote(admin, nobody)).error?.code).toBe("KH014");
+    expect((await setNumber(admin, nobody, randomStudentNumber())).error?.code).toBe("KH014");
   });
 
   it("관리자가 학번을 정정하고, 다른 사용자가 차지한 학번은 먼저 비운 뒤에만 넣을 수 있다", async () => {
@@ -105,6 +121,6 @@ describe("관리자 페이지", () => {
         ],
       },
     ]);
-    for (const other of [student, outsider]) expect((await archivedSeenBy(other)).data ?? []).toEqual([]);
+    for (const other of [student, assistant, outsider]) expect((await archivedSeenBy(other)).data ?? []).toEqual([]);
   });
 });

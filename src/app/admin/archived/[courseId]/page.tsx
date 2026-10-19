@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { formatKst } from "@/lib/time";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -28,7 +29,8 @@ async function ArchivedCourse({ courseId }: { courseId: string }) {
     )
     .eq("id", courseId)
     .maybeSingle();
-  if (!course) return <p className="text-sm text-muted-foreground">볼 수 없거나 없는 보관된 과목이에요.</p>;
+  // RLS shows the archive to 관리자 only, so everyone else gets the same 404 as a missing course.
+  if (!course) notFound();
 
   const assignments = course.archived_assignment.toSorted((a, b) => a.due_at.localeCompare(b.due_at));
 

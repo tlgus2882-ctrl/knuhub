@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +27,8 @@ export default function AdminPage({ searchParams }: PageProps<"/admin">) {
 async function AdminView({ query }: { query: string }) {
   const supabase = await createServerSupabase();
   const { data: isAdmin } = await supabase.rpc("is_admin");
-  if (!isAdmin) return <p className="text-sm text-muted-foreground">관리자만 볼 수 있는 페이지예요.</p>;
+  // Others get the plain 404, as if there were no such page.
+  if (!isAdmin) notFound();
 
   const [{ data: users }, { data: archived }] = await Promise.all([
     supabase.rpc("admin_list_users", { query }),

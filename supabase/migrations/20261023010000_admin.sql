@@ -5,7 +5,7 @@
 -- 사용자 목록은 security definer 함수가 관리자에게만 돌려준다.
 --
 -- 오류 코드: KH011 관리자가 아님, KH012 학번이 형식에 맞지 않거나 다른 사용자가 쓰고 있음,
---           KH013 학생이 아니라서 교수로 승격할 수 없음
+--           KH013 학생이 아니라서 교수로 승격할 수 없음, KH014 없는 사용자
 
 create function public.assert_admin()
 returns void
@@ -21,8 +21,8 @@ begin
 end;
 $$;
 
-revoke execute on function public.assert_admin() from public, anon;
-grant execute on function public.assert_admin() to authenticated;
+-- 관리자 함수 안에서만 부른다 (security definer라 소유자 권한으로 돈다).
+revoke execute on function public.assert_admin() from public, anon, authenticated;
 
 -- 사용자 목록: 이름, 학번, 학교 메일 중 하나에 query가 들어간 사용자 (최근 가입 순, 200명까지)
 create function public.admin_list_users(query text)
@@ -50,18 +50,25 @@ revoke execute on function public.admin_list_users(text) from public, anon;
 grant execute on function public.admin_list_users(text) to authenticated;
 
 -- 학생을 교수로 승격한다. 교수·관리자는 그대로 둔다 (관리자 지정은 계속 대시보드에서만).
+-- 교수에게는 학번이 없으므로(GLOSSARY) 승격하면서 학번을 비운다.
 create function public.admin_promote_to_professor(target_user uuid)
 returns void
 language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  target_role public.role;
 begin
   perform public.assert_admin();
-  update public.profile set role = 'professor' where id = target_user and role = 'student';
-  if not found then
+  select role into target_role from public.profile where id = target_user for update;
+  if target_role is null then
+    raise exception '없는 사용자예요' using errcode = 'KH014';
+  elsif target_role <> 'student' then
     raise exception '학생만 교수로 승격할 수 있어요' using errcode = 'KH013';
   end if;
+  update public.profile set role = 'professor', student_number = null where id = target_user;
+  update public.profile_private set pending_student_number = null where id = target_user;
 end;
 $$;
 
@@ -88,7 +95,14 @@ begin
   end if;
 
   update public.profile set student_number = wanted where id = target_user;
+  if not found then
+    raise exception '없는 사용자예요' using errcode = 'KH014';
+  end if;
   update public.profile_private set pending_student_number = null where id = target_user;
+exception
+  -- 같은 학번을 동시에 넣으면 위의 확인을 둘 다 지나칠 수 있다.
+  when unique_violation then
+    raise exception '형식에 맞지 않거나 다른 사용자가 쓰고 있는 학번이에요' using errcode = 'KH012';
 end;
 $$;
 
