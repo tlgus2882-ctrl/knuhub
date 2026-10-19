@@ -26,11 +26,11 @@ export default function SubmissionPage({ params, searchParams }: PageProps<Route
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 py-16">
       <Suspense fallback={<p className="text-sm text-muted-foreground">불러오는 중…</p>}>
-        {Promise.all([params, searchParams]).then(([p, { file, version }]) => (
+        {Promise.all([params, searchParams]).then(([p, { file, history }]) => (
           <SubmissionView
             {...p}
             file={typeof file === "string" ? file : undefined}
-            version={typeof version === "string" ? version : undefined}
+            historyId={typeof history === "string" ? history : undefined}
           />
         ))}
       </Suspense>
@@ -43,8 +43,8 @@ async function SubmissionView({
   assignmentId,
   submissionId,
   file,
-  version,
-}: Params & { file?: string; version?: string }) {
+  historyId,
+}: Params & { file?: string; historyId?: string }) {
   const supabase = await createServerSupabase();
   // RLS returns the 제출물 only to those who may see it (docs/adr/0002).
   const { data: submission } = await supabase
@@ -74,7 +74,7 @@ async function SubmissionView({
 
   // 제출 이력, newest first. RLS shows it to whoever may see the 제출물 itself.
   const history = submission.submission_history.toSorted((a, b) => b.submitted_at.localeCompare(a.submitted_at));
-  const viewed = history.find((h) => h.id === version);
+  const viewed = history.find((h) => h.id === historyId);
   const files = viewed ? viewed.submission_history_file : submission.submission_file;
   const selected =
     files.find((f) => f.path === file) ?? files.find((f) => f.kind === "text") ?? files[0];

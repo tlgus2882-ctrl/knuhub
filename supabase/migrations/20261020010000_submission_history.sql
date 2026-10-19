@@ -130,20 +130,22 @@ begin
     raise exception '제출물은 20MB를 넘을 수 없어요' using errcode = 'KH005';
   end if;
 
-  select submitted_at into previous_at
+  -- 행을 먼저 만든 뒤 잠그고 읽어야, 동시에 들어온 첫 제출의 실제 제출 시각을 이력에 남긴다.
+  insert into public.submission (assignment_id, student_id)
+  values (target_assignment, me)
+  on conflict (assignment_id, student_id) do nothing;
+
+  select id, submitted_at into target_submission, previous_at
   from public.submission
   where assignment_id = target_assignment and student_id = me
   for update;
 
-  insert into public.submission (assignment_id, student_id)
-  values (target_assignment, me)
-  on conflict (assignment_id, student_id) do update set submitted_at = now()
-  returning id into target_submission;
+  update public.submission set submitted_at = now() where id = target_submission;
 
   -- 이전 파일 묶음을 제출 이력으로 옮긴다.
   if exists (select 1 from public.submission_file where submission_id = target_submission) then
     insert into public.submission_history (submission_id, submitted_at)
-    values (target_submission, coalesce(previous_at, now()))
+    values (target_submission, previous_at)
     returning id into new_history;
 
     insert into public.submission_history_file (history_id, path, size, storage_path, kind)
@@ -167,6 +169,7 @@ begin
     order by submitted_at desc, id desc
     offset history_keep
   ), gone as (
+    -- 결과는 읽지 않는다. 이 delete를 같은 문장에서 실행하려고 둔다.
     delete from public.submission_history h using doomed d where h.id = d.id
   )
   select coalesce(array_agg(distinct f.storage_path), '{}') into removed
@@ -231,6 +234,8 @@ create table public.archived_submission_history_file (
   storage_path text not null,
   kind text not null
 );
+
+create index archived_submission_history_file_storage_path_idx on public.archived_submission_history_file (storage_path);
 
 alter table public.archived_submission_history enable row level security;
 alter table public.archived_submission_history_file enable row level security;

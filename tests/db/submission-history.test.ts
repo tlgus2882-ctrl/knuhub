@@ -13,11 +13,11 @@ async function historySetup() {
   return { professor, student, classmate, assignmentId };
 }
 
-/** Submits one file per version and returns each version's storage path, oldest first. */
-async function submitVersions(student: TestUser, assignmentId: string, count: number) {
+/** Submits `count` times, one file each, and returns each submission's storage path, oldest first. */
+async function submitRepeatedly(student: TestUser, assignmentId: string, count: number) {
   const paths: string[] = [];
-  for (let v = 1; v <= count; v++) {
-    const { error, storagePaths } = await submitFiles(student, assignmentId, [{ path: `v${v}.txt`, body: `버전 ${v}` }]);
+  for (let n = 1; n <= count; n++) {
+    const { error, storagePaths } = await submitFiles(student, assignmentId, [{ path: `v${n}.txt`, body: `제출 ${n}` }]);
     if (error) throw error;
     paths.push(storagePaths[0]);
   }
@@ -43,21 +43,21 @@ async function stillStored(storagePath: string) {
 describe("제출 이력", () => {
   it("재제출하면 이전 파일 묶음이 그때의 제출 시각과 함께 제출 이력에 남는다", async () => {
     const { student, assignmentId } = await historySetup();
-    const [v1] = await submitVersions(student, assignmentId, 1);
+    const [v1] = await submitRepeatedly(student, assignmentId, 1);
     const { data: first } = await student.client.from("submission").select("submitted_at").eq("assignment_id", assignmentId).single();
 
-    await submitVersions(student, assignmentId, 1);
+    await submitRepeatedly(student, assignmentId, 1);
 
     expect(await historySeenBy(student, assignmentId)).toEqual([
       { submitted_at: first!.submitted_at, files: [{ path: "v1.txt", storage_path: v1 }] },
     ]);
-    expect(await download(student, v1)).toBe("버전 1");
+    expect(await download(student, v1)).toBe("제출 1");
   });
 
-  it("제출 이력은 최근 5개까지만 남고, 더 오래된 버전의 파일은 Storage에서 지워진다", async () => {
+  it("제출 이력은 최근 5개까지만 남고, 더 오래된 제출 이력의 파일은 Storage에서 지워진다", async () => {
     const { student, assignmentId } = await historySetup();
 
-    const paths = await submitVersions(student, assignmentId, 7);
+    const paths = await submitRepeatedly(student, assignmentId, 7);
 
     const history = await historySeenBy(student, assignmentId);
     expect(history.map((h) => h.files[0].path)).toEqual(["v2.txt", "v3.txt", "v4.txt", "v5.txt", "v6.txt"]);
@@ -67,21 +67,21 @@ describe("제출 이력", () => {
 
   it("지금 제출물을 볼 수 있는 사람만 제출 이력과 그 파일을 본다", async () => {
     const { professor, student, classmate, assignmentId } = await historySetup();
-    const [v1] = await submitVersions(student, assignmentId, 2);
+    const [v1] = await submitRepeatedly(student, assignmentId, 2);
 
     expect(await historySeenBy(classmate, assignmentId)).toEqual([]);
     expect(await download(classmate, v1)).toBeNull();
     expect(await historySeenBy(professor, assignmentId)).toHaveLength(1);
-    expect(await download(professor, v1)).toBe("버전 1");
+    expect(await download(professor, v1)).toBe("제출 1");
 
     await moveDeadline(professor, assignmentId, inDays(-1));
     expect(await historySeenBy(classmate, assignmentId)).toHaveLength(1);
-    expect(await download(classmate, v1)).toBe("버전 1");
+    expect(await download(classmate, v1)).toBe("제출 1");
   });
 
   it("제출물을 지우면 제출 이력과 그 파일도 함께 지워진다", async () => {
     const { student, assignmentId } = await historySetup();
-    const [v1, v2] = await submitVersions(student, assignmentId, 2);
+    const [v1, v2] = await submitRepeatedly(student, assignmentId, 2);
 
     const { data: removed, error } = await student.client.rpc("delete_submission", { target_assignment: assignmentId });
     expect(error).toBeNull();
@@ -95,7 +95,7 @@ describe("제출 이력", () => {
 
   it("학생은 제출 이력의 파일을 Storage에서 따로 지울 수 없다", async () => {
     const { student, assignmentId } = await historySetup();
-    const [v1] = await submitVersions(student, assignmentId, 2);
+    const [v1] = await submitRepeatedly(student, assignmentId, 2);
 
     await student.client.storage.from(SUBMISSION_BUCKET).remove([v1]);
 
@@ -104,7 +104,7 @@ describe("제출 이력", () => {
 
   it("방금 재제출한 학생도 탈퇴할 수 있고, 제출 이력의 파일까지 지워진다", async () => {
     const { student, assignmentId } = await historySetup();
-    const [v1, v2] = await submitVersions(student, assignmentId, 2);
+    const [v1, v2] = await submitRepeatedly(student, assignmentId, 2);
 
     const { error } = await withdrawUser({ userClient: student.client, adminClient: adminClient() });
 
@@ -115,7 +115,7 @@ describe("제출 이력", () => {
 
   it("교수가 탈퇴하면 제출 이력도 과목과 함께 보관된다", async () => {
     const { professor, student, assignmentId } = await historySetup();
-    const [v1] = await submitVersions(student, assignmentId, 2);
+    const [v1] = await submitRepeatedly(student, assignmentId, 2);
 
     const { error } = await withdrawUser({ userClient: professor.client, adminClient: adminClient() });
 
