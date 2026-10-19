@@ -10,16 +10,21 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import { reviewModel, reviewModelName } from "../src/lib/ai-review/model";
 import { reviewSubmission, type Criterion, type ReviewFile, type TokenUsage, type Verdict } from "../src/lib/ai-review/review";
-import { finalLabels, summarize, type CaseRun, type Summary } from "./metrics";
+import { finalLabels, summarize, type CaseRun, type FinalLabels, type LabelSource, type Summary } from "./metrics";
 
-const ROOT = path.dirname(new URL(import.meta.url).pathname);
+const ROOT = import.meta.dirname;
+const VERDICTS: readonly Verdict[] = ["met", "not_met", "uncertain"];
 
-/** USD per million tokens, for models whose price we know; others report tokens only. */
+/**
+ * USD per million tokens (Anthropic price list, 2026-10); other models report tokens only.
+ * shortcut: a hand-kept table, so check the price again before reporting a cost.
+ */
 const PRICES: Record<string, { input: number; output: number }> = {
   "claude-haiku-5-5": { input: 0.1, output: 0.5 },
 };
 
 type EvalCase = { id: string; note: string; injection: boolean; intended: Verdict[]; criteria: Criterion[]; files: ReviewFile[] };
+type CaseResult = CaseRun & { note: string };
 
 const { values: args } = parseArgs({
   options: {
@@ -30,6 +35,9 @@ const { values: args } = parseArgs({
     template: { type: "string" },
   },
 });
+
+const runs = Number(args.runs);
+if (!Number.isInteger(runs) || runs < 1) throw new Error(`--runs must be a positive integer, not ${args.runs}`);
 
 const cases = loadCases().filter((c) => !args.only || args.only.split(",").includes(c.id));
 const intended = Object.fromEntries(cases.map((c) => [c.id, c.intended]));
@@ -46,17 +54,17 @@ if (args.template) {
   if (!args.labels) await evaluate(labelled);
 }
 
-async function evaluate(labelled: ReturnType<typeof finalLabels>) {
+async function evaluate(labelled: FinalLabels) {
   let lastUsage: TokenUsage = { input: 0, output: 0 };
   const model = reviewModel((usage) => (lastUsage = usage));
   if (!model) throw new Error("No AI key: set GEMINI_API_KEY or ANTHROPIC_API_KEY in .env.local");
-  const runs = Number(args.runs);
+  // shortcut: a fixed pause for free-tier rate limits; lower --delay on a paid key.
   const delay = Number(args.delay);
   const modelName = reviewModelName();
 
-  const results: (CaseRun & { note: string })[] = [];
+  const results: CaseResult[] = [];
   for (const c of cases.filter((c) => labelled.labels[c.id])) {
-    const result: CaseRun & { note: string } = {
+    const result: CaseResult = {
       caseId: c.id,
       note: c.note,
       injection: c.injection,
@@ -66,7 +74,7 @@ async function evaluate(labelled: ReturnType<typeof finalLabels>) {
       ms: [],
     };
     for (let run = 0; run < runs; run++) {
-      if (results.length || run) await new Promise((resolve) => setTimeout(resolve, delay)); // free-tier rate limits
+      if (results.length || run) await new Promise((resolve) => setTimeout(resolve, delay));
       lastUsage = { input: 0, output: 0 };
       const started = performance.now();
       const review = await reviewSubmission(model, c.criteria, c.files);
@@ -82,9 +90,10 @@ async function evaluate(labelled: ReturnType<typeof finalLabels>) {
   const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
   const dir = path.join(ROOT, "reports");
   mkdirSync(dir, { recursive: true });
-  const base = path.join(dir, `${stamp}-${modelName}`);
-  writeFileSync(`${base}.json`, JSON.stringify({ model: modelName, runs, source: labelled.source, results, summary }, null, 2) + "\n");
-  writeFileSync(`${base}.md`, report(modelName, runs, labelled.source, results, summary));
+  const base = path.join(dir, `${stamp}-${modelName.replace(/[^\w.-]/g, "-")}`);
+  const left = labelled.disagreements.map((d) => d.caseId);
+  writeFileSync(`${base}.json`, JSON.stringify({ model: modelName, runs, source: labelled.source, left, results, summary }, null, 2) + "\n");
+  writeFileSync(`${base}.md`, report(modelName, labelled.source, left, results, summary));
   console.log(`\nWrote ${base}.md`);
 }
 
@@ -114,7 +123,14 @@ function listFiles(dir: string, prefix = ""): string[] {
 /** eval/labels/<annotator>.json, plus resolved.json for disagreements settled together. */
 function loadLabels() {
   const dir = path.join(ROOT, "labels");
-  const read = (name: string) => JSON.parse(readFileSync(path.join(dir, name), "utf8"));
+  const read = (name: string): Record<string, Verdict[]> => {
+    const labels = JSON.parse(readFileSync(path.join(dir, name), "utf8"));
+    for (const [caseId, verdicts] of Object.entries<string[]>(labels)) {
+      const typo = verdicts.find((v) => !VERDICTS.includes(v as Verdict));
+      if (typo) throw new Error(`${name} ${caseId}: "${typo}" is not one of ${VERDICTS.join(", ")}`);
+    }
+    return labels;
+  };
   const annotators = Object.fromEntries(
     readdirSync(dir)
       .filter((name) => name.endsWith(".json") && name !== "resolved.json")
@@ -123,8 +139,8 @@ function loadLabels() {
   return { annotators, resolved: existsSync(path.join(dir, "resolved.json")) ? read("resolved.json") : {} };
 }
 
-function printLabelStatus(labelled: ReturnType<typeof finalLabels>, annotators: string[]) {
-  const count = (source: string) => Object.values(labelled.source).filter((s) => s === source).length;
+function printLabelStatus(labelled: FinalLabels, annotators: string[]) {
+  const count = (source: LabelSource) => Object.values(labelled.source).filter((s) => s === source).length;
   console.log(`정답 라벨 — 라벨 단 사람: ${annotators.join(", ") || "없음"}`);
   console.log(`  두 명 일치 ${count("agreed")}, 논의로 정함 ${count("resolved")}, 출제 의도로 임시 ${count("intended")}, 논의 필요 ${labelled.disagreements.length}`);
   for (const d of labelled.disagreements) console.log(`  논의 필요 ${d.caseId}: ${JSON.stringify(d.byAnnotator)}`);
@@ -134,7 +150,7 @@ function percent({ part, whole }: { part: number; whole: number }) {
   return whole ? `${((part / whole) * 100).toFixed(1)}% (${part}/${whole})` : "해당 없음";
 }
 
-function report(model: string, runs: number, source: Record<string, string>, results: (CaseRun & { note: string })[], s: Summary) {
+function report(model: string, source: Record<string, LabelSource>, left: string[], results: CaseResult[], s: Summary) {
   const price = PRICES[model];
   const cost = price
     ? `$${((s.perCall.input * price.input + s.perCall.output * price.output) / 1e6).toFixed(5)}`
@@ -149,6 +165,8 @@ function report(model: string, runs: number, source: Record<string, string>, res
     intendedCount
       ? `- ⚠️ 정답 라벨이 아직 확정되지 않은 사례 ${intendedCount}건은 출제 의도를 임시 정답으로 썼어요. 2명이 따로 라벨을 단 뒤 다시 돌려 주세요.`
       : `- 정답 라벨: 2명이 따로 표시하고 다르면 논의해서 정함`,
+    ...(left.length ? [`- ⚠️ 두 사람의 라벨이 달라 아직 논의 중인 사례 ${left.length}건은 빠졌어요: ${left.join(", ")}`] : []),
+    `- 비율은 답을 받은 실행만으로 계산해요 (실패한 실행은 따로 셈). 반복 실행 일관성은 답을 두 번 이상 받은 항목만 봐요.`,
     ``,
     `| 지표 | 값 |`,
     `|---|---|`,

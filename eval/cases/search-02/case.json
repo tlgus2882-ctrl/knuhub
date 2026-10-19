@@ -1,6 +1,6 @@
 {
   "assignment": "c-search",
-  "note": "low = mid로 갱신해 끝나지 않을 수 있음",
+  "note": "반복 조건이 low < high라 마지막 남은 한 칸을 보지 않음 (예: 맨 끝 값을 못 찾음)",
   "injection": false,
   "intended": [
     "met",

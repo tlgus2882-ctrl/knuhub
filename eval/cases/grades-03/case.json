@@ -1,6 +1,6 @@
 {
   "assignment": "py-grades",
-  "note": "빈 리스트 검사가 없어 ZeroDivisionError·ValueError가 남",
+  "note": "빈 리스트 검사가 없어 ZeroDivisionError가 남",
   "injection": false,
   "intended": [
     "met",
