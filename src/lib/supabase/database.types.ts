@@ -137,6 +137,46 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"archived_submission_history": {
+                  Row: {
+                    "id": string,"submission_id": string,"submitted_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id": string,"submission_id": string,"submitted_at": string
+                  }
+                  Update: {
+                    "id"?: string,"submission_id"?: string,"submitted_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "archived_submission_history_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: false
+      referencedRelation: "archived_submission"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"archived_submission_history_file": {
+                  Row: {
+                    "history_id": string,"id": string,"kind": string,"path": string,"size": number,"storage_path": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "history_id": string,"id": string,"kind": string,"path": string,"size": number,"storage_path": string
+                  }
+                  Update: {
+                    "history_id"?: string,"id"?: string,"kind"?: string,"path"?: string,"size"?: number,"storage_path"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "archived_submission_history_file_history_id_fkey"
+      columns: ["history_id"]
+isOneToOne: false
+      referencedRelation: "archived_submission_history"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"assignment": {
                   Row: {
                     "course_id": string,"created_at": string,"created_by": string | null,"description": string,"due_at": string,"id": string,"published": boolean,"title": string,"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
@@ -392,6 +432,46 @@ isOneToOne: false
       columns: ["submission_id"]
 isOneToOne: false
       referencedRelation: "submission"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"submission_history": {
+                  Row: {
+                    "id": string,"submission_id": string,"submitted_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id"?: string,"submission_id": string,"submitted_at": string
+                  }
+                  Update: {
+                    "id"?: string,"submission_id"?: string,"submitted_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "submission_history_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: false
+      referencedRelation: "submission"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"submission_history_file": {
+                  Row: {
+                    "history_id": string,"id": string,"kind": Database["public"]['Enums']["file_kind"],"path": string,"size": number,"storage_path": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "history_id": string,"id"?: string,"kind": Database["public"]['Enums']["file_kind"],"path": string,"size": number,"storage_path": string
+                  }
+                  Update: {
+                    "history_id"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["file_kind"],"path"?: string,"size"?: number,"storage_path"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "submission_history_file_history_id_fkey"
+      columns: ["history_id"]
+isOneToOne: false
+      referencedRelation: "submission_history"
       referencedColumns: ["id"]
     }
                   ]

@@ -8,7 +8,7 @@ import { SUBMISSION_BUCKET } from "@/lib/submissions/storage";
 import type { Tables } from "@/lib/supabase/database.types";
 import { createServerSupabase, type ServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
-import { submissionFileHrefs } from "../submission-href";
+import { submissionFileHrefs, submissionHref } from "../submission-href";
 import { AuthorCard } from "@/components/author-card";
 import { FileTree } from "./file-tree";
 import { Reviews } from "./reviews";
@@ -26,21 +26,31 @@ export default function SubmissionPage({ params, searchParams }: PageProps<Route
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 py-16">
       <Suspense fallback={<p className="text-sm text-muted-foreground">불러오는 중…</p>}>
-        {Promise.all([params, searchParams]).then(([p, { file }]) => (
-          <SubmissionView {...p} file={typeof file === "string" ? file : undefined} />
+        {Promise.all([params, searchParams]).then(([p, { file, history }]) => (
+          <SubmissionView
+            {...p}
+            file={typeof file === "string" ? file : undefined}
+            historyId={typeof history === "string" ? history : undefined}
+          />
         ))}
       </Suspense>
     </main>
   );
 }
 
-async function SubmissionView({ courseId, assignmentId, submissionId, file }: Params & { file?: string }) {
+async function SubmissionView({
+  courseId,
+  assignmentId,
+  submissionId,
+  file,
+  historyId,
+}: Params & { file?: string; historyId?: string }) {
   const supabase = await createServerSupabase();
   // RLS returns the 제출물 only to those who may see it (docs/adr/0002).
   const { data: submission } = await supabase
     .from("submission")
     .select(
-      "submitted_at, student_id, profile(name, student_number), assignment!inner(title, course_id), submission_file(path, size, storage_path, kind)",
+      "submitted_at, student_id, profile(name, student_number), assignment!inner(title, course_id), submission_file(path, size, storage_path, kind), submission_history(id, submitted_at, submission_history_file(path, size, storage_path, kind))",
     )
     .eq("id", submissionId)
     .eq("assignment_id", assignmentId)
@@ -62,7 +72,10 @@ async function SubmissionView({ courseId, assignmentId, submissionId, file }: Pa
     );
   }
 
-  const files = submission.submission_file;
+  // 제출 이력, newest first. RLS shows it to whoever may see the 제출물 itself.
+  const history = submission.submission_history.toSorted((a, b) => b.submitted_at.localeCompare(a.submitted_at));
+  const viewed = history.find((h) => h.id === historyId);
+  const files = viewed ? viewed.submission_history_file : submission.submission_file;
   const selected =
     files.find((f) => f.path === file) ?? files.find((f) => f.kind === "text") ?? files[0];
 
@@ -76,8 +89,28 @@ async function SubmissionView({ courseId, assignmentId, submissionId, file }: Pa
           studentNumber={submission.profile?.student_number ?? null}
         />
         <p className="text-sm text-muted-foreground">
-          제출 {formatKst(submission.submitted_at)} · 파일 {files.length}개
+          제출 {formatKst(viewed?.submitted_at ?? submission.submitted_at)} · 파일 {files.length}개
         </p>
+        {history.length > 0 && (
+          <nav aria-label="제출 이력" className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-muted-foreground">제출 이력</span>
+            {[{ id: undefined, submitted_at: submission.submitted_at }, ...history].map((h) => (
+              <Link
+                key={h.id ?? "current"}
+                href={submissionHref(courseId, assignmentId, submissionId, undefined, h.id)}
+                aria-current={h.id === viewed?.id ? "page" : undefined}
+                className="rounded-full border px-3 py-1 hover:bg-muted aria-[current=page]:border-primary aria-[current=page]:text-primary"
+              >
+                {h.id ? formatKst(h.submitted_at) : "지금 제출물"}
+              </Link>
+            ))}
+          </nav>
+        )}
+        {viewed && (
+          <p className="rounded-lg bg-muted/60 px-3 py-2 text-sm">
+            이전 제출물을 보고 있어요. 리뷰는 지금 제출물에 남아요.
+          </p>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-[16rem_1fr]">
@@ -85,7 +118,7 @@ async function SubmissionView({ courseId, assignmentId, submissionId, file }: Pa
           <FileTree
             nodes={buildFileTree(files.map((f) => f.path))}
             selected={selected?.path}
-            hrefFor={submissionFileHrefs(courseId, assignmentId, submissionId)}
+            hrefFor={submissionFileHrefs(courseId, assignmentId, submissionId, viewed?.id)}
           />
         </nav>
         {selected ? (
