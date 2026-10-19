@@ -32,7 +32,7 @@ create policy "볼 수 있는 과제의 채점 항목을 읽는다"
   on public.grading_criterion for select to authenticated
   using (exists (select 1 from public.assignment a where a.id = assignment_id));
 
--- 채점 항목 목록을 통째로 바꾼다. 반환값: 새 채점 항목 버전
+-- 채점 항목 목록을 통째로 바꾼다. 반환값: 채점 항목 버전 (바뀐 것이 없으면 그대로)
 -- criteria: [{ "name": "insert 동작", "points": 30, "description": "..." }, ...] (순서대로)
 create function public.save_grading_criteria(target_assignment uuid, criteria jsonb)
 returns int
@@ -42,34 +42,61 @@ set search_path = ''
 as $$
 declare
   target_course uuid;
+  current_version int;
   new_version int;
+  normalized jsonb;
 begin
-  select course_id into target_course from public.assignment where id = target_assignment;
+  -- 같은 과제를 동시에 저장해도 순서대로 처리되게 과제 행을 잠근다.
+  select course_id, criteria_version into target_course, current_version
+  from public.assignment where id = target_assignment
+  for update;
   if target_course is null or not public.is_professor_or_assistant(target_course) then
     raise exception '이 과제의 채점 항목을 정할 수 없어요' using errcode = 'KH003';
   end if;
 
+  -- SQL은 or의 계산 순서를 보장하지 않으므로, 형식을 먼저 따로 확인한 뒤에만 값을 꺼낸다.
   if jsonb_typeof(criteria) is distinct from 'array'
-    or jsonb_array_length(criteria) > 50
-    or exists (
-      select 1 from jsonb_array_elements(criteria) c
-      where jsonb_typeof(c -> 'points') is distinct from 'number'
-        or length(btrim(coalesce(c ->> 'name', ''))) not between 1 and 200
+    or jsonb_array_length(case when jsonb_typeof(criteria) = 'array' then criteria else '[]' end) not between 1 and 50
+  then
+    raise exception '채점 항목은 1개부터 50개까지 정할 수 있어요' using errcode = 'KH007';
+  end if;
+
+  if exists (
+    select 1 from jsonb_array_elements(criteria) c
+    where case
+      when jsonb_typeof(c) <> 'object' or jsonb_typeof(c -> 'points') is distinct from 'number' then true
+      else length(btrim(coalesce(c ->> 'name', ''))) not between 1 and 200
         or (c ->> 'points')::numeric not between 0 and 1000
         or (c ->> 'points')::numeric <> trunc((c ->> 'points')::numeric)
         or length(coalesce(c ->> 'description', '')) > 2000
-    )
-  then
-    raise exception '채점 항목은 이름(200자까지), 0~1000점 정수 배점, 설명(2000자까지)으로 50개까지 정할 수 있어요'
+    end
+  ) then
+    raise exception '채점 항목은 이름(200자까지), 0~1000점 정수 배점, 설명(2000자까지)으로 정해요'
       using errcode = 'KH007';
+  end if;
+
+  select jsonb_agg(
+    jsonb_build_object(
+      'name', btrim(c.value ->> 'name'),
+      'points', (c.value ->> 'points')::numeric::int,
+      'description', btrim(coalesce(c.value ->> 'description', ''))
+    ) order by c.ordinality
+  ) into normalized
+  from jsonb_array_elements(criteria) with ordinality c;
+
+  -- 바뀐 것이 없으면 버전을 올리지 않는다 (AI 검토 의견이 괜히 "이전 채점 항목 기준"이 되지 않게).
+  if normalized = (
+    select jsonb_agg(jsonb_build_object('name', name, 'points', points, 'description', description) order by position)
+    from public.grading_criterion where assignment_id = target_assignment
+  ) then
+    return current_version;
   end if;
 
   delete from public.grading_criterion where assignment_id = target_assignment;
 
   insert into public.grading_criterion (assignment_id, position, name, points, description)
-  select target_assignment, c.ordinality - 1, btrim(c.value ->> 'name'), (c.value ->> 'points')::int,
-         btrim(coalesce(c.value ->> 'description', ''))
-  from jsonb_array_elements(criteria) with ordinality c;
+  select target_assignment, c.ordinality - 1, c.value ->> 'name', (c.value ->> 'points')::int, c.value ->> 'description'
+  from jsonb_array_elements(normalized) with ordinality c;
 
   update public.assignment set criteria_version = criteria_version + 1
   where id = target_assignment

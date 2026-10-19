@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { withdrawUser } from "../../src/lib/withdrawal/withdraw-user";
 import { enrollInTestCourse, openTestCourse, postTestAssignment } from "../support/courses";
+import type { Criterion } from "../../src/app/courses/[courseId]/assignments/[assignmentId]/criteria-actions";
+import type { Json } from "../../src/lib/supabase/database.types";
 import { adminClient, createTestUser, type TestUser } from "../support/supabase";
-
-type Criterion = { name: string; points: number; description: string };
 
 const CRITERIA: Criterion[] = [
   { name: "insert 동작", points: 30, description: "맨 앞, 중간, 맨 뒤에 넣는다" },
@@ -20,7 +20,7 @@ async function criteriaSetup({ published = true } = {}) {
   return { professor, student, assistant, assignmentId };
 }
 
-function save(user: TestUser, assignmentId: string, criteria: Criterion[]) {
+function save(user: TestUser, assignmentId: string, criteria: Json) {
   return user.client.rpc("save_grading_criteria", { target_assignment: assignmentId, criteria });
 }
 
@@ -97,6 +97,38 @@ describe("채점 항목", () => {
     expect(negative.error?.code).toBe("KH007");
     expect(await criteriaSeenBy(student, assignmentId)).toEqual(CRITERIA);
     expect(await criteriaVersion(student, assignmentId)).toBe(1);
+  });
+
+  it("빈 목록이나 숫자가 아니거나 정수가 아닌 배점은 저장되지 않는다", async () => {
+    const { professor, student, assignmentId } = await criteriaSetup();
+
+    const results = await Promise.all([
+      save(professor, assignmentId, []),
+      save(professor, assignmentId, [{ name: "기능", points: "abc", description: "" }]),
+      save(professor, assignmentId, [{ name: "기능", points: 1.5, description: "" }]),
+      save(professor, assignmentId, { name: "배열이 아님" }),
+    ]);
+
+    expect(results.map((r) => r.error?.code)).toEqual(["KH007", "KH007", "KH007", "KH007"]);
+    expect(await criteriaVersion(student, assignmentId)).toBe(0);
+  });
+
+  it("바뀐 것 없이 다시 저장하면 채점 항목 버전이 그대로다", async () => {
+    const { professor, student, assignmentId } = await criteriaSetup();
+    await save(professor, assignmentId, CRITERIA);
+
+    const { data: version } = await save(professor, assignmentId, CRITERIA);
+
+    expect(version).toBe(1);
+    expect(await criteriaVersion(student, assignmentId)).toBe(1);
+  });
+
+  it("공개 과제의 채점 항목은 과제를 볼 수 있는 다른 사용자도 본다", async () => {
+    const { professor, assignmentId } = await criteriaSetup();
+    const outsider = await createTestUser();
+    await save(professor, assignmentId, CRITERIA);
+
+    expect(await criteriaSeenBy(outsider, assignmentId)).toEqual(CRITERIA);
   });
 
   it("비공개 과제의 채점 항목은 담당 교수와 조교만 본다", async () => {
