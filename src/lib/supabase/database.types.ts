@@ -653,7 +653,21 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "assert_school_email":
+            "admin_list_users":
+{ Args: { "query": string }; Returns: {
+              "created_at": string,"email": string,"id": string,"name": string,"role": Database["public"]['Enums']["role"],"student_number": string
+            }[]
+                           },
+"admin_promote_to_professor":
+{ Args: { "target_user": string }; Returns: undefined
+                           },
+"admin_set_student_number":
+{ Args: { "new_student_number": string,"target_user": string }; Returns: undefined
+                           },
+"assert_admin":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"assert_school_email":
 { Args: { "email": string }; Returns: undefined
                            },
 "assignment_file_course":

@@ -15,10 +15,12 @@ const ITEMS = [
   { href: "/updates", label: "업데이트" },
 ];
 
+const ADMIN_ITEM = { href: "/admin", label: "관리자 페이지" };
+
 const ITEM_CLASS =
   "flex w-full cursor-pointer rounded-md px-3 py-2 text-left outline-none data-highlighted:bg-accent data-highlighted:text-accent-foreground";
 
-export function SiteMenu() {
+export function SiteMenu({ isAdmin }: { isAdmin: boolean }) {
   const [loggingOut, startLogOut] = useTransition();
 
   return (
@@ -29,7 +31,7 @@ export function SiteMenu() {
       <Menu.Portal>
         <Menu.Positioner align="end" sideOffset={8} className="z-50">
           <Menu.Popup className="min-w-40 rounded-lg border bg-popover p-1 text-sm text-popover-foreground shadow-md outline-none">
-            {ITEMS.map((item) => (
+            {(isAdmin ? [...ITEMS, ADMIN_ITEM] : ITEMS).map((item) => (
               <Menu.LinkItem
                 key={item.href}
                 closeOnClick
