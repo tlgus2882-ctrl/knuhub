@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>정답 라벨 달기</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #6b7280; --line: #e5e7eb; --soft: #f5f7fb;
+    --primary: #1d4ed8; --met: #15803d; --not-met: #b91c1c; --uncertain: #6b7280;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111318; --fg: #e8eaee; --muted: #9aa1ad; --line: #2a2f3a; --soft: #181c24;
+      --primary: #7aa2ff; --met: #4ade80; --not-met: #f87171; --uncertain: #9aa1ad; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.6 system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  header { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--bg); }
+  header h1 { margin: 0; font-size: 17px; }
+  header .spacer { flex: 1; }
+  input[type=text] { padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); font: inherit; width: 9rem; }
+  button { font: inherit; cursor: pointer; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); padding: 6px 12px; }
+  button.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  button:disabled { opacity: .45; cursor: default; }
+  .layout { display: grid; grid-template-columns: 13rem 1fr; min-height: calc(100vh - 58px); }
+  nav { min-width: 0; border-right: 1px solid var(--line); padding: 8px; overflow-y: auto; max-height: calc(100vh - 58px); position: sticky; top: 58px; }
+  nav button { display: flex; justify-content: space-between; width: 100%; border: 0; text-align: left; padding: 6px 10px; margin-bottom: 2px; }
+  nav button[aria-current=true] { background: var(--soft); color: var(--primary); font-weight: 600; }
+  nav .done { color: var(--met); }
+  main { padding: 20px 24px 60px; max-width: 980px; min-width: 0; }
+  .muted { color: var(--muted); }
+  .criteria { display: flex; flex-direction: column; gap: 10px; margin: 16px 0 24px; }
+  .criterion { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .criterion .choices { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .choices button[aria-pressed=true][data-v=met] { background: var(--met); border-color: var(--met); color: #fff; }
+  .choices button[aria-pressed=true][data-v=not_met] { background: var(--not-met); border-color: var(--not-met); color: #fff; }
+  .choices button[aria-pressed=true][data-v=uncertain] { background: var(--uncertain); border-color: var(--uncertain); color: #fff; }
+  pre { margin: 0; padding: 12px; overflow-x: auto; border: 1px solid var(--line); border-radius: 0 0 10px 10px; background: var(--soft); font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; counter-reset: line; }
+  pre span { display: block; }
+  pre span::before { counter-increment: line; content: counter(line); display: inline-block; width: 2.5em; margin-right: 1em; text-align: right; color: var(--muted); user-select: none; }
+  .file { margin-bottom: 16px; }
+  .file .name { padding: 6px 12px; border: 1px solid var(--line); border-bottom: 0; border-radius: 10px 10px 0 0; font: 13px ui-monospace, Menlo, monospace; }
+  .pager { display: flex; justify-content: space-between; margin-top: 20px; }
+  .notice { padding: 10px 14px; border-radius: 10px; background: var(--soft); margin-bottom: 16px; }
+  @media (max-width: 720px) {
+    .layout { grid-template-columns: 1fr; }
+    nav { position: static; max-height: none; border-right: 0; border-bottom: 1px solid var(--line); display: flex; overflow-x: auto; }
+    nav button { width: auto; flex: none; }
+    main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>정답 라벨 달기</h1>
+  <label>이름 <input type="text" id="name" placeholder="예: 박시현"></label>
+  <span class="muted" id="progress"></span>
+  <span class="spacer"></span>
+  <label><button type="button" id="load">이어서 하기 (JSON 열기)</button><input type="file" id="file" accept=".json" hidden></label>
+  <button type="button" class="primary" id="download">JSON 내려받기</button>
+</header>
+<div class="layout">
+  <nav id="list" aria-label="사례 목록"></nav>
+  <main id="case"></main>
+</div>
+<script id="data" type="application/json">__CASES__</script>
+<script>
+  // 사례마다 채점 항목별 판정을 고른다. 출제 의도와 사례 설명은 일부러 넣지 않았다 (서로 따라가지 않게).
+  const cases = JSON.parse(document.getElementById("data").textContent);
+  const LABEL = { met: "충족", not_met: "부족", uncertain: "판단 불가" };
+  const nameInput = document.getElementById("name");
+  let labels = {};
+  let current = 0;
+
+  const storageKey = () => "eval-labels:" + nameInput.value.trim();
+  function save() {
+    try { localStorage.setItem(storageKey(), JSON.stringify(labels)); } catch {}
+  }
+  function restore() {
+    try { labels = JSON.parse(localStorage.getItem(storageKey()) || "{}"); } catch { labels = {}; }
+  }
+  const isDone = (c) => (labels[c.id] || []).filter(Boolean).length === c.criteria.length;
+
+  function render() {
+    const done = cases.filter(isDone).length;
+    document.getElementById("progress").textContent = `${done}/${cases.length}건 끝남`;
+
+    const list = document.getElementById("list");
+    list.replaceChildren(...cases.map((c, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("aria-current", String(i === current));
+      b.innerHTML = `<span></span><span class="done">${isDone(c) ? "✓" : ""}</span>`;
+      b.firstChild.textContent = c.id;
+      b.onclick = () => { current = i; render(); window.scrollTo(0, 0); };
+      return b;
+    }));
+
+    const c = cases[current];
+    const main = document.getElementById("case");
+    main.replaceChildren();
+    const h = (tag, text, cls) => { const el = document.createElement(tag); el.textContent = text; if (cls) el.className = cls; main.append(el); return el; };
+    if (!nameInput.value.trim()) {
+      h("p", "먼저 위에 이름을 적어 주세요. 이름마다 따로 저장돼요.", "notice");
+    }
+    h("h2", `${c.id} · ${c.title}`);
+    h("p", c.description, "muted");
+
+    const box = document.createElement("div");
+    box.className = "criteria";
+    c.criteria.forEach((criterion, i) => {
+      const row = document.createElement("div");
+      row.className = "criterion";
+      row.innerHTML = `<strong></strong> <span class="muted"></span><div class="muted"></div><div class="choices"></div>`;
+      row.children[0].textContent = `${i + 1}. ${criterion.name}`;
+      row.children[1].textContent = `(${criterion.points}점)`;
+      row.children[2].textContent = criterion.description;
+      for (const v of Object.keys(LABEL)) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.dataset.v = v;
+        b.textContent = LABEL[v];
+        b.setAttribute("aria-pressed", String((labels[c.id] || [])[i] === v));
+        b.disabled = !nameInput.value.trim();
+        b.onclick = () => {
+          const set = labels[c.id] || Array(c.criteria.length).fill(null);
+          set[i] = v;
+          labels[c.id] = set;
+          save();
+          render();
+        };
+        row.querySelector(".choices").append(b);
+      }
+      box.append(row);
+    });
+    main.append(box);
+
+    for (const f of c.files) {
+      const file = document.createElement("div");
+      file.className = "file";
+      const name = document.createElement("div");
+      name.className = "name";
+      name.textContent = f.path;
+      const pre = document.createElement("pre");
+      for (const line of f.text.replace(/\n$/, "").split("\n")) {
+        const span = document.createElement("span");
+        span.textContent = line || " ";
+        pre.append(span);
+      }
+      file.append(name, pre);
+      main.append(file);
+    }
+
+    const pager = document.createElement("div");
+    pager.className = "pager";
+    pager.innerHTML = `<button type="button">← 이전</button><button type="button" class="primary">다음 →</button>`;
+    pager.children[0].disabled = current === 0;
+    pager.children[1].disabled = current === cases.length - 1;
+    pager.children[0].onclick = () => { current--; render(); window.scrollTo(0, 0); };
+    pager.children[1].onclick = () => { current++; render(); window.scrollTo(0, 0); };
+    main.append(pager);
+  }
+
+  nameInput.addEventListener("change", () => { restore(); render(); });
+
+  document.getElementById("download").onclick = () => {
+    const name = nameInput.value.trim();
+    if (!name) return alert("먼저 이름을 적어 주세요.");
+    // Only finished cases go in: a half-labelled case would not count anyway.
+    const out = Object.fromEntries(cases.filter(isDone).map((c) => [c.id, labels[c.id]]));
+    const blob = new Blob([JSON.stringify(out, null, 2) + "\n"], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${name}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  document.getElementById("load").onclick = () => document.getElementById("file").click();
+  document.getElementById("file").onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      labels = JSON.parse(await file.text());
+      if (!nameInput.value.trim()) nameInput.value = file.name.replace(/\.json$/, "");
+      save();
+      render();
+    } catch {
+      alert("JSON 파일을 읽지 못했어요.");
+    }
+  };
+
+  render();
+</script>
+</body>
+</html>
