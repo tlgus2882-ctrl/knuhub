@@ -33,6 +33,7 @@ async function AccountActions() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
+  const { data: isAdmin } = await supabase.rpc("is_admin");
 
   return (
     <div className="flex items-center gap-2">
@@ -50,7 +51,7 @@ async function AccountActions() {
           로그아웃
         </Button>
       </form>
-      <SiteMenu />
+      <SiteMenu isAdmin={Boolean(isAdmin)} />
     </div>
   );
 }
