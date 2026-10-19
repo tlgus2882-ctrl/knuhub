@@ -2,7 +2,8 @@
 --
 -- 마감 후 담당 교수·조교가 "전체 검사"를 누르면 검사할 제출물이 대기열(first_check_queue)에 들어간다.
 -- 화면이 몇 초마다 서버 액션을 부르고, 서버 액션은 claim_first_check()로 몇 개를 맡아 AI로 검사한 뒤
--- 서버(secret key)가 결과(first_check)를 쓰고 대기열에서 지운다. 실패하면 맡은 것을 풀어 다시 맡게 한다.
+-- 서버(secret key)가 결과(first_check)를 쓰고 대기열에서 지운다. 실패하면 맡은 것을 풀고 대기열 맨 뒤로
+-- 보낸다 (계속 실패하는 제출물 하나가 나머지를 막지 않게).
 -- 5분 넘게 끝나지 않은 맡김은 함수가 중간에 죽은 것으로 보고 다시 맡을 수 있다.
 -- (Message Batches 대신 이렇게 나눠 보낸다: 개발 중 Gemini 무료 키로 돌리기 위해. 유료 키로 바꿀 때 다시 정한다.)
 --
@@ -96,11 +97,14 @@ security definer
 set search_path = ''
 as $$
 declare
-  queued int;
+  already_queued int;
+  added int;
 begin
   if not public.can_run_first_check(target_assignment) then
     raise exception '이 과제에서는 지금 1차 검사를 할 수 없어요' using errcode = 'KH010';
   end if;
+
+  select count(*) into already_queued from public.first_check_queue where assignment_id = target_assignment;
 
   insert into public.first_check_queue (submission_id, assignment_id)
   select s.id, s.assignment_id
@@ -110,12 +114,14 @@ begin
   where s.assignment_id = target_assignment
     and (f.submission_id is null or f.submitted_at <> s.submitted_at or f.criteria_version <> a.criteria_version)
   on conflict (submission_id) do nothing;
+  get diagnostics added = row_count;
 
-  select count(*) into queued from public.first_check_queue where assignment_id = target_assignment;
-
-  insert into public.first_check_run (assignment_id, total) values (target_assignment, queued)
-  on conflict (assignment_id) do update set total = excluded.total, requested_at = now();
-  return queued;
+  -- 검사 중에 다시 요청하면 진행 상황의 분모에 새로 든 것만 더한다.
+  insert into public.first_check_run (assignment_id, total) values (target_assignment, already_queued + added)
+  on conflict (assignment_id) do update
+    set total = case when already_queued > 0 then public.first_check_run.total + added else excluded.total end,
+        requested_at = now();
+  return already_queued + added;
 end;
 $$;
 
@@ -123,9 +129,9 @@ revoke execute on function public.request_first_check(uuid) from public, anon;
 grant execute on function public.request_first_check(uuid) to authenticated;
 
 -- 대기열에서 아직 아무도 맡지 않은(또는 5분 넘게 끝나지 않은) 제출물을 max_count개까지 맡는다.
--- 동시에 불러도 같은 제출물을 두 번 맡지 않는다.
+-- 동시에 불러도 같은 제출물을 두 번 맡지 않는다. claimed_at은 맡은 쪽만 풀 수 있게 돌려준다.
 create function public.claim_first_check(target_assignment uuid, max_count int)
-returns table (submission_id uuid)
+returns table (submission_id uuid, claimed_at timestamptz)
 language plpgsql
 security definer
 set search_path = ''
@@ -146,7 +152,7 @@ begin
     limit max_count
     for update skip locked
   )
-  returning q.submission_id;
+  returning q.submission_id, q.claimed_at;
 end;
 $$;
 

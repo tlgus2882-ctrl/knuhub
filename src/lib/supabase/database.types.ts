@@ -699,7 +699,7 @@ isOneToOne: false
                            },
 "claim_first_check":
 { Args: { "max_count": number,"target_assignment": string }; Returns: {
-              "submission_id": string
+              "claimed_at": string,"submission_id": string
             }[]
                            },
 "course_roster":

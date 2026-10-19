@@ -9,13 +9,15 @@ const VERDICT: Record<Verdict, { label: string; className: string }> = {
   uncertain: { label: "판단 불가", className: "bg-muted text-muted-foreground" },
 };
 
-const sameTime = (a: string, b: string) => new Date(a).getTime() === new Date(b).getTime();
+export const sameTime = (a: string, b: string) => new Date(a).getTime() === new Date(b).getTime();
+
+/** A 제출물 now, with its 제출 이력, to tell which version an AI 검토 result checked. */
+export type SubmissionVersions = { id: string; submitted_at: string; submission_history: { id: string; submitted_at: string }[] };
 
 type Props = {
   courseId: string;
   assignmentId: string;
-  /** The 제출물 now, with its 제출 이력, to tell whether the result checked an older version. */
-  submission: { id: string; submitted_at: string; submission_history: { id: string; submitted_at: string }[] };
+  submission: SubmissionVersions;
   criteriaVersion: number;
   /** A 셀프 점검 or 1차 검사 result. */
   result: { submitted_at: string; criteria_version: number; criteria: Json; opinions: Json };

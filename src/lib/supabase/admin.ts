@@ -4,9 +4,12 @@ import type { Database } from "./database.types";
 import { supabaseSecretKey, supabaseUrl } from "./env";
 
 // Bypasses RLS. Only for what users may not do themselves (docs/adr/0002):
-// server-only lookups such as finding an email by 학번, and carrying out 탈퇴.
+// server-only lookups such as finding an email by 학번, carrying out 탈퇴, and writing AI 검토
+// results users must not forge.
 export function createAdminSupabase() {
   return createClient<Database>(supabaseUrl(), supabaseSecretKey(), {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
+
+export type AdminSupabase = ReturnType<typeof createAdminSupabase>;

@@ -62,8 +62,19 @@ describe("1차 검사", () => {
     expect(await request(professor, assignmentId)).toMatchObject({ data: 2, error: null });
     expect((await request(assistant, assignmentId)).error).toBeNull();
 
-    const { data: progress } = await professor.client.rpc("first_check_progress", { target_assignment: assignmentId });
-    expect(progress).toEqual([{ total: 2, remaining: 2 }]);
+    const progress = async () => (await professor.client.rpc("first_check_progress", { target_assignment: assignmentId })).data;
+    expect(await progress()).toEqual([{ total: 2, remaining: 2 }]);
+  });
+
+  it("검사 중에 다시 요청해도 끝난 수가 처음부터 다시 세어지지 않는다", async () => {
+    const { professor, student, assignmentId } = await firstCheckSetup();
+    await request(professor, assignmentId);
+    await saveResult(student, assignmentId);
+
+    await request(professor, assignmentId);
+
+    const { data } = await professor.client.rpc("first_check_progress", { target_assignment: assignmentId });
+    expect(data).toEqual([{ total: 2, remaining: 1 }]);
   });
 
   it("마감 전(마감을 연장한 뒤 포함)이거나 담당 교수·조교가 아니면 요청도 맡기도 못 한다", async () => {
@@ -112,13 +123,17 @@ describe("1차 검사", () => {
     expect(third.data).toEqual([]);
   });
 
-  it("결과는 담당 교수·조교만 읽고, 학생·다른 교수는 못 읽는다", async () => {
+  it("결과는 담당 교수·조교만 읽고, 학생·다른 교수·관리자·외부인은 못 읽는다", async () => {
     const { professor, student, classmate, assistant, assignmentId } = await firstCheckSetup();
-    const otherProfessor = await createTestUser({ role: "professor" });
+    const [otherProfessor, admin, outsider] = await Promise.all([
+      createTestUser({ role: "professor" }),
+      createTestUser({ role: "admin" }),
+      createTestUser(),
+    ]);
     await saveResult(student, assignmentId);
 
     for (const staff of [professor, assistant]) expect(await resultsSeenBy(staff, assignmentId)).toEqual([true]);
-    for (const other of [student, classmate, otherProfessor]) expect(await resultsSeenBy(other, assignmentId)).toEqual([]);
+    for (const other of [student, classmate, otherProfessor, admin, outsider]) expect(await resultsSeenBy(other, assignmentId)).toEqual([]);
     expect((await student.client.from("first_check_queue").select("submission_id")).data).toEqual([]);
   });
 

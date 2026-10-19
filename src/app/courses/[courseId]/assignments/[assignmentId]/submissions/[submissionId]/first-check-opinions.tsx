@@ -1,11 +1,11 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
-import { AiReviewResult, Tag } from "../../ai-review-result";
+import { AiReviewResult, Tag, type SubmissionVersions } from "../../ai-review-result";
 
 type Props = {
   courseId: string;
   assignmentId: string;
-  submission: { id: string; submitted_at: string; submission_history: { id: string; submitted_at: string }[] };
+  submission: SubmissionVersions;
 };
 
 // The 1차 검사 result of one 제출물. RLS returns it only to the course's professor and
