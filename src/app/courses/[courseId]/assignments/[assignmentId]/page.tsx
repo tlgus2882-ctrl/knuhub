@@ -9,6 +9,7 @@ import { formatKst, timeLeft } from "@/lib/time";
 import { asCourseRole } from "../../../course-role";
 import { VISIBILITY_HINT, VISIBILITY_LABEL } from "../../../visibility";
 import { Attachments } from "./attachments";
+import { GradingCriteria } from "./grading-criteria";
 import { MySubmission } from "./my-submission";
 import { SubmissionList } from "./submission-list";
 import { SubmissionStatus } from "./submission-status";
@@ -96,6 +97,8 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
       ) : (
         <p className="text-sm text-muted-foreground">설명이 없어요.</p>
       )}
+
+      <GradingCriteria assignmentId={assignmentId} canEdit={Boolean(canEdit)} />
 
       <Attachments assignmentId={assignmentId} canEdit={Boolean(canEdit)} />
 
