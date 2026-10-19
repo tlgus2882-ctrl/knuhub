@@ -8,11 +8,12 @@ export type ContactSettings = Pick<
   "show_email" | "open_chat_url" | "github" | "contact_visibility"
 >;
 
+/** What applies until I save my own: 학교 메일 shown to everyone (matches the DB defaults). */
 export const NO_CONTACT_SETTINGS: ContactSettings = {
-  show_email: false,
+  show_email: true,
   open_chat_url: null,
   github: null,
-  contact_visibility: "private",
+  contact_visibility: "public",
 };
 
 // 연락처 공개 범위 (GLOSSARY.md): who sees my contact methods on my 작성자 카드.

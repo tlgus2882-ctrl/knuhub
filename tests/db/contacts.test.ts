@@ -158,10 +158,27 @@ describe("연락처 공개 범위", () => {
     expect(await contactsOf(outsider, professor)).toEqual([]);
   });
 
-  it("학교 메일은 본인이 공개하기로 한 경우에만 나온다", async () => {
+  it("연락처를 저장한 적 없는 사용자의 학교 메일은 로그인한 누구나 본다", async () => {
     const owner = await createTestUser();
     const viewer = await createTestUser();
-    await owner.client.from("profile_contact").upsert({ id: owner.id, github: "knu-dev", contact_visibility: "public" });
+
+    expect(await contactsOf(viewer, owner)).toEqual([{ email: owner.email, open_chat_url: null, github: null }]);
+  });
+
+  it("연락처를 저장할 때 따로 정하지 않으면 학교 메일을 전체에 공개한다", async () => {
+    const owner = await createTestUser();
+    const viewer = await createTestUser();
+    await owner.client.from("profile_contact").upsert({ id: owner.id, github: "knu-dev" });
+
+    expect(await contactsOf(viewer, owner)).toEqual([{ email: owner.email, open_chat_url: null, github: "knu-dev" }]);
+  });
+
+  it("학교 메일을 숨기기로 하면 다른 연락 수단만 나온다", async () => {
+    const owner = await createTestUser();
+    const viewer = await createTestUser();
+    await owner.client
+      .from("profile_contact")
+      .upsert({ id: owner.id, show_email: false, github: "knu-dev", contact_visibility: "public" });
 
     expect(await contactsOf(viewer, owner)).toEqual([{ email: null, open_chat_url: null, github: "knu-dev" }]);
   });
