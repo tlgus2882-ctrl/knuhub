@@ -4,6 +4,14 @@ export type Update = { date: string; title: string; items: string[] };
 export const UPDATES: Update[] = [
   {
     date: "2026-10-19",
+    title: "1시간 뒤 자동 로그아웃",
+    items: [
+      "로그인하고 1시간이 지나면 자동으로 로그아웃돼요. 공용 PC에서 로그아웃을 잊어도 안전해요.",
+      "로그아웃되면 로그인 화면에서 안내가 나오고, 다시 로그인하면 이어서 쓸 수 있어요.",
+    ],
+  },
+  {
+    date: "2026-10-19",
     title: "과제 만들기에 채점 기준표 양식",
     items: [
       "\"과제 공지\" 버튼이 \"과제 만들기\"로 바뀌었어요.",

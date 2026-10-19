@@ -12,7 +12,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <Suspense>
-          <ConfirmFailedNotice searchParams={searchParams} />
+          <LoginNotice searchParams={searchParams} />
         </Suspense>
         <LoginForm />
         <p className="text-sm text-muted-foreground">
@@ -26,8 +26,11 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
   );
 }
 
-async function ConfirmFailedNotice({ searchParams }: Pick<PageProps<"/login">, "searchParams">) {
-  const { confirm } = await searchParams;
+async function LoginNotice({ searchParams }: Pick<PageProps<"/login">, "searchParams">) {
+  const { confirm, expired } = await searchParams;
+  if (expired) {
+    return <p className="text-sm text-muted-foreground">로그인한 지 1시간이 지나 로그아웃됐어요. 다시 로그인해 주세요.</p>;
+  }
   if (confirm !== "failed") return null;
 
   return (
