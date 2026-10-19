@@ -77,6 +77,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"archived_grading_criterion": {
+                  Row: {
+                    "assignment_id": string,"description": string,"id": string,"name": string,"points": number,"position": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assignment_id": string,"description": string,"id": string,"name": string,"points": number,"position": number
+                  }
+                  Update: {
+                    "assignment_id"?: string,"description"?: string,"id"?: string,"name"?: string,"points"?: number,"position"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "archived_grading_criterion_assignment_id_fkey"
+      columns: ["assignment_id"]
+isOneToOne: false
+      referencedRelation: "archived_assignment"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"archived_review": {
                   Row: {
                     "author_id": string,"author_name": string,"body": string,"created_at": string,"id": string,"submission_id": string
@@ -179,14 +199,14 @@ isOneToOne: false
                   ]
                 },"assignment": {
                   Row: {
-                    "course_id": string,"created_at": string,"created_by": string | null,"description": string,"due_at": string,"id": string,"published": boolean,"title": string,"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
+                    "course_id": string,"created_at": string,"created_by": string | null,"criteria_version": number,"description": string,"due_at": string,"id": string,"published": boolean,"title": string,"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "course_id": string,"created_at"?: string,"created_by"?: string | null,"description"?: string,"due_at": string,"id"?: string,"published"?: boolean,"title": string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
+                    "course_id": string,"created_at"?: string,"created_by"?: string | null,"criteria_version"?: number,"description"?: string,"due_at": string,"id"?: string,"published"?: boolean,"title": string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
                   }
                   Update: {
-                    "course_id"?: string,"created_at"?: string,"created_by"?: string | null,"description"?: string,"due_at"?: string,"id"?: string,"published"?: boolean,"title"?: string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
+                    "course_id"?: string,"created_at"?: string,"created_by"?: string | null,"criteria_version"?: number,"description"?: string,"due_at"?: string,"id"?: string,"published"?: boolean,"title"?: string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
                   }
                   Relationships: [
                     {
@@ -306,6 +326,26 @@ isOneToOne: false
       columns: ["student_id"]
 isOneToOne: false
       referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"grading_criterion": {
+                  Row: {
+                    "assignment_id": string,"description": string,"id": string,"name": string,"points": number,"position": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assignment_id": string,"description"?: string,"id"?: string,"name": string,"points": number,"position": number
+                  }
+                  Update: {
+                    "assignment_id"?: string,"description"?: string,"id"?: string,"name"?: string,"points"?: number,"position"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "grading_criterion_assignment_id_fkey"
+      columns: ["assignment_id"]
+isOneToOne: false
+      referencedRelation: "assignment"
       referencedColumns: ["id"]
     }
                   ]
@@ -577,6 +617,9 @@ isOneToOne: false
                            },
 "regenerate_invite_code":
 { Args: { "target_course": string }; Returns: string
+                           },
+"save_grading_criteria":
+{ Args: { "criteria": Json,"target_assignment": string }; Returns: number
                            },
 "search":
 { Args: { "query": string }; Returns: {
