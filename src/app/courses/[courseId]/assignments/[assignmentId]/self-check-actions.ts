@@ -1,11 +1,9 @@
 "use server";
 
 import { refresh } from "next/cache";
-import { claudeReviewModel } from "@/lib/ai-review/claude";
-import { geminiReviewModel } from "@/lib/ai-review/gemini";
+import { reviewModel } from "@/lib/ai-review/model";
 import { reviewSubmission } from "@/lib/ai-review/review";
-import { decodeText } from "@/lib/highlight";
-import { SUBMISSION_BUCKET } from "@/lib/submissions/storage";
+import { readTextFiles } from "@/lib/submissions/read-text-files";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase, type ServerSupabase } from "@/lib/supabase/server";
 
@@ -76,20 +74,12 @@ async function reviewAndSave(supabase: ServerSupabase, assignmentId: string, stu
   ]);
   if (!assignment || !submission) return NOT_SAVED_ERRORS.failed;
 
-  const model = geminiReviewModel() ?? claudeReviewModel();
+  const model = reviewModel();
   if (!model) return NOT_SAVED_ERRORS.notConfigured;
 
   // Binary files never reach the model.
-  const textFiles = submission.submission_file.filter((f) => f.kind === "text");
-  if (!textFiles.length) return NOT_SAVED_ERRORS.noText;
-  const storage = supabase.storage.from(SUBMISSION_BUCKET);
-  const files = await Promise.all(
-    textFiles.map(async (f) => {
-      const { data, error } = await storage.download(f.storage_path);
-      if (error) throw error;
-      return { path: f.path, text: decodeText(await data.arrayBuffer()) };
-    }),
-  );
+  const files = await readTextFiles(supabase, submission.submission_file);
+  if (!files.length) return NOT_SAVED_ERRORS.noText;
 
   const criteria = assignment.grading_criterion.map(({ name, points, description }) => ({ name, points, description }));
   const redact = [author?.name, author?.student_number].filter((s): s is string => Boolean(s));

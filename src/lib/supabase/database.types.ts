@@ -77,6 +77,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"archived_first_check": {
+                  Row: {
+                    "checked_at": string,"criteria": NonNullable<Json>,"criteria_version": number,"opinions": NonNullable<Json>,"status": string,"submission_id": string,"submitted_at": string,"suspicious": boolean
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "checked_at": string,"criteria": NonNullable<Json>,"criteria_version": number,"opinions": NonNullable<Json>,"status": string,"submission_id": string,"submitted_at": string,"suspicious": boolean
+                  }
+                  Update: {
+                    "checked_at"?: string,"criteria"?: NonNullable<Json>,"criteria_version"?: number,"opinions"?: NonNullable<Json>,"status"?: string,"submission_id"?: string,"submitted_at"?: string,"suspicious"?: boolean
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "archived_first_check_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: true
+      referencedRelation: "archived_submission"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"archived_grading_criterion": {
                   Row: {
                     "assignment_id": string,"description": string,"id": string,"name": string,"points": number,"position": number
@@ -326,6 +346,72 @@ isOneToOne: false
       columns: ["student_id"]
 isOneToOne: false
       referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"first_check": {
+                  Row: {
+                    "checked_at": string,"criteria": NonNullable<Json>,"criteria_version": number,"opinions": NonNullable<Json>,"status": string,"submission_id": string,"submitted_at": string,"suspicious": boolean
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "checked_at"?: string,"criteria": NonNullable<Json>,"criteria_version": number,"opinions"?: NonNullable<Json>,"status": string,"submission_id": string,"submitted_at": string,"suspicious"?: boolean
+                  }
+                  Update: {
+                    "checked_at"?: string,"criteria"?: NonNullable<Json>,"criteria_version"?: number,"opinions"?: NonNullable<Json>,"status"?: string,"submission_id"?: string,"submitted_at"?: string,"suspicious"?: boolean
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "first_check_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: true
+      referencedRelation: "submission"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"first_check_queue": {
+                  Row: {
+                    "assignment_id": string,"claimed_at": string | null,"queued_at": string,"submission_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assignment_id": string,"claimed_at"?: string | null,"queued_at"?: string,"submission_id": string
+                  }
+                  Update: {
+                    "assignment_id"?: string,"claimed_at"?: string | null,"queued_at"?: string,"submission_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "first_check_queue_assignment_id_fkey"
+      columns: ["assignment_id"]
+isOneToOne: false
+      referencedRelation: "assignment"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "first_check_queue_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: true
+      referencedRelation: "submission"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"first_check_run": {
+                  Row: {
+                    "assignment_id": string,"requested_at": string,"total": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assignment_id": string,"requested_at"?: string,"total": number
+                  }
+                  Update: {
+                    "assignment_id"?: string,"requested_at"?: string,"total"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "first_check_run_assignment_id_fkey"
+      columns: ["assignment_id"]
+isOneToOne: true
+      referencedRelation: "assignment"
       referencedColumns: ["id"]
     }
                   ]
@@ -599,6 +685,9 @@ isOneToOne: false
 "can_read_submission_object":
 { Args: { "object_name": string }; Returns: boolean
                            },
+"can_run_first_check":
+{ Args: { "target_assignment": string }; Returns: boolean
+                           },
 "can_submit":
 { Args: { "target_assignment": string }; Returns: boolean
                            },
@@ -607,6 +696,11 @@ isOneToOne: false
                            },
 "can_write_submission_object":
 { Args: { "object_name": string }; Returns: boolean
+                           },
+"claim_first_check":
+{ Args: { "max_count": number,"target_assignment": string }; Returns: {
+              "submission_id": string
+            }[]
                            },
 "course_roster":
 { Args: { "target_course": string }; Returns: {
@@ -618,6 +712,11 @@ isOneToOne: false
                            },
 "detach_assignment_file":
 { Args: { "target_file": string }; Returns: string
+                           },
+"first_check_progress":
+{ Args: { "target_assignment": string }; Returns: {
+              "remaining": number,"total": number
+            }[]
                            },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
@@ -666,6 +765,9 @@ isOneToOne: false
                            },
 "regenerate_invite_code":
 { Args: { "target_course": string }; Returns: string
+                           },
+"request_first_check":
+{ Args: { "target_assignment": string }; Returns: number
                            },
 "save_grading_criteria":
 { Args: { "criteria": Json,"target_assignment": string }; Returns: number

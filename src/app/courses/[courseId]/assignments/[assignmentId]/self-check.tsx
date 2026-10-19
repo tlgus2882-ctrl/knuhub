@@ -1,19 +1,9 @@
-import type { Criterion, Opinion, Verdict } from "@/lib/ai-review/review";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
-import { cn } from "@/lib/utils";
+import { AiReviewResult } from "./ai-review-result";
 import { SelfCheckButton } from "./self-check-button";
-import { submissionHref } from "./submissions/submission-href";
 
 type Props = { courseId: string; assignmentId: string; studentId: string; open: boolean };
-
-const VERDICT: Record<Verdict, { label: string; className: string }> = {
-  met: { label: "충족", className: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200" },
-  not_met: { label: "부족", className: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200" },
-  uncertain: { label: "판단 불가", className: "bg-muted text-muted-foreground" },
-};
-
-const sameTime = (a: string, b: string) => new Date(a).getTime() === new Date(b).getTime();
 
 // The signed-in 수강생's 셀프 점검 for one assignment: the button and their own results (RLS shows no one else).
 export async function SelfCheck({ courseId, assignmentId, studentId, open }: Props) {
@@ -33,15 +23,6 @@ export async function SelfCheck({ courseId, assignmentId, studentId, open }: Pro
   const criteriaVersion = assignment?.criteria_version ?? 0;
   const max = limit ?? 0;
 
-  // Evidence opens the code viewer at its line, in the 제출물 version the result checked
-  // (no link once that version has dropped out of the 제출 이력).
-  const evidenceHref = (checkedAt: string) => {
-    if (!submission) return null;
-    const current = sameTime(checkedAt, submission.submitted_at);
-    const history = current ? undefined : submission.submission_history.find((h) => sameTime(h.submitted_at, checkedAt));
-    if (!current && !history) return null;
-    return (path: string, line: number) => `${submissionHref(courseId, assignmentId, submission.id, path, history?.id)}#L${line}`;
-  };
   const remaining = `남은 횟수 ${max - (usage?.used ?? 0)}/${max}`;
 
   return (
@@ -64,59 +45,17 @@ export async function SelfCheck({ courseId, assignmentId, studentId, open }: Pro
         <SelfCheckButton assignmentId={assignmentId} remaining={max - (usage?.used ?? 0)} limit={max} />
       )}
 
-      {submission?.self_check.map((result) => {
-        const criteria = result.criteria as Criterion[];
-        const hrefFor = evidenceHref(result.submitted_at);
-        return (
-          <article key={result.id} className="flex flex-col gap-3 rounded-lg border p-4">
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="font-medium">{formatKst(result.created_at)} 점검</span>
-              {!sameTime(result.submitted_at, submission.submitted_at) && <Tag>이전 제출물</Tag>}
-              {result.criteria_version !== criteriaVersion && <Tag>이전 채점 항목 기준</Tag>}
-            </div>
-            <ol className="flex flex-col gap-3">
-              {(result.opinions as Opinion[]).map((opinion) => {
-                const criterion = criteria[opinion.criterion - 1];
-                const verdict = VERDICT[opinion.verdict];
-                return (
-                  <li key={opinion.criterion} className="flex flex-col gap-1 text-sm">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", verdict.className)}>{verdict.label}</span>
-                      <span className="font-medium">
-                        {criterion?.name} <span className="text-muted-foreground">({criterion?.points}점)</span>
-                      </span>
-                    </div>
-                    {opinion.comment && <p className="text-muted-foreground">{opinion.comment}</p>}
-                    {opinion.evidence.length > 0 && (
-                      <ul className="flex flex-wrap gap-x-3 gap-y-1">
-                        {opinion.evidence.map((e) => {
-                          const label = `${e.path} ${e.start_line === e.end_line ? e.start_line : `${e.start_line}–${e.end_line}`}줄`;
-                          return (
-                            <li key={`${e.path}:${e.start_line}-${e.end_line}`} className="font-mono text-xs">
-                              {hrefFor ? (
-                                // A full page load, so the browser marks the line as :target and scrolls to it.
-                                <a href={hrefFor(e.path, e.start_line)} className="text-primary underline">
-                                  {label}
-                                </a>
-                              ) : (
-                                label
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
-          </article>
-        );
-      })}
+      {submission?.self_check.map((result) => (
+        <AiReviewResult
+          key={result.id}
+          courseId={courseId}
+          assignmentId={assignmentId}
+          submission={submission}
+          criteriaVersion={criteriaVersion}
+          result={result}
+          title={`${formatKst(result.created_at)} 점검`}
+        />
+      ))}
     </section>
   );
-}
-
-function Tag({ children }: { children: React.ReactNode }) {
-  return <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">{children}</span>;
 }

@@ -11,6 +11,7 @@ import { formatKst } from "@/lib/time";
 import { submissionFileHrefs, submissionHref } from "../submission-href";
 import { AuthorCard } from "@/components/author-card";
 import { FileTree } from "./file-tree";
+import { FirstCheckOpinions } from "./first-check-opinions";
 import { Reviews } from "./reviews";
 
 type Route = "/courses/[courseId]/assignments/[assignmentId]/submissions/[submissionId]";
@@ -121,11 +122,17 @@ async function SubmissionView({
             hrefFor={submissionFileHrefs(courseId, assignmentId, submissionId, viewed?.id)}
           />
         </nav>
-        {selected ? (
-          <FileContent supabase={supabase} file={selected} />
-        ) : (
-          <p className="text-sm text-muted-foreground">파일이 없는 제출물이에요.</p>
-        )}
+        {/* On wide screens the 1차 검사 opinions sit beside the code (only staff get any). */}
+        <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-start">
+          <div className="min-w-0 flex-1">
+            {selected ? (
+              <FileContent supabase={supabase} file={selected} />
+            ) : (
+              <p className="text-sm text-muted-foreground">파일이 없는 제출물이에요.</p>
+            )}
+          </div>
+          <FirstCheckOpinions courseId={courseId} assignmentId={assignmentId} submission={{ ...submission, id: submissionId }} />
+        </div>
       </div>
 
       <Reviews submissionId={submissionId} />

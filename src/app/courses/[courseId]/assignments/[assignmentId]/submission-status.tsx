@@ -27,6 +27,26 @@ export async function SubmissionStatus({ courseId, assignmentId }: Props) {
   }
 
   const rows = data as StatusRow[];
+  // 1차 검사 results, readable by the same professor and assistants (RLS).
+  const [{ data: checks }, { data: assignment }] = await Promise.all([
+    supabase
+      .from("first_check")
+      .select("submission_id, submitted_at, criteria_version, status, suspicious, submission!inner(assignment_id)")
+      .eq("submission.assignment_id", assignmentId),
+    supabase.from("assignment").select("criteria_version").eq("id", assignmentId).single(),
+  ]);
+  const checkOf = new Map(checks?.map((c) => [c.submission_id, c]));
+  const firstCheckLabel = (row: StatusRow): FirstCheckLabel | null => {
+    if (!row.submission_id || !row.submitted_at) return null;
+    const check = checkOf.get(row.submission_id);
+    const upToDate =
+      check &&
+      new Date(check.submitted_at).getTime() === new Date(row.submitted_at).getTime() &&
+      check.criteria_version === assignment?.criteria_version;
+    if (!upToDate) return "notChecked";
+    if (check.status === "unreviewable") return "unreviewable";
+    return check.suspicious ? "suspicious" : "clear";
+  };
   const submitted = rows.filter((r) => r.submitted_at).length;
 
   return (
@@ -46,6 +66,7 @@ export async function SubmissionStatus({ courseId, assignmentId }: Props) {
                 <th className="px-4 py-2 font-medium">학번</th>
                 <th className="px-4 py-2 font-medium">제출</th>
                 <th className="px-4 py-2 font-medium">제출 시각</th>
+                <th className="px-4 py-2 font-medium">1차 검사</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -67,6 +88,9 @@ export async function SubmissionStatus({ courseId, assignmentId }: Props) {
                   <td className="px-4 py-2 text-muted-foreground">
                     {row.submitted_at ? formatKst(row.submitted_at) : "-"}
                   </td>
+                  <td className="px-4 py-2">
+                    <FirstCheckBadge label={firstCheckLabel(row)} />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -77,4 +101,19 @@ export async function SubmissionStatus({ courseId, assignmentId }: Props) {
       )}
     </section>
   );
+}
+
+type FirstCheckLabel = "notChecked" | "unreviewable" | "suspicious" | "clear";
+
+const FIRST_CHECK_BADGE: Record<FirstCheckLabel, { text: string; className: string }> = {
+  notChecked: { text: "검사 전", className: "text-muted-foreground" },
+  unreviewable: { text: "검사할 수 없음", className: "rounded-full bg-amber-100 px-2 py-0.5 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" },
+  suspicious: { text: "의심", className: "rounded-full bg-red-100 px-2 py-0.5 font-medium text-red-800 dark:bg-red-900/40 dark:text-red-200" },
+  clear: { text: "의심 없음", className: "text-muted-foreground" },
+};
+
+function FirstCheckBadge({ label }: { label: FirstCheckLabel | null }) {
+  if (!label) return <span className="text-muted-foreground">-</span>;
+  const badge = FIRST_CHECK_BADGE[label];
+  return <span className={`text-xs ${badge.className}`}>{badge.text}</span>;
 }
