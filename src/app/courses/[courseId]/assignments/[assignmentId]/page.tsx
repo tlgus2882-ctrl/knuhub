@@ -11,6 +11,7 @@ import { VISIBILITY_HINT, VISIBILITY_LABEL } from "../../../visibility";
 import { Attachments } from "./attachments";
 import { GradingCriteria } from "./grading-criteria";
 import { MySubmission } from "./my-submission";
+import { SelfCheck } from "./self-check";
 import { SubmissionList } from "./submission-list";
 import { SubmissionStatus } from "./submission-status";
 
@@ -103,6 +104,7 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
       <Attachments assignmentId={assignmentId} canEdit={Boolean(canEdit)} />
 
       {enrolled && user && <MySubmission courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
+      {enrolled && user && <SelfCheck courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
 
       {canEdit && <SubmissionStatus courseId={courseId} assignmentId={assignmentId} />}
 

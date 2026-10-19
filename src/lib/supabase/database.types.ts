@@ -429,6 +429,52 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"self_check": {
+                  Row: {
+                    "created_at": string,"criteria": NonNullable<Json>,"criteria_version": number,"id": string,"opinions": NonNullable<Json>,"submission_id": string,"submitted_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"criteria": NonNullable<Json>,"criteria_version": number,"id"?: string,"opinions": NonNullable<Json>,"submission_id": string,"submitted_at": string
+                  }
+                  Update: {
+                    "created_at"?: string,"criteria"?: NonNullable<Json>,"criteria_version"?: number,"id"?: string,"opinions"?: NonNullable<Json>,"submission_id"?: string,"submitted_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "self_check_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: false
+      referencedRelation: "submission"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"self_check_usage": {
+                  Row: {
+                    "assignment_id": string,"student_id": string,"used": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assignment_id": string,"student_id": string,"used"?: number
+                  }
+                  Update: {
+                    "assignment_id"?: string,"student_id"?: string,"used"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "self_check_usage_assignment_id_fkey"
+      columns: ["assignment_id"]
+isOneToOne: false
+      referencedRelation: "assignment"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "self_check_usage_student_id_fkey"
+      columns: ["student_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"submission": {
                   Row: {
                     "assignment_id": string,"id": string,"student_id": string,"submitted_at": string
@@ -615,6 +661,9 @@ isOneToOne: false
 "prepare_withdrawal":
 { Args: Record<PropertyKey, never>; Returns: (string)[]
                            },
+"refund_self_check":
+{ Args: { "target_assignment": string,"target_student": string }; Returns: undefined
+                           },
 "regenerate_invite_code":
 { Args: { "target_course": string }; Returns: string
                            },
@@ -626,8 +675,14 @@ isOneToOne: false
               "assignment_id": string,"course_id": string,"detail": string,"kind": string,"section": string,"semester": string,"submission_id": string,"title": string
             }[]
                            },
+"self_check_limit":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "shares_course_with":
 { Args: { "other": string }; Returns: boolean
+                           },
+"start_self_check":
+{ Args: { "target_assignment": string }; Returns: number
                            },
 "student_number_taken":
 { Args: { "candidate": string }; Returns: boolean

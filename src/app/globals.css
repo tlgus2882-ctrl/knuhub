@@ -166,3 +166,9 @@
   color: var(--shiki-dark) !important;
   background-color: var(--shiki-dark-bg) !important;
 }
+/* The line a link opened (#L12), e.g. an AI 검토 의견's evidence */
+.code-view .line:target,
+.dark .code-view .shiki .line:target {
+  scroll-margin-top: 6rem;
+  background-color: rgb(250 204 21 / 0.3) !important;
+}
