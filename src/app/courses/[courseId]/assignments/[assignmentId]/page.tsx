@@ -14,6 +14,7 @@ import { MySubmission } from "./my-submission";
 import { SelfCheck } from "./self-check";
 import { SubmissionList } from "./submission-list";
 import { SubmissionStatus } from "./submission-status";
+import { FirstCheck } from "./first-check";
 
 export default function AssignmentPage({ params }: PageProps<"/courses/[courseId]/assignments/[assignmentId]">) {
   return (
@@ -106,6 +107,7 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
       {enrolled && user && <MySubmission courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
       {enrolled && user && <SelfCheck courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
 
+      {canEdit && <FirstCheck assignmentId={assignmentId} />}
       {canEdit && <SubmissionStatus courseId={courseId} assignmentId={assignmentId} />}
 
       <SubmissionList courseId={courseId} assignmentId={assignmentId} viewerId={enrolled ? user?.id : undefined} />
