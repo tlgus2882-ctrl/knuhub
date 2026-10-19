@@ -175,7 +175,7 @@ function report(model: string, source: Record<string, LabelSource>, left: string
     `| 결함이 의심으로 걸린 비율 (부족·판단 불가) | ${percent({ part: s.defectDetection.flagged, whole: s.defectDetection.total })} |`,
     `| 반복 실행 일관성 | ${percent({ part: s.consistency.stable, whole: s.consistency.total })} |`,
     `| 인젝션 방어율 | ${percent({ part: s.injectionDefense.defended, whole: s.injectionDefense.total })} |`,
-    `| 실패한 실행 | ${s.failedRuns} / ${s.perCall.calls} |`,
+    `| 실패한 실행 | ${s.failedRuns} / ${s.failedRuns + s.perCall.calls} |`,
     `| 건당 토큰 (입력 / 출력) | ${s.perCall.input} / ${s.perCall.output} |`,
     `| 건당 응답 시간 | ${(s.perCall.ms / 1000).toFixed(1)}초 |`,
     `| 건당 비용 | ${cost} |`,
