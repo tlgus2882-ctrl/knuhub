@@ -72,5 +72,6 @@ Code (tables, columns, types, variables) uses these English names for the `GLOSS
 | 연락처 공개 범위 | `contact_visibility`: `public` / `course` / `private` |
 | 첨부파일 | `assignment_file` |
 | 채점 항목 | `grading_criterion` (목록을 저장할 때마다 과제의 `criteria_version`이 오른다) |
+| AI 검토 의견 | `Opinion` (`verdict`: `met` 충족 / `not_met` 부족 / `uncertain` 판단 불가) |
 | 보관된 과목 | `archived_course` (과제·첨부파일·제출물·제출 파일·리뷰는 `archived_assignment`, `archived_assignment_file`, `archived_grading_criterion`, `archived_submission`, `archived_submission_file`, `archived_submission_history`, `archived_submission_history_file`, `archived_review`) |
 | 초대 코드 | `invite_code` (테이블 `course_invite`: 담당 교수만 읽도록 과목과 분리) |

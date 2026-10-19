@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { saveGradingCriteria, type Criterion } from "./criteria-actions";
+import { draftGradingCriteria, saveGradingCriteria, type Criterion } from "./criteria-actions";
 
 // A row keeps a stable id so focus follows it when rows move or go away.
 type Row = Criterion & { id: string };
@@ -25,6 +25,17 @@ export function CriteriaEditor({ assignmentId, initial }: { assignmentId: string
     setRows(next);
   };
   const total = rows.reduce((sum, r) => sum + (Number.isFinite(r.points) ? r.points : 0), 0);
+
+  function draft() {
+    const hasContent = rows.some((r) => r.name.trim() || r.description.trim());
+    if (hasContent && !window.confirm("편집 칸의 내용을 AI 초안으로 바꿀까요? 저장하기 전에는 확정되지 않아요.")) return;
+    setMessage(null);
+    startTransition(async () => {
+      const result = await draftGradingCriteria(assignmentId);
+      if (result.criteria) setRows(result.criteria.map((c) => ({ ...c, id: crypto.randomUUID() })));
+      setMessage(result.error ?? "AI 초안을 채웠어요. 확인하고 고친 뒤 저장해 주세요.");
+    });
+  }
 
   function save() {
     setMessage(null);
@@ -85,6 +96,9 @@ export function CriteriaEditor({ assignmentId, initial }: { assignmentId: string
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" size="sm" variant="outline" onClick={() => setRows([...rows, emptyRow()])}>
           항목 추가
+        </Button>
+        <Button type="button" size="sm" variant="outline" disabled={pending} onClick={draft}>
+          AI로 초안 만들기
         </Button>
         <span className="text-sm text-muted-foreground">합계 {total}점</span>
         <Button type="button" size="sm" className="ml-auto" disabled={pending || !rows.length} onClick={save}>
