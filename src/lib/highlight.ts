@@ -1,5 +1,5 @@
 import "server-only";
-import { bundledLanguages, codeToHtml } from "shiki";
+import { bundledLanguages, codeToHtml, type ShikiTransformer } from "shiki";
 
 // Language from the file name: Shiki knows most extensions as aliases (py, ts, rs…).
 const BY_NAME: Record<string, string> = { dockerfile: "dockerfile", makefile: "makefile" };
@@ -15,18 +15,25 @@ export function languageOf(path: string): string {
 
 /**
  * Syntax-highlighted HTML (Shiki escapes the code, so it is safe to inject).
- * Each line is a `.line` span; line numbers come from CSS (globals.css .code-view).
+ * Each line is a `.line` span with id `L<n>` (so `#L12` opens at line 12); line numbers come
+ * from CSS (globals.css .code-view).
  */
 export async function highlight(code: string, path: string): Promise<string> {
   const source = code.replace(/\r?\n$/, "");
-  const themes = { light: "github-light", dark: "github-dark" };
+  const options = { themes: { light: "github-light", dark: "github-dark" }, transformers: [LINE_IDS] };
   try {
-    return await codeToHtml(source, { lang: languageOf(path), themes });
+    return await codeToHtml(source, { lang: languageOf(path), ...options });
   } catch {
     // A grammar that fails to load or tokenize still shows the code, unhighlighted.
-    return codeToHtml(source, { lang: "text", themes });
+    return codeToHtml(source, { lang: "text", ...options });
   }
 }
+
+const LINE_IDS: ShikiTransformer = {
+  line(node, line) {
+    node.properties.id = `L${line}`;
+  },
+};
 
 const utf8 = new TextDecoder("utf-8", { fatal: true });
 const cp949 = new TextDecoder("euc-kr");
