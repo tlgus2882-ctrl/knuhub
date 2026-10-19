@@ -12,6 +12,7 @@ const ITEMS = [
   { href: "/courses", label: "전체 과목 둘러보기" },
   { href: "/search", label: "검색" },
   { href: "/profile", label: "내 프로필" },
+  { href: "/updates", label: "업데이트" },
 ];
 
 const ITEM_CLASS =

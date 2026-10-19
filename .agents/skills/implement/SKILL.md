@@ -12,4 +12,6 @@ Run typechecking regularly, single test files regularly, and the full test suite
 
 Once done, call the Skill tool with "code-review" to review the work.
 
+Add an entry for the ticket at the top of `src/app/updates/updates.ts` (the site's 업데이트 page): a short title and what users can now do, in Korean, in the user's domain language.
+
 Commit your work to the current branch.
