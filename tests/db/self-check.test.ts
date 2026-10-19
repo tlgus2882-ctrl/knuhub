@@ -26,21 +26,20 @@ async function usedBy(viewer: TestUser, assignmentId: string) {
   return data?.map((row) => row.used) ?? [];
 }
 
-/** Saves a 셀프 점검 result for the student's current 제출물, the way the server action does. */
-async function saveResult(student: TestUser, assignmentId: string) {
+/** A 셀프 점검 result for the student's current 제출물. */
+async function resultFor(student: TestUser, assignmentId: string) {
   const { data: submission } = await student.client
     .from("submission")
     .select("id, submitted_at")
     .eq("assignment_id", assignmentId)
     .eq("student_id", student.id)
     .single();
-  return student.client.from("self_check").insert({
-    submission_id: submission!.id,
-    submitted_at: submission!.submitted_at,
-    criteria_version: 1,
-    criteria: CRITERIA,
-    opinions: OPINIONS,
-  });
+  return { submission_id: submission!.id, submitted_at: submission!.submitted_at, criteria_version: 1, criteria: CRITERIA, opinions: OPINIONS };
+}
+
+/** Saves a result the way the server action does: with the secret key. */
+async function saveResult(student: TestUser, assignmentId: string) {
+  return adminClient().from("self_check").insert(await resultFor(student, assignmentId));
 }
 
 async function resultsSeenBy(viewer: TestUser, assignmentId: string) {
@@ -63,15 +62,16 @@ describe("셀프 점검", () => {
     expect(await usedBy(student, assignmentId)).toEqual([1]);
   });
 
-  it("결과와 횟수 기록은 그 학생만 읽는다 (교수·조교·다른 수강생은 못 읽는다)", async () => {
+  it("결과와 횟수 기록은 그 학생만 읽는다 (교수·조교·다른 수강생·다른 교수·관리자는 못 읽는다)", async () => {
     const { professor, student, classmate, assistant, assignmentId } = await selfCheckSetup();
+    const [otherProfessor, admin] = await Promise.all([createTestUser({ role: "professor" }), createTestUser({ role: "admin" })]);
     await start(student, assignmentId);
 
     const { error } = await saveResult(student, assignmentId);
 
     expect(error).toBeNull();
     expect(await resultsSeenBy(student, assignmentId)).toEqual([OPINIONS]);
-    for (const other of [professor, classmate, assistant]) {
+    for (const other of [professor, classmate, assistant, otherProfessor, admin]) {
       expect(await resultsSeenBy(other, assignmentId)).toEqual([]);
       expect(await usedBy(other, assignmentId)).toEqual([]);
     }
@@ -119,19 +119,14 @@ describe("셀프 점검", () => {
     expect(await usedBy(student, assignmentId)).toEqual([0]);
   });
 
-  it("다른 학생의 제출물에는 결과를 넣을 수 없다", async () => {
+  it("학생은 결과를 직접 넣을 수 없다 (자기 제출물에도)", async () => {
     const { student, classmate, assignmentId } = await selfCheckSetup();
-    const { data: submission } = await student.client.from("submission").select("id, submitted_at").eq("assignment_id", assignmentId).single();
+    const result = await resultFor(student, assignmentId);
 
-    const { error } = await classmate.client.from("self_check").insert({
-      submission_id: submission!.id,
-      submitted_at: submission!.submitted_at,
-      criteria_version: 1,
-      criteria: CRITERIA,
-      opinions: OPINIONS,
-    });
-
-    expect(error).not.toBeNull();
+    for (const user of [student, classmate]) {
+      expect((await user.client.from("self_check").insert(result)).error).not.toBeNull();
+    }
+    expect(await resultsSeenBy(student, assignmentId)).toEqual([]);
   });
 
   it("제출물을 지우면 결과는 지워지지만 쓴 횟수는 되돌아가지 않는다", async () => {

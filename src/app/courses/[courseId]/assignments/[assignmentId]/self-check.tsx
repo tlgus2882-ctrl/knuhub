@@ -33,17 +33,16 @@ export async function SelfCheck({ courseId, assignmentId, studentId, open }: Pro
   const criteriaVersion = assignment?.criteria_version ?? 0;
   const max = limit ?? 0;
 
-  // Evidence opens the code viewer at its line, in the 제출물 version the result checked.
+  // Evidence opens the code viewer at its line, in the 제출물 version the result checked
+  // (no link once that version has dropped out of the 제출 이력).
   const evidenceHref = (checkedAt: string) => {
     if (!submission) return null;
-    if (sameTime(checkedAt, submission.submitted_at)) {
-      return (path: string, line: number) => `${submissionHref(courseId, assignmentId, submission.id, path)}#L${line}`;
-    }
-    const history = submission.submission_history.find((h) => sameTime(h.submitted_at, checkedAt));
-    return history
-      ? (path: string, line: number) => `${submissionHref(courseId, assignmentId, submission.id, path, history.id)}#L${line}`
-      : null;
+    const current = sameTime(checkedAt, submission.submitted_at);
+    const history = current ? undefined : submission.submission_history.find((h) => sameTime(h.submitted_at, checkedAt));
+    if (!current && !history) return null;
+    return (path: string, line: number) => `${submissionHref(courseId, assignmentId, submission.id, path, history?.id)}#L${line}`;
   };
+  const remaining = `남은 횟수 ${max - (usage?.used ?? 0)}/${max}`;
 
   return (
     <section className="flex flex-col gap-4 rounded-xl border p-5">
@@ -58,9 +57,9 @@ export async function SelfCheck({ courseId, assignmentId, studentId, open }: Pro
       {criteriaVersion === 0 ? (
         <p className="text-sm text-muted-foreground">아직 열리지 않았어요. 교수님이 채점 항목을 정하면 쓸 수 있어요.</p>
       ) : !open ? (
-        <p className="text-sm text-muted-foreground">마감이 지나서 셀프 점검을 쓸 수 없어요.</p>
+        <p className="text-sm text-muted-foreground">마감이 지나서 셀프 점검을 쓸 수 없어요. ({remaining})</p>
       ) : !submission ? (
-        <p className="text-sm text-muted-foreground">제출하면 셀프 점검을 쓸 수 있어요.</p>
+        <p className="text-sm text-muted-foreground">제출하면 셀프 점검을 쓸 수 있어요. ({remaining})</p>
       ) : (
         <SelfCheckButton assignmentId={assignmentId} remaining={max - (usage?.used ?? 0)} limit={max} />
       )}

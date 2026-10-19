@@ -1,9 +1,12 @@
 -- 셀프 점검 (v2, #48)
 --
 -- 학생이 마감 전에 자기 제출물을 채점 항목별로 AI에게 점검받는다. 결과는 그 학생만 본다.
--- 서버 액션이 start_self_check()로 횟수를 먼저 차감하고 AI를 부른 뒤 결과를 self_check에 넣는다.
+-- 서버 액션이 start_self_check()로 횟수를 먼저 차감하고 AI를 부른 뒤, 서버(secret key)가 결과를
+-- self_check에 넣는다. 학생은 결과를 직접 넣을 수 없다 (한도·마감을 건너뛴 결과가 생기지 않게).
 -- "너무 큼"이거나 AI 호출이 실패하면 서버가 refund_self_check()로 횟수를 되돌린다.
 -- 횟수는 제출물과 따로 기록해서, 제출물을 지웠다 다시 내도 되돌아가지 않는다.
+-- 교수가 탈퇴해도 셀프 점검은 보관하지 않는다 (ADR-0003의 보관 대상 아님): 그 학생만 보는 기록이라
+-- 과목과 함께 지워진다.
 --
 -- 오류 코드: KH008 셀프 점검을 쓸 수 없음 (수강생 아님, 마감 지남, 채점 항목 없음, 제출물 없음),
 --           KH009 셀프 점검 횟수를 다 씀
@@ -54,21 +57,14 @@ create index on public.self_check (submission_id);
 
 alter table public.self_check enable row level security;
 
+-- 쓰기는 서버(secret key)만 한다.
 revoke all on public.self_check from anon, authenticated;
 grant select on public.self_check to authenticated;
-grant insert (submission_id, submitted_at, criteria_version, criteria, opinions) on public.self_check to authenticated;
 
 -- 교수·조교도 읽지 못한다. 학생이 부담 없이 점검하게.
 create policy "내 제출물의 셀프 점검 결과를 읽는다"
   on public.self_check for select to authenticated
   using (exists (
-    select 1 from public.submission s where s.id = submission_id and s.student_id = (select auth.uid())
-  ));
-
--- 결과는 서버 액션이 학생 권한으로 넣는다. 자기 제출물에만 넣을 수 있고, 꾸며 넣어도 본인만 본다.
-create policy "내 제출물에 셀프 점검 결과를 넣는다"
-  on public.self_check for insert to authenticated
-  with check (exists (
     select 1 from public.submission s where s.id = submission_id and s.student_id = (select auth.uid())
   ));
 
