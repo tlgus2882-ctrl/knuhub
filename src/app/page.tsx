@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { PostList } from "./board/post-list";
+import { MascotGreeting } from "./mascot-greeting";
 import { RecentRecommendations } from "./recommendations/recent-recommendations";
 import { createServerSupabase, type ServerSupabase as Supabase } from "@/lib/supabase/server";
 import { courseTerm } from "./courses/course-term";
@@ -23,6 +24,12 @@ export default function Home({ searchParams }: PageProps<"/">) {
       </Suspense>
     </main>
   );
+}
+
+// A Server Component renders once per request (this part already reads the session),
+// so each visit starts the mascot on a different line.
+function randomSeed() {
+  return Math.random();
 }
 
 type CourseSummary = { id: string; name: string; semester: string; section: string };
@@ -54,10 +61,7 @@ async function SignedInHome() {
 
   return (
     <>
-      <p className="text-base">
-        {profile?.name}
-        {profile?.student_number && ` (${profile.student_number})`}님, 안녕하세요.
-      </p>
+      <MascotGreeting name={profile?.name ?? ""} seed={randomSeed()} />
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">전체 과목 검색</h2>

@@ -4,6 +4,14 @@ export type Update = { date: string; title: string; items: string[] };
 export const UPDATES: Update[] = [
   {
     date: "2026-10-20",
+    title: "메인 페이지 캐릭터 인사",
+    items: [
+      "로그인하면 메인 페이지에서 강남대 캐릭터가 말풍선으로 인사해요. 들어올 때마다 다른 말을 해요.",
+      "캐릭터를 누르면 다른 말을 들을 수 있어요.",
+    ],
+  },
+  {
+    date: "2026-10-20",
     title: "프로필 GitHub 저장소 목록",
     items: [
       "연락처에 GitHub 아이디를 적은 사람의 프로필에 최근에 고친 GitHub 공개 저장소가 10개까지 보여요.",
