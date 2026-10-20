@@ -435,6 +435,52 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"post": {
+                  Row: {
+                    "author_id": string,"body": string,"category": Database["public"]['Enums']["post_category"],"created_at": string,"id": string,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_id"?: string,"body": string,"category": Database["public"]['Enums']["post_category"],"created_at"?: string,"id"?: string,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "author_id"?: string,"body"?: string,"category"?: Database["public"]['Enums']["post_category"],"created_at"?: string,"id"?: string,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "post_author_id_fkey"
+      columns: ["author_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"post_comment": {
+                  Row: {
+                    "author_id": string,"body": string,"created_at": string,"id": string,"post_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_id"?: string,"body": string,"created_at"?: string,"id"?: string,"post_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "author_id"?: string,"body"?: string,"created_at"?: string,"id"?: string,"post_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "post_comment_author_id_fkey"
+      columns: ["author_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "post_comment_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "post"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profile": {
                   Row: {
                     "created_at": string,"id": string,"name": string,"role": Database["public"]['Enums']["role"],"student_number": string | null
@@ -485,6 +531,38 @@ isOneToOne: true
       foreignKeyName: "profile_private_id_fkey"
       columns: ["id"]
 isOneToOne: true
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"report": {
+                  Row: {
+                    "closed_at": string | null,"comment_id": string | null,"created_at": string,"id": string,"post_id": string | null,"reason": string,"reporter_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "closed_at"?: string | null,"comment_id"?: string | null,"created_at"?: string,"id"?: string,"post_id"?: string | null,"reason": string,"reporter_id"?: string
+                  }
+                  Update: {
+                    "closed_at"?: string | null,"comment_id"?: string | null,"created_at"?: string,"id"?: string,"post_id"?: string | null,"reason"?: string,"reporter_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "report_comment_id_fkey"
+      columns: ["comment_id"]
+isOneToOne: false
+      referencedRelation: "post_comment"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "report_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "post"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "report_reporter_id_fkey"
+      columns: ["reporter_id"]
+isOneToOne: false
       referencedRelation: "profile"
       referencedColumns: ["id"]
     }
@@ -816,7 +894,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "contact_visibility": "public"|"course"|"private","file_kind": "text"|"binary","role": "student"|"professor"|"admin","visibility": "private"|"course"|"campus"
+            "contact_visibility": "public"|"course"|"private","file_kind": "text"|"binary","post_category": "free"|"question"|"career"|"info"|"etc","role": "student"|"professor"|"admin","visibility": "private"|"course"|"campus"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -936,7 +1014,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "contact_visibility": ["public", "course", "private"],"file_kind": ["text", "binary"],"role": ["student", "professor", "admin"],"visibility": ["private", "course", "campus"]
+            "contact_visibility": ["public", "course", "private"],"file_kind": ["text", "binary"],"post_category": ["free", "question", "career", "info", "etc"],"role": ["student", "professor", "admin"],"visibility": ["private", "course", "campus"]
           }
         }
 } as const
