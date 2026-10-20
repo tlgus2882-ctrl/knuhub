@@ -13,6 +13,11 @@ export const CATEGORY_LABEL: Record<PostCategory, string> = {
 
 export const CATEGORIES = Object.keys(CATEGORY_LABEL) as PostCategory[];
 
+/** Where a post's board lists it: its course, or the 메인 게시판. */
+export function boardHref(courseId: string | null) {
+  return courseId ? `/courses/${courseId}#board` : "/board";
+}
+
 export function toCategory(value: unknown): PostCategory | null {
   return CATEGORIES.find((category) => category === value) ?? null;
 }

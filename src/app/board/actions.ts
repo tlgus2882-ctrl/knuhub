@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { toCategory } from "./categories";
+import { boardHref, toCategory } from "./categories";
 
 export type BoardFormState = {
   error: string | null;
@@ -20,7 +20,7 @@ export async function createPost(_prev: BoardFormState, form: FormData): Promise
 
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.from("post").insert(post).select("id").single();
-  if (error) return failed("createPost", error, "글을 올리지 못했어요. 다시 로그인해 주세요.");
+  if (error) return failed("createPost", error, post.course_id ? "이 과목 사람만 글을 쓰고, 공지는 교수·조교만 올려요." : "글을 올리지 못했어요. 다시 로그인해 주세요.");
 
   redirect(`/board/${data.id}`);
 }
@@ -31,7 +31,9 @@ export async function updatePost(_prev: BoardFormState, form: FormData): Promise
 
   const postId = String(form.get("post_id"));
   const supabase = await createServerSupabase();
-  const { data, error } = await supabase.from("post").update(post).eq("id", postId).select("id");
+  // The board a post belongs to never changes, so course_id is not sent.
+  const { category, is_notice, title, body } = post;
+  const { data, error } = await supabase.from("post").update({ category, is_notice, title, body }).eq("id", postId).select("id");
   if (error || !data?.length) return failed("updatePost", error, "내가 쓴 글만 고칠 수 있어요.");
 
   redirect(`/board/${postId}`);
@@ -39,15 +41,15 @@ export async function updatePost(_prev: BoardFormState, form: FormData): Promise
 
 export async function deletePost(_prev: BoardFormState, form: FormData): Promise<BoardFormState> {
   const supabase = await createServerSupabase();
-  const { data, error } = await supabase.from("post").delete().eq("id", String(form.get("post_id"))).select("id");
-  if (error || !data?.length) return failed("deletePost", error, "글쓴이나 관리자만 지울 수 있어요.");
+  const { data, error } = await supabase.from("post").delete().eq("id", String(form.get("post_id"))).select("course_id");
+  if (error || !data?.length) return failed("deletePost", error, "글쓴이나 게시판을 관리하는 사람만 지울 수 있어요.");
 
   // From the 관리자 페이지 the admin stays there; from the post itself the post is gone.
   if (form.get("stay")) {
     refresh();
     return { error: null };
   }
-  redirect("/board");
+  redirect(boardHref(data[0].course_id));
 }
 
 export async function createComment(_prev: BoardFormState, form: FormData): Promise<BoardFormState> {
@@ -85,7 +87,7 @@ export async function deleteComment(_prev: BoardFormState, form: FormData): Prom
     .delete()
     .eq("id", String(form.get("comment_id")))
     .select("id");
-  if (error || !data?.length) return failed("deleteComment", error, "글쓴이나 관리자만 지울 수 있어요.");
+  if (error || !data?.length) return failed("deleteComment", error, "글쓴이나 게시판을 관리하는 사람만 지울 수 있어요.");
 
   refresh();
   return { error: null };
@@ -108,14 +110,15 @@ export async function createReport(_prev: BoardFormState, form: FormData): Promi
   return { error: null, savedAt: Date.now() };
 }
 
-/** The post's fields, or what is missing. */
+/** The post's fields, or what is missing. A 과목 게시판 post has no 말머리 and may be a 공지. */
 function readPost(form: FormData) {
-  const category = toCategory(form.get("category"));
+  const courseId = readText(form, "course_id") || null;
+  const category = courseId ? null : toCategory(form.get("category"));
   const title = readText(form, "title");
   const body = readText(form, "body");
-  if (!category) return "말머리를 골라 주세요.";
+  if (!courseId && !category) return "말머리를 골라 주세요.";
   if (!title || !body) return "제목과 내용을 입력해 주세요.";
-  return { category, title, body };
+  return { course_id: courseId, category, is_notice: Boolean(courseId && form.get("is_notice")), title, body };
 }
 
 function readText(form: FormData, name: string): string {
