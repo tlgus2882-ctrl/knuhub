@@ -10,12 +10,12 @@ export async function setLiked(target: LikeTarget, liked: boolean): Promise<{ er
   const supabase = await createServerSupabase();
   const { error } =
     "submissionId" in target
-      ? liked
-        ? await supabase.from("submission_like").insert({ submission_id: target.submissionId })
-        : await supabase.from("submission_like").delete().eq("submission_id", target.submissionId)
-      : liked
-        ? await supabase.from("post_like").insert({ post_id: target.postId })
-        : await supabase.from("post_like").delete().eq("post_id", target.postId);
+      ? await (liked
+          ? supabase.from("submission_like").insert({ submission_id: target.submissionId })
+          : supabase.from("submission_like").delete().eq("submission_id", target.submissionId))
+      : await (liked
+          ? supabase.from("post_like").insert({ post_id: target.postId })
+          : supabase.from("post_like").delete().eq("post_id", target.postId));
   // Pressing twice (two tabs) is not an error: the like is already there.
   if (error && error.code !== "23505") {
     console.error("setLiked failed", error.message);

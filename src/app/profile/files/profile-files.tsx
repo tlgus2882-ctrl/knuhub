@@ -1,5 +1,5 @@
 import { formatBytes } from "@/lib/format-bytes";
-import { PROFILE_FILE_BUCKET, PROFILE_FILE_MAX_BYTES, PROFILE_FILES_TOTAL_BYTES } from "@/lib/profile-files/storage";
+import { PROFILE_FILE_BUCKET, PROFILE_FILE_MAX_BYTES } from "@/lib/profile-files/storage";
 import { downloadUrl } from "@/lib/storage-download";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { DeleteProfileFileButton } from "./delete-profile-file-button";
@@ -11,11 +11,10 @@ const MB = 1024 * 1024;
 /** Someone's 프로필 파일: anyone signed in sees and downloads them; `editable` on my own profile. */
 export async function ProfileFiles({ ownerId, editable }: { ownerId: string; editable: boolean }) {
   const supabase = await createServerSupabase();
-  const { data } = await supabase
-    .from("profile_file")
-    .select("id, name, size, storage_path")
-    .eq("owner_id", ownerId)
-    .order("created_at");
+  const [{ data }, { data: totalLimit }] = await Promise.all([
+    supabase.from("profile_file").select("id, name, size, storage_path").eq("owner_id", ownerId).order("created_at"),
+    supabase.rpc("profile_files_limit"),
+  ]);
   const files = data ?? [];
   if (!files.length && !editable) return null;
 
@@ -55,7 +54,7 @@ export async function ProfileFiles({ ownerId, editable }: { ownerId: string; edi
       {editable && (
         <>
           <p className="text-xs text-muted-foreground">
-            로그인한 사용자 누구나 내려받을 수 있어요. 파일 하나에 {PROFILE_FILE_MAX_BYTES / MB}MB, 합쳐서 {PROFILE_FILES_TOTAL_BYTES / MB}MB까지 · 지금{" "}
+            로그인한 사용자 누구나 내려받을 수 있어요. 파일 하나에 {PROFILE_FILE_MAX_BYTES / MB}MB, 합쳐서 {(totalLimit ?? 0) / MB}MB까지 · 지금{" "}
             {formatBytes(used)}
           </p>
           <ProfileFileUpload ownerId={ownerId} />

@@ -21,8 +21,13 @@ export function ProfileFileUpload({ ownerId }: { ownerId: string }) {
       for (const file of files) {
         const storagePath = profileFileObjectName(ownerId, crypto.randomUUID());
         const { error: uploadError } = await storage.upload(storagePath, file, { contentType: file.type || "application/octet-stream" });
-        if (uploadError) return setError(`${file.name}: 올리지 못했어요. 다시 로그인한 뒤 해 주세요.`);
-        const result = await addProfileFile(storagePath, file.name);
+        if (uploadError) return setError(`${file.name}: 올리지 못했어요. 합계 한도를 넘었거나 로그인이 끝났을 수 있어요.`);
+        let result: { error: string | null };
+        try {
+          result = await addProfileFile(storagePath, file.name);
+        } catch {
+          result = { error: "올리지 못했어요. 잠시 뒤에 다시 해 주세요." };
+        }
         if (result.error) {
           await storage.remove([storagePath]);
           return setError(`${file.name}: ${result.error}`);

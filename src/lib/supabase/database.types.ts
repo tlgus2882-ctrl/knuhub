@@ -971,6 +971,12 @@ isOneToOne: false
 "my_course_role":
 { Args: { "target_course": string }; Returns: string
                            },
+"my_profile_file_objects":
+{ Args: Record<PropertyKey, never>; Returns: (string)[]
+                           },
+"my_profile_folder_usage":
+{ Args: Record<PropertyKey, never>; Returns: Record<string, unknown>
+                           },
 "new_invite_code":
 { Args: Record<PropertyKey, never>; Returns: string
                            },

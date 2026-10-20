@@ -4,7 +4,7 @@
 -- 브라우저가 {owner_id}/{파일 id} 이름으로 본인 폴더에 올리고 add_profile_file()이 확정한다.
 -- 원래 파일 이름은 DB에만 둔다 (Storage 객체 이름에는 한글을 쓸 수 없다).
 -- 파일당 20MB는 버킷 설정으로, 1인당 50MB는 add_profile_file()이 확인한다.
--- 탈퇴하면 행은 외래 키로, Storage 파일은 탈퇴 처리(withdrawUser)가 지운다.
+-- 탈퇴하면 행은 외래 키로, Storage 파일은 my_profile_file_objects() 목록대로 탈퇴 처리(withdrawUser)가 지운다.
 --
 -- 오류 코드: KH015 1인당 용량 초과, KH016 본인 폴더에 올라간 파일이 아님
 
@@ -45,14 +45,6 @@ create policy "본인은 자기 프로필 파일을 지운다"
   on public.profile_file for delete to authenticated
   using (owner_id = (select auth.uid()));
 
-create policy "본인 폴더에 프로필 파일을 올린다"
-  on storage.objects for insert to authenticated
-  with check (bucket_id = 'profile-files' and split_part(name, '/', 1) = (select auth.uid())::text);
-
-create policy "본인 폴더의 프로필 파일을 지운다"
-  on storage.objects for delete to authenticated
-  using (bucket_id = 'profile-files' and split_part(name, '/', 1) = (select auth.uid())::text);
-
 -- 프로필 파일로 등록된 Storage 객체인가 (정책 안에서 profile_file.name과 헷갈리지 않게 함수로 묻는다)
 create function public.is_profile_file_object(object_name text)
 returns boolean
@@ -66,6 +58,42 @@ $$;
 
 revoke execute on function public.is_profile_file_object(text) from public, anon;
 grant execute on function public.is_profile_file_object(text) to authenticated;
+
+-- 내 폴더에 이미 있는 Storage 객체(등록하지 않은 것 포함)의 개수와 합계
+create function public.my_profile_folder_usage(out objects bigint, out bytes bigint)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select count(*), coalesce(sum((metadata ->> 'size')::bigint), 0)
+  from storage.objects
+  where bucket_id = 'profile-files' and split_part(name, '/', 1) = (select auth.uid())::text;
+$$;
+
+-- 부른 사람 자신의 폴더만 센다. Storage 정책이 그 사람 권한으로 부르므로 authenticated에 연다.
+revoke execute on function public.my_profile_folder_usage() from public, anon;
+grant execute on function public.my_profile_folder_usage() to authenticated;
+
+-- {내 id}/{파일 id} 이름으로만 올린다 (하위 폴더 없음). 등록 전 파일도 쌓이지 않게, 폴더가 이미
+-- 한도만큼 찼거나 파일이 100개면 더 받지 않는다 (새 파일 하나는 버킷이 20MB로 막는다).
+create policy "본인 폴더에 프로필 파일을 올린다"
+  on storage.objects for insert to authenticated
+  with check (
+    bucket_id = 'profile-files'
+    and name ~ ('^' || (select auth.uid())::text || '/[0-9a-f-]{36}$')
+    and (select bytes < public.profile_files_limit() and objects < 100 from public.my_profile_folder_usage())
+  );
+
+-- 등록한 파일은 목록에서 먼저 지워야 Storage에서 지운다. 바로 지우고 같은 이름에 다시 올려
+-- 등록된 크기와 다른 파일을 두는 것을 막는다.
+create policy "본인 폴더의 등록하지 않은 프로필 파일을 지운다"
+  on storage.objects for delete to authenticated
+  using (
+    bucket_id = 'profile-files'
+    and split_part(name, '/', 1) = (select auth.uid())::text
+    and not public.is_profile_file_object(name)
+  );
 
 -- 등록한 파일은 누구나, 아직 등록하지 않은 파일은 본인만 읽는다.
 create policy "등록된 프로필 파일을 읽는다"
@@ -101,7 +129,7 @@ begin
   perform 1 from public.profile where id = me for update;
   select coalesce(sum(size), 0) into used from public.profile_file where owner_id = me;
   if used + object_size > public.profile_files_limit() then
-    raise exception '프로필 파일은 한 사람당 합쳐서 50MB까지예요' using errcode = 'KH015';
+    raise exception '프로필 파일 합계 한도를 넘어요' using errcode = 'KH015';
   end if;
 
   insert into public.profile_file (owner_id, name, size, storage_path)
@@ -113,3 +141,19 @@ $$;
 
 revoke execute on function public.add_profile_file(text, text) from public, anon;
 grant execute on function public.add_profile_file(text, text) to authenticated;
+
+-- 탈퇴할 때 Storage에서 지울 내 프로필 파일 (등록하지 않은 것 포함). 탈퇴 처리가 이 목록대로 지운다.
+create function public.my_profile_file_objects()
+returns text[]
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(array_agg(name order by name), '{}')
+  from storage.objects
+  where bucket_id = 'profile-files' and split_part(name, '/', 1) = (select auth.uid())::text;
+$$;
+
+revoke execute on function public.my_profile_file_objects() from public, anon;
+grant execute on function public.my_profile_file_objects() to authenticated;

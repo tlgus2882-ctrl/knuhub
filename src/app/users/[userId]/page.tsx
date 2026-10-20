@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import type { Database } from "@/lib/supabase/database.types";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
-import { ProfileFiles } from "../../profile/files/profile-files";
+import { ProfileFiles } from "@/app/profile/files/profile-files";
 import { GitHubRepos } from "./github-repos";
-import { RecommendedBadge } from "../../recommendations/recommended-badge";
+import { RecommendedBadge } from "@/app/recommendations/recommended-badge";
 import { submissionHref } from "../../courses/[courseId]/assignments/[assignmentId]/submissions/submission-href";
 
 const ROLE_LABEL: Record<Database["public"]["Enums"]["role"], string> = {

@@ -6,7 +6,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 
 // Raised by add_profile_file() (supabase/migrations/*_profile_files.sql).
 const PROFILE_FILE_ERRORS: Record<string, string> = {
-  KH015: "프로필 파일은 한 사람당 합쳐서 50MB까지예요. 다른 파일을 지운 뒤 올려 주세요.",
+  KH015: "프로필 파일 합계 한도를 넘어요. 다른 파일을 지운 뒤 올려 주세요.",
   KH016: "올린 파일을 찾지 못했어요. 다시 골라 주세요.",
 };
 
