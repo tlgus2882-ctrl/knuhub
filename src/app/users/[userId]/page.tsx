@@ -7,6 +7,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
 import { ProfileFiles } from "../../profile/files/profile-files";
+import { GitHubRepos } from "./github-repos";
 import { RecommendedBadge } from "../../recommendations/recommended-badge";
 import { submissionHref } from "../../courses/[courseId]/assignments/[assignmentId]/submissions/submission-href";
 
@@ -54,6 +55,9 @@ async function UserProfile({ userId }: { userId: string }) {
         </section>
       )}
       <ProfileFiles ownerId={profile.id} editable={false} />
+      <Suspense fallback={null}>
+        <GitHubRepos userId={profile.id} />
+      </Suspense>
       {profile.role === "student" && <VisibleSubmissions studentId={profile.id} />}
       {auth.user?.id === profile.id && (
         <Button variant="outline" className="self-start" nativeButton={false} render={<Link href="/profile" />}>

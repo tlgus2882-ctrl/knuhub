@@ -4,6 +4,14 @@ export type Update = { date: string; title: string; items: string[] };
 export const UPDATES: Update[] = [
   {
     date: "2026-10-20",
+    title: "프로필 GitHub 저장소 목록",
+    items: [
+      "연락처에 GitHub 아이디를 적은 사람의 프로필에 최근에 고친 GitHub 공개 저장소가 10개까지 보여요.",
+      "연락처 공개 범위 때문에 GitHub 아이디가 보이지 않는 사람에게는 저장소 목록도 보이지 않아요.",
+    ],
+  },
+  {
+    date: "2026-10-20",
     title: "프로필 파일",
     items: [
       "내 프로필에 포트폴리오, 이력서 같은 파일을 올리고 지울 수 있어요. 파일 하나에 20MB, 합쳐서 50MB까지예요.",
