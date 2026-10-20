@@ -27,7 +27,7 @@ export function GitHubSubmitForm({ assignmentId, resubmit }: { assignmentId: str
         </div>
         <p className="text-xs text-muted-foreground">
           공개 저장소만 가져올 수 있어요. zip 업로드와 같이 node_modules, .git 같은 폴더는 빼고, 합쳐서 20MB까지 제출돼요.
-          {resubmit && " 다시 제출하면 지금 파일은 모두 지워지고 저장소 파일로 바뀌어요."}
+          {resubmit && " 다시 제출하면 지금 파일은 제출 이력에 남고 저장소 파일로 바뀌어요."}
         </p>
         {state.error && <p className="text-sm text-destructive">{state.error}</p>}
         <Button type="submit" disabled={pending} className="self-start">

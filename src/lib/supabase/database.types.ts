@@ -778,7 +778,7 @@ isOneToOne: false
 { Args: { "review_author": string }; Returns: boolean
                            },
 "can_moderate_board":
-{ Args: { "target_course": string }; Returns: boolean
+{ Args: { "target_course"?: string }; Returns: boolean
                            },
 "can_read_assignment_file":
 { Args: { "object_name": string }; Returns: boolean
@@ -800,6 +800,9 @@ isOneToOne: false
                            },
 "can_view_submission":
 { Args: { "target_submission": string }; Returns: boolean
+                           },
+"can_write_board":
+{ Args: { "target_course": string }; Returns: boolean
                            },
 "can_write_submission_object":
 { Args: { "object_name": string }; Returns: boolean

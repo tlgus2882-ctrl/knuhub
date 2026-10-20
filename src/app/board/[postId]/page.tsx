@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { UserLink } from "@/components/user-link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
-import { boardHref, CATEGORY_LABEL } from "../categories";
+import { boardHref, postLabel } from "../categories";
 import { CommentForm } from "../comment-form";
 import { CommentItem } from "../comment-item";
 import { DeleteButton } from "../delete-button";
@@ -27,7 +27,7 @@ const edited = (row: { created_at: string; updated_at: string }) => Date.parse(r
 
 async function Post({ postId }: { postId: string }) {
   const supabase = await createServerSupabase();
-  const [{ data: post }, { data: claims }, { data: isAdmin }] = await Promise.all([
+  const [{ data: post }, { data: claims }] = await Promise.all([
     supabase
       .from("post")
       .select("id, course_id, category, is_notice, title, body, author_id, created_at, updated_at, profile(name), course(name), post_comment(id, body, author_id, created_at, updated_at, profile(name))")
@@ -35,15 +35,13 @@ async function Post({ postId }: { postId: string }) {
       .order("created_at", { referencedTable: "post_comment" })
       .maybeSingle(),
     supabase.auth.getClaims(),
-    supabase.rpc("is_admin"),
   ]);
   if (!post) notFound();
 
   // Only which buttons to show: RLS decides what is allowed (docs/adr/0002).
   const me = claims?.claims.sub;
   const mine = post.author_id === me;
-  const canModerate =
-    isAdmin || (post.course_id && (await supabase.rpc("is_professor_or_assistant", { target_course: post.course_id })).data);
+  const { data: canModerate } = await supabase.rpc("can_moderate_board", { target_course: post.course_id ?? undefined });
 
   return (
     <>
@@ -52,7 +50,7 @@ async function Post({ postId }: { postId: string }) {
       </Link>
       <article className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <p className="text-sm text-primary">{post.is_notice ? "공지" : post.category && CATEGORY_LABEL[post.category]}</p>
+          <p className="text-sm text-primary">{postLabel(post)}</p>
           <h1 className="text-2xl font-semibold tracking-tight break-words">{post.title}</h1>
           <p className="text-sm">
             <UserLink userId={post.author_id} name={post.profile?.name ?? "알 수 없음"} />{" "}

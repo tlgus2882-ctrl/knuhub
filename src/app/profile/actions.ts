@@ -51,7 +51,8 @@ export async function saveBio(_prev: ProfileFormState, form: FormData): Promise<
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { error } = await supabase.from("profile").update({ bio }).eq("id", user?.id ?? "");
+  if (!user) return { error: "다시 로그인해 주세요." };
+  const { error } = await supabase.from("profile").update({ bio }).eq("id", user.id);
   if (error) {
     console.error("saveBio failed", error.message);
     return { error: "자기소개를 저장하지 못했어요. 2000자까지 쓸 수 있어요." };

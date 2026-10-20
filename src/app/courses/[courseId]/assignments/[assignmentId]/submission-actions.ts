@@ -58,6 +58,15 @@ export async function submitFromGitHub(_prev: SubmissionActionState, form: FormD
   const repo = parseGitHubRepo(String(form.get("repo") ?? ""), String(form.get("branch") ?? ""));
   if (!repo) return { error: "GitHub 저장소 주소가 아니에요. 예: https://github.com/아이디/저장소" };
 
+  // Check before downloading, so only someone who may submit now makes the server fetch an archive.
+  const assignmentId = String(form.get("assignment_id"));
+  const supabase = await createServerSupabase();
+  const [{ data: canSubmit }, { data: auth }] = await Promise.all([
+    supabase.rpc("can_submit", { target_assignment: assignmentId }),
+    supabase.auth.getUser(),
+  ]);
+  if (!canSubmit || !auth.user) return { error: SUBMISSION_ERRORS.KH003 };
+
   const archive = await downloadGitHubArchive(repo);
   if (!archive.ok) return { error: GITHUB_ERRORS[archive.reason] };
 
@@ -69,14 +78,8 @@ export async function submitFromGitHub(_prev: SubmissionActionState, form: FormD
   }
   if (!prepared.ok) return { error: PREPARE_ERRORS[prepared.reason] };
 
-  const assignmentId = String(form.get("assignment_id"));
-  const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "다시 로그인해 주세요." };
   const storage = supabase.storage.from(SUBMISSION_BUCKET);
-  const uploaded = await uploadPrepared(storage, { assignmentId, studentId: user.id }, prepared.files, () => {});
+  const uploaded = await uploadPrepared(storage, { assignmentId, studentId: auth.user.id }, prepared.files, () => {});
   if (!uploaded) return { error: "파일을 올리지 못했어요. 이 과목의 수강생인지, 마감이 지나지 않았는지 확인해 주세요." };
 
   const result = await submitUploadedFiles(assignmentId, uploaded);

@@ -69,6 +69,32 @@ describe("과목 게시판", () => {
     expect((await professor.client.from("post").delete().eq("id", post!.id).select("id")).data).toHaveLength(1);
   });
 
+  it("수강생은 남의 글·댓글을 지우지 못하고, 자기 댓글은 고친다. 다른 과목 교수는 댓글도 못 지운다", async () => {
+    const { course, assistant, student } = await courseWithPeople();
+    const other = await courseWithPeople();
+    const { data: post } = await writeCoursePost(assistant, course.id);
+    const { data: theirs } = await assistant.client.from("post_comment").insert({ post_id: post!.id, body: "조교 댓글" }).select("id").single();
+    const { data: mine } = await student.client.from("post_comment").insert({ post_id: post!.id, body: "내 댓글" }).select("id").single();
+
+    expect((await student.client.from("post").delete().eq("id", post!.id).select("id")).data).toEqual([]);
+    expect((await student.client.from("post_comment").delete().eq("id", theirs!.id).select("id")).data).toEqual([]);
+    expect((await other.professor.client.from("post_comment").delete().eq("id", theirs!.id).select("id")).data).toEqual([]);
+    expect((await student.client.from("post_comment").update({ body: "고침" }).eq("id", mine!.id).select("id")).data).toHaveLength(1);
+  });
+
+  it("관리자는 신고를 처리하려고 과목 게시판 글·댓글을 읽고 지우지만, 글이나 댓글을 쓰지는 않는다", async () => {
+    const { course, student } = await courseWithPeople();
+    const admin = await createTestUser({ role: "admin" });
+    const { data: post } = await writeCoursePost(student, course.id);
+    const { data: comment } = await student.client.from("post_comment").insert({ post_id: post!.id, body: "댓글" }).select("id").single();
+
+    expect((await admin.client.from("post").select("id").eq("id", post!.id)).data).toHaveLength(1);
+    expect((await writeCoursePost(admin, course.id)).error).not.toBeNull();
+    expect((await admin.client.from("post_comment").insert({ post_id: post!.id, body: "관리자" })).error).not.toBeNull();
+    expect((await admin.client.from("post_comment").delete().eq("id", comment!.id).select("id")).data).toHaveLength(1);
+    expect((await admin.client.from("post").delete().eq("id", post!.id).select("id")).data).toHaveLength(1);
+  });
+
   it("과목 게시판 글도 신고하면 관리자가 읽는다", async () => {
     const { course, student, assistant } = await courseWithPeople();
     const admin = await createTestUser({ role: "admin" });

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
-import { CATEGORY_LABEL, type PostCategory } from "./categories";
+import { cn } from "@/lib/utils";
+import { postLabel, type PostCategory } from "./categories";
 
 type Board = { courseId: string; category?: undefined } | { courseId?: undefined; category: PostCategory | null };
 
@@ -23,10 +24,8 @@ export async function PostList({ limit, ...board }: Board & { limit: number }) {
         <li key={post.id} className={post.is_notice ? "bg-primary/5" : undefined}>
           <Link href={`/board/${post.id}`} className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted">
             <span className="min-w-0 truncate">
-              {post.is_notice ? (
-                <span className="mr-2 text-sm font-semibold text-primary">[공지]</span>
-              ) : (
-                post.category && <span className="mr-2 text-sm text-primary">[{CATEGORY_LABEL[post.category]}]</span>
+              {postLabel(post) && (
+                <span className={cn("mr-2 text-sm text-primary", post.is_notice && "font-semibold")}>[{postLabel(post)}]</span>
               )}
               <span className="font-medium">{post.title}</span>
               {post.post_comment[0]?.count ? <span className="ml-1 text-sm text-muted-foreground">({post.post_comment[0].count})</span> : null}
