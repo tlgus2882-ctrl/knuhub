@@ -3,13 +3,13 @@
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { report, type BoardFormState } from "./actions";
+import { createReport, type BoardFormState } from "./actions";
 
 const initial: BoardFormState = { error: null };
 
 /** 신고 for a post or a comment: a reason, then it goes to the 관리자 페이지. */
 export function ReportButton({ target }: { target: { post_id: string } | { comment_id: string } }) {
-  const [state, action, pending] = useActionState(report, initial);
+  const [state, action, pending] = useActionState(createReport, initial);
   const [name, id] = Object.entries(target)[0];
 
   if (state.savedAt) return <p className="text-xs text-muted-foreground">신고했어요. 관리자가 확인할 거예요.</p>;

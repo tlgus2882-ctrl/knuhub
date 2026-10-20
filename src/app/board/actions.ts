@@ -92,7 +92,7 @@ export async function deleteComment(_prev: BoardFormState, form: FormData): Prom
 }
 
 /** Reports a post (post_id) or a comment (comment_id); it goes to the 관리자 페이지. */
-export async function report(_prev: BoardFormState, form: FormData): Promise<BoardFormState> {
+export async function createReport(_prev: BoardFormState, form: FormData): Promise<BoardFormState> {
   const reason = readText(form, "reason");
   if (!reason) return { error: "신고 사유를 적어 주세요." };
 

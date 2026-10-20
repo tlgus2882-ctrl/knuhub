@@ -45,5 +45,6 @@ export async function closeReport(reportId: string): Promise<{ error: string | n
     .update({ closed_at: new Date().toISOString() })
     .eq("id", reportId)
     .select("id");
-  return toActionResult("closeReport", error ?? (data?.length ? null : { code: "KH011", message: "no row closed" }));
+  if (!error && !data?.length) return { error: "신고를 닫지 못했어요. 이미 처리됐을 수 있어요. 새로 고쳐 주세요." };
+  return toActionResult("closeReport", error);
 }

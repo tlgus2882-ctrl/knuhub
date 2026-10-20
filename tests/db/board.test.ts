@@ -43,6 +43,14 @@ describe("메인 게시판", () => {
     await writePost(student);
     expect((await anonClient().from("post").select("id")).data ?? []).toEqual([]);
     expect((await anonClient().from("post").insert({ category: "free", title: "제목", body: "본문" })).error).not.toBeNull();
+
+    // 다른 사람 이름으로 글·댓글·신고를 쓸 수 없다
+    const other = await createTestUser();
+    const postId = await writePost(other);
+    expect((await student.client.from("post").insert({ author_id: other.id, category: "free", title: "제목", body: "본문" } as never)).error).not.toBeNull();
+    expect((await student.client.from("post_comment").insert({ author_id: other.id, post_id: postId, body: "댓글" } as never)).error).not.toBeNull();
+    expect((await student.client.from("report").insert({ reporter_id: other.id, post_id: postId, reason: "광고" } as never)).error).not.toBeNull();
+    expect((await anonClient().from("report").insert({ post_id: postId, reason: "광고" })).error).not.toBeNull();
   });
 
   it("말머리로 모아 본다", async () => {
