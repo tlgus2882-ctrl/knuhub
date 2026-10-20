@@ -487,6 +487,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"post_like": {
+                  Row: {
+                    "created_at": string,"post_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"post_id": string,"user_id"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"post_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "post_like_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "post"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "post_like_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profile": {
                   Row: {
                     "bio": string,"created_at": string,"id": string,"name": string,"role": Database["public"]['Enums']["role"],"student_number": string | null
@@ -728,6 +754,32 @@ isOneToOne: false
       columns: ["history_id"]
 isOneToOne: false
       referencedRelation: "submission_history"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"submission_like": {
+                  Row: {
+                    "created_at": string,"submission_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"submission_id": string,"user_id"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"submission_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "submission_like_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: false
+      referencedRelation: "submission"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "submission_like_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profile"
       referencedColumns: ["id"]
     }
                   ]

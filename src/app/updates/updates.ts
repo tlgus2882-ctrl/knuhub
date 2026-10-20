@@ -4,6 +4,14 @@ export type Update = { date: string; title: string; items: string[] };
 export const UPDATES: Update[] = [
   {
     date: "2026-10-20",
+    title: "좋아요",
+    items: [
+      "제출물과 게시판 글에 좋아요를 누르고, 다시 눌러 취소할 수 있어요. 한 사람이 한 번씩만 눌러요.",
+      "좋아요 수는 그 제출물이나 글을 볼 수 있는 사람에게만 보여요. 게시판 목록에도 좋아요 수가 보여요.",
+    ],
+  },
+  {
+    date: "2026-10-20",
     title: "GitHub 저장소로 제출",
     items: [
       "과제 화면에서 GitHub 공개 저장소 주소와 브랜치를 넣으면 그 내용을 바로 제출할 수 있어요. zip으로 묶지 않아도 돼요.",

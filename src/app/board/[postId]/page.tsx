@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
+import { Likes } from "@/app/likes/likes";
 import { UserLink } from "@/components/user-link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
@@ -62,6 +63,7 @@ async function Post({ postId }: { postId: string }) {
         </div>
         <p className="whitespace-pre-wrap break-words">{post.body}</p>
         <div className="flex flex-wrap items-start gap-2">
+          <Likes target={{ postId: post.id }} />
           {mine && (
             <Button size="xs" variant="ghost" nativeButton={false} render={<Link href={`/board/${post.id}/edit`} />}>
               고치기
