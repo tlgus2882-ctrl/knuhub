@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { PostList } from "./board/post-list";
+import { RecentRecommendations } from "./recommendations/recent-recommendations";
 import { createServerSupabase, type ServerSupabase as Supabase } from "@/lib/supabase/server";
 import { courseTerm } from "./courses/course-term";
 import { JoinCourseForm } from "./courses/join-course-form";
@@ -66,6 +67,9 @@ async function SignedInHome() {
       </section>
       {profile?.role === "professor" && <ProfessorCourses supabase={supabase} userId={user.id} />}
       {profile?.role === "student" && <StudentCourses supabase={supabase} userId={user.id} />}
+      <div className="2xl:hidden">
+        <RecentRecommendations />
+      </div>
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">메인 게시판</h2>

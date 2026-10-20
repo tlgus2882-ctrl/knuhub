@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
+import { Suspense } from "react";
+import { RecentRecommendations } from "@/app/recommendations/recent-recommendations";
 import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
@@ -34,6 +36,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <SiteHeader />
         {children}
+        {/* Beside the page only where the widest pages (max-w-5xl) still leave room; the home page lists it below that. */}
+        <aside className="fixed top-24 right-4 hidden max-h-[calc(100vh-7rem)] w-56 overflow-y-auto 2xl:block">
+          <Suspense>
+            <RecentRecommendations />
+          </Suspense>
+        </aside>
       </body>
     </html>
   );

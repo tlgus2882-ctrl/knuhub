@@ -487,6 +487,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"post_like": {
+                  Row: {
+                    "created_at": string,"id": string,"post_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"post_id": string,"user_id"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"post_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "post_like_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "post"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "post_like_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profile": {
                   Row: {
                     "bio": string,"created_at": string,"id": string,"name": string,"role": Database["public"]['Enums']["role"],"student_number": string | null
@@ -521,6 +547,26 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"profile_file": {
+                  Row: {
+                    "created_at": string,"id": string,"name": string,"owner_id": string,"size": number,"storage_path": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"name": string,"owner_id": string,"size": number,"storage_path": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"name"?: string,"owner_id"?: string,"size"?: number,"storage_path"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "profile_file_owner_id_fkey"
+      columns: ["owner_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profile_private": {
                   Row: {
                     "id": string,"pending_student_number": string | null,"phone": string,"privacy_consented_at": string
@@ -538,6 +584,32 @@ isOneToOne: true
       columns: ["id"]
 isOneToOne: true
       referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"recommendation": {
+                  Row: {
+                    "created_at": string,"recommended_by": string | null,"submission_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"recommended_by"?: string | null,"submission_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"recommended_by"?: string | null,"submission_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "recommendation_recommended_by_fkey"
+      columns: ["recommended_by"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "recommendation_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: true
+      referencedRelation: "submission"
       referencedColumns: ["id"]
     }
                   ]
@@ -731,13 +803,42 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"submission_like": {
+                  Row: {
+                    "created_at": string,"id": string,"submission_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"submission_id": string,"user_id"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"submission_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "submission_like_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: false
+      referencedRelation: "submission"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "submission_like_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
             [_ in never]: never
           }
           Functions: {
-            "admin_list_users":
+            "add_profile_file":
+{ Args: { "file_name": string,"storage_path": string }; Returns: string
+                           },
+"admin_list_users":
 { Args: { "query": string }; Returns: {
               "created_at": string,"email": string,"id": string,"name": string,"role": Database["public"]['Enums']["role"],"student_number": string
             }[]
@@ -846,7 +947,13 @@ isOneToOne: false
 "is_professor_or_assistant":
 { Args: { "target_course": string }; Returns: boolean
                            },
+"is_profile_file_object":
+{ Args: { "object_name": string }; Returns: boolean
+                           },
 "is_submission_course_professor":
+{ Args: { "target_submission": string }; Returns: boolean
+                           },
+"is_submission_course_staff":
 { Args: { "target_submission": string }; Returns: boolean
                            },
 "is_submitted_object":
@@ -864,6 +971,12 @@ isOneToOne: false
 "my_course_role":
 { Args: { "target_course": string }; Returns: string
                            },
+"my_profile_file_objects":
+{ Args: Record<PropertyKey, never>; Returns: (string)[]
+                           },
+"my_profile_folder_usage":
+{ Args: Record<PropertyKey, never>; Returns: Record<string, unknown>
+                           },
 "new_invite_code":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
@@ -872,6 +985,14 @@ isOneToOne: false
                            },
 "prepare_withdrawal":
 { Args: Record<PropertyKey, never>; Returns: (string)[]
+                           },
+"profile_files_limit":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
+"recent_recommendations":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "assignment_id": string,"assignment_title": string,"course_id": string,"course_name": string,"recommended_at": string,"student_name": string,"submission_id": string
+            }[]
                            },
 "refund_self_check":
 { Args: { "target_assignment": string,"target_student": string }; Returns: undefined

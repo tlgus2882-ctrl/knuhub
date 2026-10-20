@@ -9,7 +9,7 @@ type Board = { courseId: string; category?: undefined } | { courseId?: undefined
 /** Newest posts of a 과목 게시판 (공지 first), or of the 메인 게시판, optionally of one 말머리. */
 export async function PostList({ limit, ...board }: Board & { limit: number }) {
   const supabase = await createServerSupabase();
-  let query = supabase.from("post").select("id, category, is_notice, title, created_at, profile(name), post_comment(count)");
+  let query = supabase.from("post").select("id, category, is_notice, title, created_at, profile(name), post_comment(count), post_like(count)");
   if (board.courseId) query = query.eq("course_id", board.courseId).order("is_notice", { ascending: false });
   else query = query.is("course_id", null);
   if (board.category) query = query.eq("category", board.category);
@@ -29,6 +29,7 @@ export async function PostList({ limit, ...board }: Board & { limit: number }) {
               )}
               <span className="font-medium">{post.title}</span>
               {post.post_comment[0]?.count ? <span className="ml-1 text-sm text-muted-foreground">({post.post_comment[0].count})</span> : null}
+              {post.post_like[0]?.count ? <span className="ml-1 text-sm text-red-500">♥ {post.post_like[0].count}</span> : null}
             </span>
             <span className="text-xs text-muted-foreground">
               {post.profile?.name ?? "알 수 없음"} · {formatKst(post.created_at)}

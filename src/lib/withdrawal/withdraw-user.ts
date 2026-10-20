@@ -8,6 +8,7 @@
 // pointing to missing files.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
+import { PROFILE_FILE_BUCKET } from "@/lib/profile-files/storage";
 import { SUBMISSION_BUCKET } from "@/lib/submissions/storage";
 
 type WithdrawInput = {
@@ -31,6 +32,8 @@ export async function withdrawUser({ userClient, adminClient }: WithdrawInput): 
 
   const { data: storagePaths, error } = await userClient.rpc("prepare_withdrawal");
   if (error) return { error: { code: error.code, message: error.message } };
+  const { data: profileFilePaths, error: profileFilesError } = await userClient.rpc("my_profile_file_objects");
+  if (profileFilesError) return { error: { code: profileFilesError.code, message: profileFilesError.message } };
 
   const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id);
   if (deleteError) return { error: { code: deleteError.code ?? null, message: deleteError.message } };
@@ -42,6 +45,11 @@ export async function withdrawUser({ userClient, adminClient }: WithdrawInput): 
   for (let i = 0; i < storagePaths.length; i += REMOVE_BATCH) {
     const { error: removeError } = await storage.remove(storagePaths.slice(i, i + REMOVE_BATCH));
     if (removeError) console.error("withdrawUser: removing files failed", removeError.message);
+  }
+  // At most 100 프로필 파일 objects (the Storage insert policy), so one call.
+  if (profileFilePaths.length) {
+    const { error: removeError } = await adminClient.storage.from(PROFILE_FILE_BUCKET).remove(profileFilePaths);
+    if (removeError) console.error("withdrawUser: removing 프로필 파일 failed", removeError.message);
   }
   return { error: null };
 }

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { NO_CONTACT_SETTINGS } from "./contact-visibility";
 import { BioForm } from "./bio-form";
+import { ProfileFiles } from "./files/profile-files";
 import { ProfileForm } from "./profile-form";
 
 export default function ProfilePage() {
@@ -50,6 +51,7 @@ async function MyProfile() {
         contact={contact ?? NO_CONTACT_SETTINGS}
       />
       <BioForm bio={profile?.bio ?? ""} />
+      <ProfileFiles ownerId={user.id} editable />
       <Link href={`/users/${user.id}`} className="self-start text-sm text-primary underline">
         다른 사람에게 보이는 내 프로필 보기
       </Link>
