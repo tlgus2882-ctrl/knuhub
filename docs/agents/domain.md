@@ -74,6 +74,8 @@ Code (tables, columns, types, variables) uses these English names for the `GLOSS
 | 채점 항목 | `grading_criterion` (목록을 저장할 때마다 과제의 `criteria_version`이 오른다) |
 | 셀프 점검 | `self_check` (결과 하나, 그 학생만 읽음), `self_check_usage` (과제당 쓴 횟수, 제출물과 따로), 한도는 `self_check_limit()` |
 | 1차 검사 | `first_check` (제출물마다 최신 결과 하나. `status`: `reviewed` 검사함 / `unreviewable` 검사할 수 없음, 의심은 별도 `suspicious`), `first_check_queue` (검사 대기열), `first_check_run` (진행 상황) |
+| 메인 게시판 | `post` (글), `post_comment` (댓글). 말머리는 `post_category` (`free` 자유 / `question` 질문 / `career` 취창업 / `info` 정보 / `etc` 기타) |
+| 신고 | `report` (글 `post_id` 또는 댓글 `comment_id` 하나, 닫으면 `closed_at`) |
 | AI 검토 의견 | `Opinion` (`verdict`: `met` 충족 / `not_met` 부족 / `uncertain` 판단 불가) |
 | 보관된 과목 | `archived_course` (과제·첨부파일·제출물·제출 파일·리뷰는 `archived_assignment`, `archived_assignment_file`, `archived_grading_criterion`, `archived_submission`, `archived_first_check`, `archived_submission_file`, `archived_submission_history`, `archived_submission_history_file`, `archived_review`) |
 | 초대 코드 | `invite_code` (테이블 `course_invite`: 담당 교수만 읽도록 과목과 분리) |

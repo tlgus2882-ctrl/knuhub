@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 
 const ITEMS = [
   { href: "/", label: "메인" },
+  { href: "/board", label: "메인 게시판" },
   { href: "/courses", label: "전체 과목 둘러보기" },
   { href: "/search", label: "검색" },
   { href: "/profile", label: "내 프로필" },

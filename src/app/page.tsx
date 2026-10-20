@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
+import { PostList } from "./board/post-list";
 import { createServerSupabase, type ServerSupabase as Supabase } from "@/lib/supabase/server";
 import { courseTerm } from "./courses/course-term";
 import { JoinCourseForm } from "./courses/join-course-form";
@@ -12,7 +13,7 @@ export default function Home({ searchParams }: PageProps<"/">) {
       <Suspense>
         {searchParams.then(({ withdrawn }) =>
           withdrawn === "1" ? (
-            <p className="rounded-lg border p-3 text-sm">탈퇴가 끝났어요. 프로필, 제출물, 리뷰를 모두 지웠어요.</p>
+            <p className="rounded-lg border p-3 text-sm">탈퇴가 끝났어요. 프로필, 제출물, 리뷰, 게시판 글과 댓글을 모두 지웠어요.</p>
           ) : null,
         )}
       </Suspense>
@@ -65,6 +66,20 @@ async function SignedInHome() {
       </section>
       {profile?.role === "professor" && <ProfessorCourses supabase={supabase} userId={user.id} />}
       {profile?.role === "student" && <StudentCourses supabase={supabase} userId={user.id} />}
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">메인 게시판</h2>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" nativeButton={false} render={<Link href="/board" />}>
+              전체 보기 →
+            </Button>
+            <Button size="sm" nativeButton={false} render={<Link href="/board/new" />}>
+              글쓰기
+            </Button>
+          </div>
+        </div>
+        <PostList category={null} limit={5} />
+      </section>
     </>
   );
 }

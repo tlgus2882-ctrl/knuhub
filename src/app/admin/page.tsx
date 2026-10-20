@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
+import { DeleteButton } from "../board/delete-button";
+import { CloseReportButton } from "./close-report-button";
 import { UserActions } from "./user-actions";
 
 const ROLE_LABEL = { student: "학생", professor: "교수", admin: "관리자" } as const;
@@ -30,13 +32,53 @@ async function AdminView({ query }: { query: string }) {
   // Others get the plain 404, as if there were no such page.
   if (!isAdmin) notFound();
 
-  const [{ data: users }, { data: archived }] = await Promise.all([
+  const [{ data: users }, { data: archived }, { data: reports }] = await Promise.all([
     supabase.rpc("admin_list_users", { query }),
     supabase.from("archived_course").select("id, name, semester, section, professor_name, archived_at").order("archived_at", { ascending: false }),
+    supabase
+      .from("report")
+      .select("id, reason, created_at, profile(name), post(id, title), post_comment(id, body, post_id)")
+      .is("closed_at", null)
+      .order("created_at"),
   ]);
 
   return (
     <>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">
+          신고 <span className="text-muted-foreground">{reports?.length ?? 0}</span>
+        </h2>
+        <p className="text-sm text-muted-foreground">메인 게시판에 들어온 신고예요. 글을 지우면 그 신고도 함께 사라지고, 지울 일이 아니면 신고를 닫아요.</p>
+        {reports?.length ? (
+          <ul className="flex flex-col divide-y rounded-xl border">
+            {reports.map((report) => {
+              const comment = report.post_comment;
+              const postId = report.post?.id ?? comment?.post_id;
+              return (
+                <li key={report.id} className="flex flex-col gap-1 px-4 py-3">
+                  <p className="text-sm">
+                    {comment ? "댓글" : "글"}{" "}
+                    <Link href={`/board/${postId}${comment ? `#comment-${comment.id}` : ""}`} className="font-medium text-primary underline break-all">
+                      {report.post?.title ?? comment?.body.slice(0, 80)}
+                    </Link>
+                  </p>
+                  <p className="text-sm whitespace-pre-wrap">사유: {report.reason}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {report.profile?.name} 신고 · {formatKst(report.created_at)}
+                  </p>
+                  <div className="flex flex-wrap items-start gap-2">
+                    <DeleteButton target={comment ? { comment_id: comment.id } : { post_id: postId! }} stay />
+                    <CloseReportButton reportId={report.id} />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">처리할 신고가 없어요.</p>
+        )}
+      </section>
+
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">사용자</h2>
         <form action="/admin" role="search" className="flex gap-2">

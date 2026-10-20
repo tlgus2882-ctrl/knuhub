@@ -36,3 +36,14 @@ export async function setStudentNumber(userId: string, studentNumber: string): P
   });
   return toActionResult("admin_set_student_number", error);
 }
+
+/** Closes a 신고 without deleting what was reported. */
+export async function closeReport(reportId: string): Promise<{ error: string | null }> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from("report")
+    .update({ closed_at: new Date().toISOString() })
+    .eq("id", reportId)
+    .select("id");
+  return toActionResult("closeReport", error ?? (data?.length ? null : { code: "KH011", message: "no row closed" }));
+}
