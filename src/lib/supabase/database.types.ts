@@ -547,6 +547,26 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"profile_file": {
+                  Row: {
+                    "created_at": string,"id": string,"name": string,"owner_id": string,"size": number,"storage_path": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"name": string,"owner_id": string,"size": number,"storage_path": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"name"?: string,"owner_id"?: string,"size"?: number,"storage_path"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "profile_file_owner_id_fkey"
+      columns: ["owner_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profile_private": {
                   Row: {
                     "id": string,"pending_student_number": string | null,"phone": string,"privacy_consented_at": string
@@ -815,7 +835,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "admin_list_users":
+            "add_profile_file":
+{ Args: { "file_name": string,"storage_path": string }; Returns: string
+                           },
+"admin_list_users":
 { Args: { "query": string }; Returns: {
               "created_at": string,"email": string,"id": string,"name": string,"role": Database["public"]['Enums']["role"],"student_number": string
             }[]
@@ -924,6 +947,9 @@ isOneToOne: false
 "is_professor_or_assistant":
 { Args: { "target_course": string }; Returns: boolean
                            },
+"is_profile_file_object":
+{ Args: { "object_name": string }; Returns: boolean
+                           },
 "is_submission_course_professor":
 { Args: { "target_submission": string }; Returns: boolean
                            },
@@ -953,6 +979,9 @@ isOneToOne: false
                            },
 "prepare_withdrawal":
 { Args: Record<PropertyKey, never>; Returns: (string)[]
+                           },
+"profile_files_limit":
+{ Args: Record<PropertyKey, never>; Returns: number
                            },
 "recent_recommendations":
 { Args: Record<PropertyKey, never>; Returns: {

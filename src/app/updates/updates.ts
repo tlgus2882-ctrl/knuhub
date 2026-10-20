@@ -4,6 +4,15 @@ export type Update = { date: string; title: string; items: string[] };
 export const UPDATES: Update[] = [
   {
     date: "2026-10-20",
+    title: "프로필 파일",
+    items: [
+      "내 프로필에 포트폴리오, 이력서 같은 파일을 올리고 지울 수 있어요. 파일 하나에 20MB, 합쳐서 50MB까지예요.",
+      "로그인한 사용자 누구나 다른 사람의 프로필에서 파일을 보고 내려받을 수 있어요.",
+      "탈퇴하면 프로필 파일도 모두 지워져요.",
+    ],
+  },
+  {
+    date: "2026-10-20",
     title: "교수 추천",
     items: [
       "교수님과 조교는 내 과목의 우수한 제출물에 \"교수 추천\"을 붙이고 뗄 수 있어요.",

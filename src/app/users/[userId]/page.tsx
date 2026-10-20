@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import type { Database } from "@/lib/supabase/database.types";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
+import { ProfileFiles } from "../../profile/files/profile-files";
 import { RecommendedBadge } from "../../recommendations/recommended-badge";
 import { submissionHref } from "../../courses/[courseId]/assignments/[assignmentId]/submissions/submission-href";
 
@@ -52,6 +53,7 @@ async function UserProfile({ userId }: { userId: string }) {
           <p className="text-sm whitespace-pre-wrap break-words">{profile.bio}</p>
         </section>
       )}
+      <ProfileFiles ownerId={profile.id} editable={false} />
       {profile.role === "student" && <VisibleSubmissions studentId={profile.id} />}
       {auth.user?.id === profile.id && (
         <Button variant="outline" className="self-start" nativeButton={false} render={<Link href="/profile" />}>

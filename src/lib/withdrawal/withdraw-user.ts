@@ -8,6 +8,7 @@
 // pointing to missing files.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
+import { PROFILE_FILE_BUCKET } from "@/lib/profile-files/storage";
 import { SUBMISSION_BUCKET } from "@/lib/submissions/storage";
 
 type WithdrawInput = {
@@ -42,6 +43,14 @@ export async function withdrawUser({ userClient, adminClient }: WithdrawInput): 
   for (let i = 0; i < storagePaths.length; i += REMOVE_BATCH) {
     const { error: removeError } = await storage.remove(storagePaths.slice(i, i + REMOVE_BATCH));
     if (removeError) console.error("withdrawUser: removing files failed", removeError.message);
+  }
+  // 프로필 파일 live in the user's own folder; the 50MB limit keeps it to one page.
+  const profileFiles = adminClient.storage.from(PROFILE_FILE_BUCKET);
+  const { data: owned, error: listError } = await profileFiles.list(user.id, { limit: REMOVE_BATCH });
+  if (listError) console.error("withdrawUser: listing 프로필 파일 failed", listError.message);
+  if (owned?.length) {
+    const { error: removeError } = await profileFiles.remove(owned.map((file) => `${user.id}/${file.name}`));
+    if (removeError) console.error("withdrawUser: removing 프로필 파일 failed", removeError.message);
   }
   return { error: null };
 }
