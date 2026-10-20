@@ -74,6 +74,7 @@ Code (tables, columns, types, variables) uses these English names for the `GLOSS
 | 채점 항목 | `grading_criterion` (목록을 저장할 때마다 과제의 `criteria_version`이 오른다) |
 | 셀프 점검 | `self_check` (결과 하나, 그 학생만 읽음), `self_check_usage` (과제당 쓴 횟수, 제출물과 따로), 한도는 `self_check_limit()` |
 | 1차 검사 | `first_check` (제출물마다 최신 결과 하나. `status`: `reviewed` 검사함 / `unreviewable` 검사할 수 없음, 의심은 별도 `suspicious`), `first_check_queue` (검사 대기열), `first_check_run` (진행 상황) |
+| 자기소개 | `profile.bio` |
 | 과목 게시판 | 메인 게시판과 같은 `post`·`post_comment`에 `course_id`가 있는 글 (비어 있으면 메인 게시판). 공지는 `is_notice` |
 | 메인 게시판 | `post` (글), `post_comment` (댓글). 말머리는 `post_category` (`free` 자유 / `question` 질문 / `career` 취창업 / `info` 정보 / `etc` 기타) |
 | 신고 | `report` (글 `post_id` 또는 댓글 `comment_id` 하나, 닫으면 `closed_at`) |

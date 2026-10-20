@@ -4,6 +4,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { courseTerm } from "../courses/course-term";
 import { submissionHref } from "../courses/[courseId]/assignments/[assignmentId]/submissions/submission-href";
+import { userHref } from "@/components/user-link";
 import { SearchBox } from "./search-box";
 
 export default function SearchPage({ searchParams }: PageProps<"/search">) {
@@ -30,7 +31,7 @@ export default function SearchPage({ searchParams }: PageProps<"/search">) {
 
 type SearchRow = Database["public"]["Functions"]["search"]["Returns"][number];
 
-const GROUP_TITLE = { course: "과목", assignment: "과제", submission: "제출물" } as const;
+const GROUP_TITLE = { profile: "사람", course: "과목", assignment: "과제", submission: "제출물" } as const;
 type Kind = keyof typeof GROUP_TITLE;
 
 /** One search hit, already linked: toResult() reads only the ids its kind has. */
@@ -41,6 +42,8 @@ const PER_KIND_LIMIT = 20;
 
 function toResult(row: SearchRow): Result | null {
   switch (row.kind) {
+    case "profile":
+      return { kind: "profile", key: row.user_id, title: row.title, detail: row.detail, href: userHref(row.user_id) };
     case "course":
       return {
         kind: "course",

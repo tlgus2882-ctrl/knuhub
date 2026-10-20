@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { NO_CONTACT_SETTINGS } from "./contact-visibility";
+import { BioForm } from "./bio-form";
 import { ProfileForm } from "./profile-form";
 
 export default function ProfilePage() {
@@ -26,7 +27,7 @@ async function MyProfile() {
   if (!user) return null; // the proxy sends signed-out visitors to /login
 
   const [{ data: profile }, { data: contact }] = await Promise.all([
-    supabase.from("profile").select("name, student_number").eq("id", user.id).single(),
+    supabase.from("profile").select("name, student_number, bio").eq("id", user.id).single(),
     supabase
       .from("profile_contact")
       .select("show_email, open_chat_url, github, contact_visibility")
@@ -48,6 +49,10 @@ async function MyProfile() {
         name={profile?.name ?? ""}
         contact={contact ?? NO_CONTACT_SETTINGS}
       />
+      <BioForm bio={profile?.bio ?? ""} />
+      <Link href={`/users/${user.id}`} className="self-start text-sm text-primary underline">
+        다른 사람에게 보이는 내 프로필 보기
+      </Link>
       <Link href="/profile/withdraw" className="self-start text-sm text-muted-foreground underline hover:text-primary">
         탈퇴하기
       </Link>

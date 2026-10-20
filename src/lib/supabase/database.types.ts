@@ -489,14 +489,14 @@ isOneToOne: false
                   ]
                 },"profile": {
                   Row: {
-                    "created_at": string,"id": string,"name": string,"role": Database["public"]['Enums']["role"],"student_number": string | null
+                    "bio": string,"created_at": string,"id": string,"name": string,"role": Database["public"]['Enums']["role"],"student_number": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id": string,"name": string,"role"?: Database["public"]['Enums']["role"],"student_number"?: string | null
+                    "bio"?: string,"created_at"?: string,"id": string,"name": string,"role"?: Database["public"]['Enums']["role"],"student_number"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"name"?: string,"role"?: Database["public"]['Enums']["role"],"student_number"?: string | null
+                    "bio"?: string,"created_at"?: string,"id"?: string,"name"?: string,"role"?: Database["public"]['Enums']["role"],"student_number"?: string | null
                   }
                   Relationships: [
                     
@@ -884,7 +884,7 @@ isOneToOne: false
                            },
 "search":
 { Args: { "query": string }; Returns: {
-              "assignment_id": string,"course_id": string,"detail": string,"kind": string,"section": string,"semester": string,"submission_id": string,"title": string
+              "assignment_id": string,"course_id": string,"detail": string,"kind": string,"section": string,"semester": string,"submission_id": string,"title": string,"user_id": string
             }[]
                            },
 "self_check_limit":
