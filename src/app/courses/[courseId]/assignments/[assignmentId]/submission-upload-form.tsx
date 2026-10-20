@@ -113,7 +113,7 @@ export function SubmissionUploadForm({ assignmentId, studentId, resubmit }: Prop
             ))}
             {prepared.files.length > PREVIEW_COUNT && <li>외 {prepared.files.length - PREVIEW_COUNT}개</li>}
           </ul>
-          {resubmit && <p className="text-xs text-muted-foreground">다시 제출하면 지금 파일은 모두 지워지고 이 파일들로 바뀌어요.</p>}
+          {resubmit && <p className="text-xs text-muted-foreground">다시 제출하면 지금 파일은 제출 이력에 남고 이 파일들로 바뀌어요.</p>}
         </div>
       )}
 

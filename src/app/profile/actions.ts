@@ -43,3 +43,21 @@ function failed(error: { code: string; message: string }): ProfileFormState {
   console.error("saveProfile failed", error.message);
   return { error: "저장하지 못했어요. 잠시 뒤에 다시 해 주세요." };
 }
+
+/** My 자기소개; an empty one clears it. Only I can change it (RLS). */
+export async function saveBio(_prev: ProfileFormState, form: FormData): Promise<ProfileFormState> {
+  const bio = String(form.get("bio") ?? "").trim();
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "다시 로그인해 주세요." };
+  const { error } = await supabase.from("profile").update({ bio }).eq("id", user.id);
+  if (error) {
+    console.error("saveBio failed", error.message);
+    return { error: "자기소개를 저장하지 못했어요. 2000자까지 쓸 수 있어요." };
+  }
+
+  refresh();
+  return { error: null, savedAt: Date.now() };
+}

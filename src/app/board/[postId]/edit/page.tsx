@@ -19,11 +19,14 @@ export default function EditPostPage({ params }: PageProps<"/board/[postId]/edit
 async function EditPost({ postId }: { postId: string }) {
   const supabase = await createServerSupabase();
   const [{ data: post }, { data: claims }] = await Promise.all([
-    supabase.from("post").select("id, category, title, body, author_id").eq("id", postId).maybeSingle(),
+    supabase.from("post").select("id, course_id, category, is_notice, title, body, author_id").eq("id", postId).maybeSingle(),
     supabase.auth.getClaims(),
   ]);
   // Someone else's post: the save would be refused by RLS anyway, so don't offer the form.
   if (!post || post.author_id !== claims?.claims.sub) notFound();
 
-  return <PostForm post={post} />;
+  const { data: canNotice } = post.course_id
+    ? await supabase.rpc("is_professor_or_assistant", { target_course: post.course_id })
+    : { data: false };
+  return <PostForm post={post} canNotice={canNotice === true} />;
 }

@@ -7,7 +7,11 @@ import { asCourseRole } from "../course-role";
 import { courseTerm } from "../course-term";
 import { regenerateInviteCode } from "../actions";
 import { AssignmentList } from "./assignment-list";
+import { PostList } from "../../board/post-list";
 import { Roster } from "./roster";
+
+// shortcut: the newest 50 posts (공지 first) with no paging, add paging when a course board outgrows that.
+const BOARD_SIZE = 50;
 
 export default function CoursePage({ params }: PageProps<"/courses/[courseId]">) {
   return (
@@ -75,6 +79,18 @@ async function CourseDetail({ courseId }: { courseId: string }) {
       )}
 
       <AssignmentList courseId={courseId} canPost={canPost === true} />
+
+      {myRole && (
+        <section id="board" className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">과목 게시판</h2>
+            <Button size="sm" nativeButton={false} render={<Link href={`/board/new?course=${courseId}`} />}>
+              글쓰기
+            </Button>
+          </div>
+          <PostList courseId={courseId} limit={BOARD_SIZE} />
+        </section>
+      )}
 
       {myRole === "professor" && <Roster courseId={courseId} />}
     </>

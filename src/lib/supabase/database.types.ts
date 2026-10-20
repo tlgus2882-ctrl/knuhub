@@ -437,14 +437,14 @@ isOneToOne: false
                   ]
                 },"post": {
                   Row: {
-                    "author_id": string,"body": string,"category": Database["public"]['Enums']["post_category"],"created_at": string,"id": string,"title": string,"updated_at": string
+                    "author_id": string,"body": string,"category": Database["public"]['Enums']["post_category"] | null,"course_id": string | null,"created_at": string,"id": string,"is_notice": boolean,"title": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "author_id"?: string,"body": string,"category": Database["public"]['Enums']["post_category"],"created_at"?: string,"id"?: string,"title": string,"updated_at"?: string
+                    "author_id"?: string,"body": string,"category"?: Database["public"]['Enums']["post_category"] | null,"course_id"?: string | null,"created_at"?: string,"id"?: string,"is_notice"?: boolean,"title": string,"updated_at"?: string
                   }
                   Update: {
-                    "author_id"?: string,"body"?: string,"category"?: Database["public"]['Enums']["post_category"],"created_at"?: string,"id"?: string,"title"?: string,"updated_at"?: string
+                    "author_id"?: string,"body"?: string,"category"?: Database["public"]['Enums']["post_category"] | null,"course_id"?: string | null,"created_at"?: string,"id"?: string,"is_notice"?: boolean,"title"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -452,6 +452,12 @@ isOneToOne: false
       columns: ["author_id"]
 isOneToOne: false
       referencedRelation: "profile"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "post_course_id_fkey"
+      columns: ["course_id"]
+isOneToOne: false
+      referencedRelation: "course"
       referencedColumns: ["id"]
     }
                   ]
@@ -483,14 +489,14 @@ isOneToOne: false
                   ]
                 },"profile": {
                   Row: {
-                    "created_at": string,"id": string,"name": string,"role": Database["public"]['Enums']["role"],"student_number": string | null
+                    "bio": string,"created_at": string,"id": string,"name": string,"role": Database["public"]['Enums']["role"],"student_number": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id": string,"name": string,"role"?: Database["public"]['Enums']["role"],"student_number"?: string | null
+                    "bio"?: string,"created_at"?: string,"id": string,"name": string,"role"?: Database["public"]['Enums']["role"],"student_number"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"name"?: string,"role"?: Database["public"]['Enums']["role"],"student_number"?: string | null
+                    "bio"?: string,"created_at"?: string,"id"?: string,"name"?: string,"role"?: Database["public"]['Enums']["role"],"student_number"?: string | null
                   }
                   Relationships: [
                     
@@ -771,6 +777,9 @@ isOneToOne: false
 "can_edit_review":
 { Args: { "review_author": string }; Returns: boolean
                            },
+"can_moderate_board":
+{ Args: { "target_course"?: string }; Returns: boolean
+                           },
 "can_read_assignment_file":
 { Args: { "object_name": string }; Returns: boolean
                            },
@@ -783,8 +792,17 @@ isOneToOne: false
 "can_submit":
 { Args: { "target_assignment": string }; Returns: boolean
                            },
+"can_use_board":
+{ Args: { "target_course": string }; Returns: boolean
+                           },
+"can_use_post":
+{ Args: { "target_post": string }; Returns: boolean
+                           },
 "can_view_submission":
 { Args: { "target_submission": string }; Returns: boolean
+                           },
+"can_write_board":
+{ Args: { "target_course": string }; Returns: boolean
                            },
 "can_write_submission_object":
 { Args: { "object_name": string }; Returns: boolean
@@ -849,6 +867,9 @@ isOneToOne: false
 "new_invite_code":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"post_course":
+{ Args: { "target_post": string }; Returns: string
+                           },
 "prepare_withdrawal":
 { Args: Record<PropertyKey, never>; Returns: (string)[]
                            },
@@ -866,7 +887,7 @@ isOneToOne: false
                            },
 "search":
 { Args: { "query": string }; Returns: {
-              "assignment_id": string,"course_id": string,"detail": string,"kind": string,"section": string,"semester": string,"submission_id": string,"title": string
+              "assignment_id": string,"course_id": string,"detail": string,"kind": string,"section": string,"semester": string,"submission_id": string,"title": string,"user_id": string
             }[]
                            },
 "self_check_limit":

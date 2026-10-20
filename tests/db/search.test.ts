@@ -97,7 +97,8 @@ describe("검색", () => {
 
     const results = await search(classmate, author.studentNumber!);
 
-    expect(results).toEqual([]);
+    // 프로필은 누구나 찾는다. 숨은 제출물만 없어야 한다.
+    expect(results.filter((r) => r.kind !== "profile")).toEqual([]);
   });
 
   it("%나 _ 같은 기호는 글자 그대로 찾는다 (전부 나오지 않는다)", async () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { zipSync } from "fflate";
+import { entriesFromGitHubArchive, parseGitHubRepo } from "./github";
 import { entriesFromZip, prepareUpload, UploadTooLargeError } from "./prepare-upload";
 
 const text = (s: string) => new TextEncoder().encode(s);
@@ -148,5 +149,48 @@ describe("entriesFromZip", () => {
     const zip = zipSync({ [utf8AsLatin1]: text("x") });
 
     expect(entriesFromZip(zip).map((e) => e.path)).toEqual(["과제/a.txt"]);
+  });
+});
+
+describe("GitHub 저장소로 제출", () => {
+  it("저장소 주소를 여러 모양으로 넣어도 소유자·저장소·브랜치를 읽는다", () => {
+    expect(parseGitHubRepo("https://github.com/kim/stack-hw", "main")).toEqual({ owner: "kim", repo: "stack-hw", branch: "main" });
+    expect(parseGitHubRepo("github.com/kim/stack-hw.git", "")).toEqual({ owner: "kim", repo: "stack-hw", branch: null });
+    expect(parseGitHubRepo("  https://www.github.com/kim/stack-hw/  ", " dev ")).toEqual({ owner: "kim", repo: "stack-hw", branch: "dev" });
+    // 브라우저 주소창에서 복사한 브랜치 주소: 브랜치 칸이 비어 있으면 주소의 브랜치를 쓴다
+    expect(parseGitHubRepo("https://github.com/kim/stack-hw/tree/feature/list", "")).toEqual({
+      owner: "kim",
+      repo: "stack-hw",
+      branch: "feature/list",
+    });
+  });
+
+  it("GitHub 저장소 주소가 아니면 거부한다", () => {
+    for (const input of ["", "kim/stack-hw", "https://gitlab.com/kim/stack-hw", "https://github.com/kim", "https://github.com/kim/stack hw", "javascript:alert(1)"]) {
+      expect(parseGitHubRepo(input, "main"), input).toBeNull();
+    }
+    expect(parseGitHubRepo("https://github.com/kim/stack-hw", "../etc"), "브랜치 이름").toBeNull();
+  });
+
+  it("압축 파일을 감싼 최상위 폴더(저장소-브랜치)를 벗기고, zip 업로드와 같은 규칙(제외 폴더, 텍스트·바이너리)을 거친다", () => {
+    const zip = zipSync({
+      "stack-hw-main/": new Uint8Array(),
+      "stack-hw-main/src/Stack.java": text("class Stack {}"),
+      "stack-hw-main/node_modules/x/index.js": text("x"),
+      "stack-hw-main/logo.png": new Uint8Array([0x89, 0x50, 0, 0]),
+    });
+
+    const result = prepareUpload(entriesFromGitHubArchive(zip));
+
+    expect(result.ok && result.files.map((f) => [f.path, f.kind])).toEqual([
+      ["src/Stack.java", "text"],
+      ["logo.png", "binary"],
+    ]);
+  });
+
+  it("풀었을 때 20MB를 넘는 저장소는 다 풀기 전에 멈춘다", () => {
+    const zip = zipSync({ "r-main/a.bin": new Uint8Array(15 * 1024 * 1024), "r-main/b.bin": new Uint8Array(15 * 1024 * 1024) });
+
+    expect(() => entriesFromGitHubArchive(zip)).toThrow(UploadTooLargeError);
   });
 });

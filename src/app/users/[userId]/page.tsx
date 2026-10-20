@@ -5,6 +5,8 @@ import { AuthorCard } from "@/components/author-card";
 import { Button } from "@/components/ui/button";
 import type { Database } from "@/lib/supabase/database.types";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { formatKst } from "@/lib/time";
+import { submissionHref } from "../../courses/[courseId]/assignments/[assignmentId]/submissions/submission-href";
 
 const ROLE_LABEL: Record<Database["public"]["Enums"]["role"], string> = {
   student: "학생",
@@ -30,7 +32,7 @@ export default function UserPage({ params }: PageProps<"/users/[userId]">) {
 async function UserProfile({ userId }: { userId: string }) {
   const supabase = await createServerSupabase();
   const [{ data: profile }, { data: auth }] = await Promise.all([
-    supabase.from("profile").select("id, name, student_number, role").eq("id", userId).maybeSingle(),
+    supabase.from("profile").select("id, name, student_number, role, bio").eq("id", userId).maybeSingle(),
     supabase.auth.getUser(),
   ]);
   if (!profile) notFound();
@@ -43,11 +45,57 @@ async function UserProfile({ userId }: { userId: string }) {
         <dd>{ROLE_LABEL[profile.role]}</dd>
       </dl>
       <p className="text-sm text-muted-foreground">연락처는 이 사용자가 정한 공개 범위 안에서만 보여요.</p>
+      {profile.bio && (
+        <section className="flex flex-col gap-1">
+          <h2 className="text-lg font-semibold">자기소개</h2>
+          <p className="text-sm whitespace-pre-wrap break-words">{profile.bio}</p>
+        </section>
+      )}
+      {profile.role === "student" && <VisibleSubmissions studentId={profile.id} />}
       {auth.user?.id === profile.id && (
         <Button variant="outline" className="self-start" nativeButton={false} render={<Link href="/profile" />}>
           내 프로필 고치기
         </Button>
       )}
     </>
+  );
+}
+
+// The same submission RLS as everywhere (공개 범위 and 마감일), so only what the viewer may see is listed.
+async function VisibleSubmissions({ studentId }: { studentId: string }) {
+  const supabase = await createServerSupabase();
+  const { data: submissions } = await supabase
+    .from("submission")
+    .select("id, submitted_at, assignment(id, title, course_id, course(name))")
+    .eq("student_id", studentId)
+    .order("submitted_at", { ascending: false });
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="text-lg font-semibold">
+        제출물 <span className="text-muted-foreground">{submissions?.length ?? 0}</span>
+      </h2>
+      {submissions?.length ? (
+        <ul className="flex flex-col divide-y rounded-xl border">
+          {submissions.map((s) =>
+            s.assignment ? (
+              <li key={s.id}>
+                <Link
+                  href={submissionHref(s.assignment.course_id, s.assignment.id, s.id)}
+                  className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted"
+                >
+                  <span className="font-medium">{s.assignment.title}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {s.assignment.course?.name} · {formatKst(s.submitted_at)} 제출
+                  </span>
+                </Link>
+              </li>
+            ) : null,
+          )}
+        </ul>
+      ) : (
+        <p className="text-sm text-muted-foreground">내가 볼 수 있는 제출물이 없어요. 마감 전이거나 공개 범위 밖인 제출물은 보이지 않아요.</p>
+      )}
+    </section>
   );
 }

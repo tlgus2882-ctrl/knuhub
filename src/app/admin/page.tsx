@@ -48,7 +48,7 @@ async function AdminView({ query }: { query: string }) {
         <h2 className="text-lg font-semibold">
           신고 <span className="text-muted-foreground">{reports?.length ?? 0}</span>
         </h2>
-        <p className="text-sm text-muted-foreground">메인 게시판에 들어온 신고예요. 글을 지우면 그 신고도 함께 사라지고, 지울 일이 아니면 신고를 닫아요.</p>
+        <p className="text-sm text-muted-foreground">게시판에 들어온 신고예요. 글을 지우면 그 신고도 함께 사라지고, 지울 일이 아니면 신고를 닫아요.</p>
         {reports?.length ? (
           <ul className="flex flex-col divide-y rounded-xl border">
             {reports.map((report) => {
