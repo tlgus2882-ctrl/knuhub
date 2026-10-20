@@ -13,6 +13,7 @@ import { AuthorCard } from "@/components/author-card";
 import { FileTree } from "./file-tree";
 import { FirstCheckOpinions } from "./first-check-opinions";
 import { Likes } from "@/app/likes/likes";
+import { Recommendation } from "@/app/recommendations/recommendation";
 import { Reviews } from "./reviews";
 
 type Route = "/courses/[courseId]/assignments/[assignmentId]/submissions/[submissionId]";
@@ -95,6 +96,7 @@ async function SubmissionView({
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <Likes target={{ submissionId }} />
+          <Recommendation submissionId={submissionId} />
         </div>
         {history.length > 0 && (
           <nav aria-label="제출 이력" className="flex flex-wrap items-center gap-2 text-sm">

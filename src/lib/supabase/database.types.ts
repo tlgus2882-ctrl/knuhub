@@ -489,14 +489,14 @@ isOneToOne: false
                   ]
                 },"post_like": {
                   Row: {
-                    "created_at": string,"post_id": string,"user_id": string
+                    "created_at": string,"id": string,"post_id": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"post_id": string,"user_id"?: string
+                    "created_at"?: string,"id"?: string,"post_id": string,"user_id"?: string
                   }
                   Update: {
-                    "created_at"?: string,"post_id"?: string,"user_id"?: string
+                    "created_at"?: string,"id"?: string,"post_id"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -564,6 +564,32 @@ isOneToOne: true
       columns: ["id"]
 isOneToOne: true
       referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"recommendation": {
+                  Row: {
+                    "created_at": string,"recommended_by": string | null,"submission_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"recommended_by"?: string | null,"submission_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"recommended_by"?: string | null,"submission_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "recommendation_recommended_by_fkey"
+      columns: ["recommended_by"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "recommendation_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: true
+      referencedRelation: "submission"
       referencedColumns: ["id"]
     }
                   ]
@@ -759,14 +785,14 @@ isOneToOne: false
                   ]
                 },"submission_like": {
                   Row: {
-                    "created_at": string,"submission_id": string,"user_id": string
+                    "created_at": string,"id": string,"submission_id": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"submission_id": string,"user_id"?: string
+                    "created_at"?: string,"id"?: string,"submission_id": string,"user_id"?: string
                   }
                   Update: {
-                    "created_at"?: string,"submission_id"?: string,"user_id"?: string
+                    "created_at"?: string,"id"?: string,"submission_id"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -901,6 +927,9 @@ isOneToOne: false
 "is_submission_course_professor":
 { Args: { "target_submission": string }; Returns: boolean
                            },
+"is_submission_course_staff":
+{ Args: { "target_submission": string }; Returns: boolean
+                           },
 "is_submitted_object":
 { Args: { "object_name": string }; Returns: boolean
                            },
@@ -924,6 +953,11 @@ isOneToOne: false
                            },
 "prepare_withdrawal":
 { Args: Record<PropertyKey, never>; Returns: (string)[]
+                           },
+"recent_recommendations":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "assignment_id": string,"assignment_title": string,"course_id": string,"course_name": string,"recommended_at": string,"student_name": string,"submission_id": string
+            }[]
                            },
 "refund_self_check":
 { Args: { "target_assignment": string,"target_student": string }; Returns: undefined

@@ -6,6 +6,7 @@ import { cn } from "cn";
 import { buttonVariants } from "@/components/ui/button";
 import { UserChip } from "@/components/user-link";
 import { SubmissionFileList } from "./submission-files";
+import { RecommendedBadge } from "@/app/recommendations/recommended-badge";
 import { submissionFileHrefs, submissionHref } from "./submissions/submission-href";
 
 type Props = {
@@ -21,7 +22,7 @@ export async function SubmissionList({ courseId, assignmentId, viewerId }: Props
   const supabase = await createServerSupabase();
   let query = supabase
     .from("submission")
-    .select("id, submitted_at, student_id, profile(name, student_number), submission_file(path, size, storage_path)")
+    .select("id, submitted_at, student_id, profile(name, student_number), submission_file(path, size, storage_path), recommendation(submission_id)")
     .eq("assignment_id", assignmentId);
   if (viewerId) query = query.neq("student_id", viewerId);
   const { data: submissions } = await query.order("submitted_at");
@@ -43,6 +44,7 @@ export async function SubmissionList({ courseId, assignmentId, viewerId }: Props
                   name={submission.profile?.name ?? "알 수 없음"}
                   studentNumber={submission.profile?.student_number ?? null}
                 />
+                {submission.recommendation && <RecommendedBadge />}
                 <span className="order-last basis-full text-sm text-muted-foreground sm:order-none sm:basis-auto">
                   {formatKst(submission.submitted_at)}
                 </span>

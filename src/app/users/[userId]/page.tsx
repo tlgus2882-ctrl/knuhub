@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import type { Database } from "@/lib/supabase/database.types";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
+import { RecommendedBadge } from "../../recommendations/recommended-badge";
 import { submissionHref } from "../../courses/[courseId]/assignments/[assignmentId]/submissions/submission-href";
 
 const ROLE_LABEL: Record<Database["public"]["Enums"]["role"], string> = {
@@ -66,7 +67,7 @@ async function VisibleSubmissions({ studentId }: { studentId: string }) {
   const supabase = await createServerSupabase();
   const { data: submissions } = await supabase
     .from("submission")
-    .select("id, submitted_at, assignment(id, title, course_id, course(name))")
+    .select("id, submitted_at, assignment(id, title, course_id, course(name)), recommendation(submission_id)")
     .eq("student_id", studentId)
     .order("submitted_at", { ascending: false });
 
@@ -84,7 +85,10 @@ async function VisibleSubmissions({ studentId }: { studentId: string }) {
                   href={submissionHref(s.assignment.course_id, s.assignment.id, s.id)}
                   className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted"
                 >
-                  <span className="font-medium">{s.assignment.title}</span>
+                  <span className="flex flex-wrap items-center gap-2 font-medium">
+                    {s.assignment.title}
+                    {s.recommendation && <RecommendedBadge />}
+                  </span>
                   <span className="text-xs text-muted-foreground">
                     {s.assignment.course?.name} · {formatKst(s.submitted_at)} 제출
                   </span>

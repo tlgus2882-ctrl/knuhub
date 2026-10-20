@@ -4,17 +4,23 @@
 -- 탈퇴하면 그 사람의 좋아요가 외래 키로 함께 지워진다.
 
 create table public.submission_like (
+  -- A separate key, not (submission_id, user_id): PostgREST would read a composite key as a
+  -- many-to-many join and every submission ↔ profile embed would become ambiguous.
+  id uuid primary key default gen_random_uuid(),
   submission_id uuid not null references public.submission (id) on delete cascade,
   user_id uuid not null default auth.uid() references public.profile (id) on delete cascade,
   created_at timestamptz not null default now(),
-  primary key (submission_id, user_id)
+  unique (submission_id, user_id)
 );
 
 create table public.post_like (
+  -- A separate key, not (post_id, user_id): PostgREST would read a composite key as a
+  -- many-to-many join and every post ↔ profile embed would become ambiguous.
+  id uuid primary key default gen_random_uuid(),
   post_id uuid not null references public.post (id) on delete cascade,
   user_id uuid not null default auth.uid() references public.profile (id) on delete cascade,
   created_at timestamptz not null default now(),
-  primary key (post_id, user_id)
+  unique (post_id, user_id)
 );
 
 create index submission_like_user_id_idx on public.submission_like (user_id);
