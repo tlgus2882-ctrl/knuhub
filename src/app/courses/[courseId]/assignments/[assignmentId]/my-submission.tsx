@@ -3,6 +3,7 @@ import { formatKst } from "@/lib/time";
 import { DeleteSubmissionForm } from "./delete-submission-form";
 import { SubmissionFileList } from "./submission-files";
 import { submissionFileHrefs } from "./submissions/submission-href";
+import { GitHubSubmitForm } from "./github-submit-form";
 import { SubmissionUploadForm } from "./submission-upload-form";
 
 type Props = { courseId: string; assignmentId: string; studentId: string; open: boolean };
@@ -41,6 +42,7 @@ export async function MySubmission({ courseId, assignmentId, studentId, open }: 
       {open ? (
         <>
           <SubmissionUploadForm assignmentId={assignmentId} studentId={studentId} resubmit={Boolean(submission)} />
+          <GitHubSubmitForm assignmentId={assignmentId} resubmit={Boolean(submission)} />
           {submission && <DeleteSubmissionForm assignmentId={assignmentId} />}
         </>
       ) : (
