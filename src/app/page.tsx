@@ -61,7 +61,10 @@ async function SignedInHome() {
 
   return (
     <>
-      <MascotGreeting name={profile?.name ?? ""} seed={randomSeed()} />
+      {/* Beside the page on the left where there is room (the 교수 추천 list sits on the right), on top otherwise. */}
+      <div className="2xl:fixed 2xl:top-24 2xl:left-4 2xl:w-64">
+        <MascotGreeting name={profile?.name ?? ""} seed={randomSeed()} />
+      </div>
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">전체 과목 검색</h2>
