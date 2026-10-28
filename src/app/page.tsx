@@ -42,9 +42,9 @@ async function SignedInHome({ searchParams }: Pick<PageProps<"/">, "searchParams
   } = await supabase.auth.getUser();
 
   if (!user) {
-    // The same card as /login, sized like the auth pages.
+    // The same card as /login, sized like the auth pages but nearer the top.
     return (
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10">
+      <div className="mx-auto w-full max-w-md pt-10">
         <LoginCard searchParams={searchParams} />
       </div>
     );
