@@ -13,10 +13,10 @@ export function SiteHeader() {
         <Link href="/" aria-label="메인으로" className="justify-self-start">
           <Image src="/kangnam-logo.jpg" alt="강남대학교" width={173} height={48} className="h-8 w-auto max-w-none" />
         </Link>
-        <div className="flex flex-col items-center text-center">
+        <Link href="/" className="flex flex-col items-center text-center">
           <span className="font-brand text-xl font-bold sm:text-2xl tracking-tight text-primary">KNU Hub</span>
           <span className="hidden text-xs text-muted-foreground sm:block">강남대 과제 공유 & 리뷰 플랫폼</span>
-        </div>
+        </Link>
         <div className="justify-self-end">
           <Suspense>
             <AccountActions />

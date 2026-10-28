@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
+import { LoginCard } from "./(auth)/login/login-card";
 import { PostList } from "./board/post-list";
 import { MascotGreeting } from "./mascot-greeting";
 import { RecentRecommendations } from "./recommendations/recent-recommendations";
@@ -20,7 +21,7 @@ export default function Home({ searchParams }: PageProps<"/">) {
         )}
       </Suspense>
       <Suspense fallback={<p className="text-sm text-muted-foreground">세션 확인 중…</p>}>
-        <SignedInHome />
+        <SignedInHome searchParams={searchParams} />
       </Suspense>
     </main>
   );
@@ -34,21 +35,17 @@ function randomSeed() {
 
 type CourseSummary = { id: string; name: string; semester: string; section: string };
 
-async function SignedInHome() {
+async function SignedInHome({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
   const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
+    // The same card as /login, sized like the auth pages but nearer the top.
     return (
-      <div className="flex gap-2">
-        <Button nativeButton={false} render={<Link href="/login" />}>
-          로그인
-        </Button>
-        <Button variant="outline" nativeButton={false} render={<Link href="/signup" />}>
-          가입하기
-        </Button>
+      <div className="mx-auto w-full max-w-md pt-10">
+        <LoginCard searchParams={searchParams} />
       </div>
     );
   }
