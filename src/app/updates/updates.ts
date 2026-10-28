@@ -3,6 +3,14 @@ export type Update = { date: string; title: string; items: string[] };
 
 export const UPDATES: Update[] = [
   {
+    date: "2026-10-28",
+    title: "메인 페이지 로그인 화면",
+    items: [
+      "로그인하지 않고 메인 페이지에 들어오면 로그인 화면이 바로 보여요. 여기서 로그인하거나 가입하기로 넘어갈 수 있어요.",
+      "화면 위의 KNU Hub를 누르면 메인 페이지로 가요.",
+    ],
+  },
+  {
     date: "2026-10-20",
     title: "메인 페이지 캐릭터 인사",
     items: [
