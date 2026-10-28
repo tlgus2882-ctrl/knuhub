@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { Button } from "@/components/ui/button";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { NO_CONTACT_SETTINGS } from "./contact-visibility";
 import { BioForm } from "./bio-form";
@@ -12,11 +13,30 @@ export default function ProfilePage() {
       <Link href="/" className="text-sm text-muted-foreground underline hover:text-primary">
         ← 처음으로
       </Link>
-      <h1 className="text-2xl font-semibold tracking-tight">프로필</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">프로필</h1>
+        <Suspense>
+          <PublicProfileButton />
+        </Suspense>
+      </div>
       <Suspense fallback={<p className="text-sm text-muted-foreground">불러오는 중…</p>}>
         <MyProfile />
       </Suspense>
     </main>
+  );
+}
+
+async function PublicProfileButton() {
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  return (
+    <Button nativeButton={false} render={<Link href={`/users/${user.id}`} />}>
+      다른 사람에게 보이는 내 프로필 보기
+    </Button>
   );
 }
 
@@ -52,9 +72,6 @@ async function MyProfile() {
       />
       <BioForm bio={profile?.bio ?? ""} />
       <ProfileFiles ownerId={user.id} editable />
-      <Link href={`/users/${user.id}`} className="self-start text-sm text-primary underline">
-        다른 사람에게 보이는 내 프로필 보기
-      </Link>
       <Link href="/profile/withdraw" className="self-start text-sm text-muted-foreground underline hover:text-primary">
         탈퇴하기
       </Link>

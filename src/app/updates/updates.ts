@@ -4,6 +4,11 @@ export type Update = { date: string; title: string; items: string[] };
 export const UPDATES: Update[] = [
   {
     date: "2026-10-28",
+    title: "내 프로필 미리 보기 버튼",
+    items: ["프로필 화면 맨 위 제목 오른쪽의 파란 버튼으로 다른 사람에게 보이는 내 프로필을 볼 수 있어요."],
+  },
+  {
+    date: "2026-10-28",
     title: "점수 이의신청",
     items: [
       "채점이 끝난 과제 화면에서 \"점수 이의신청\" 버튼을 눌러 담당 교수님과 조교에게 점수 이의신청을 남길 수 있어요. 과제마다 한 번이에요.",
