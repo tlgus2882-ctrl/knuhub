@@ -37,14 +37,15 @@ JSON 파일을 직접 고치고 싶으면 `npm run eval -- --template 박시현`
 
 ## 실행
 
-`.env.local`에 `GEMINI_API_KEY`나 `ANTHROPIC_API_KEY`가 있어야 해요.
+`.env.local`에 `ANTHROPIC_API_KEY`(서비스와 같은 Claude)가 있어야 해요. 없으면 개발용 `GEMINI_API_KEY`로 돌아요.
+실제 모델을 부르므로 돌릴 때마다 Claude 사용료가 나가요 (34건 × 3회에 몇 센트 수준).
 
 ```bash
 npm run eval                              # 모든 사례 × 3회
 npm run eval -- --runs 1 --only calc-01   # 일부만, 1회
 ```
 
-무료 등급의 호출 한도 때문에 호출 사이에 4초를 쉬어요 (`--delay` 밀리초). 34건 × 3회는 10분쯤 걸려요.
+호출 사이에 4초를 쉬어요 (`--delay` 밀리초, Gemini 무료 등급의 한도 때문). Claude로 돌릴 때는 `--delay 500`처럼 줄여도 돼요.
 
 ## 지표
 

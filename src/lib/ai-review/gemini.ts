@@ -4,8 +4,8 @@ import { z } from "zod";
 import type { ReviewModel, TokenUsage } from "./review";
 
 // shortcut: a free Gemini API key lets Google use and human-review what we send (Unpaid Services terms),
-// so it is only for development and the mock course. Switch to a paid Gemini key or ANTHROPIC_API_KEY
-// before any real 제출물 goes through AI 검토.
+// so it is only for development and the mock course. Real 제출물 go through Claude (ANTHROPIC_API_KEY),
+// which model.ts always picks first.
 
 /** The current lightweight Gemini model, unless AI_REVIEW_MODEL names another. */
 export const GEMINI_MODEL = process.env.AI_REVIEW_MODEL ?? "gemini-3.5-flash-lite";
