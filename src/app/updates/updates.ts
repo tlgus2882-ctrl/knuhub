@@ -4,6 +4,11 @@ export type Update = { date: string; title: string; items: string[] };
 export const UPDATES: Update[] = [
   {
     date: "2026-10-28",
+    title: "과제 화면 배치",
+    items: ["과제 화면의 내 제출물, 셀프 점검, 점수 이의신청, 1차 검사를 두 줄 두 칸으로 나란히 보여 줘요. 휴대폰에서는 한 줄로 보여요."],
+  },
+  {
+    date: "2026-10-28",
     title: "AI 검토를 Claude로 전환",
     items: [
       "셀프 점검과 1차 검사의 AI 검토가 Claude 유료 API로 바뀌었어요.",
