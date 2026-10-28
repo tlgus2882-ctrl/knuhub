@@ -415,6 +415,38 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"grade_appeal": {
+                  Row: {
+                    "answer": string | null,"answered_at": string | null,"answered_by": string | null,"assignment_id": string,"body": string,"created_at": string,"student_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "answer"?: string | null,"answered_at"?: string | null,"answered_by"?: string | null,"assignment_id": string,"body": string,"created_at"?: string,"student_id"?: string
+                  }
+                  Update: {
+                    "answer"?: string | null,"answered_at"?: string | null,"answered_by"?: string | null,"assignment_id"?: string,"body"?: string,"created_at"?: string,"student_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "grade_appeal_answered_by_fkey"
+      columns: ["answered_by"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "grade_appeal_assignment_id_fkey"
+      columns: ["assignment_id"]
+isOneToOne: false
+      referencedRelation: "assignment"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "grade_appeal_student_id_fkey"
+      columns: ["student_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"grading_criterion": {
                   Row: {
                     "assignment_id": string,"description": string,"id": string,"name": string,"points": number,"position": number
@@ -866,6 +898,9 @@ isOneToOne: false
               "email": string,"github": string,"open_chat_url": string
             }[]
                            },
+"can_appeal":
+{ Args: { "target_assignment": string }; Returns: boolean
+                           },
 "can_delete":
 { Args: { "": Database["public"]['Tables']["review"]['Row'] }; Returns: { error: true } & "the function public.can_delete with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
                            },
@@ -931,6 +966,9 @@ isOneToOne: false
                            },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_assignment_staff":
+{ Args: { "target_assignment": string }; Returns: boolean
                            },
 "is_course_member":
 { Args: { "target_course": string }; Returns: boolean
