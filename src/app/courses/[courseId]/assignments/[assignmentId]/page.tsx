@@ -9,6 +9,7 @@ import { formatKst, timeLeft } from "@/lib/time";
 import { asCourseRole } from "../../../course-role";
 import { VISIBILITY_HINT, VISIBILITY_LABEL } from "../../../visibility";
 import { Attachments } from "./attachments";
+import { GradeAppeals, MyAppeal } from "./grade-appeal";
 import { GradedButton } from "./graded-button";
 import { GradingCriteria } from "./grading-criteria";
 import { MySubmission } from "./my-submission";
@@ -121,6 +122,9 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
 
       {enrolled && user && <MySubmission courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
       {enrolled && user && <SelfCheck courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
+      {enrolled && user && <MyAppeal assignmentId={assignmentId} studentId={user.id} />}
+
+      {canEdit && <GradeAppeals assignmentId={assignmentId} />}
 
       {canEdit && <FirstCheck assignmentId={assignmentId} />}
       {canEdit && <SubmissionStatus courseId={courseId} assignmentId={assignmentId} />}
