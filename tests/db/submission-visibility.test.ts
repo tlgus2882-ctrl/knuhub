@@ -120,7 +120,7 @@ describe("제출물 열람", () => {
   });
 
   it("마감을 연장하면 공개된 제출물이 다시 숨겨지고 재제출할 수 있다", async () => {
-    const { author, assignmentId, update, closeAndGrade, whoSees } = await submittedSetup("campus");
+    const { author, classmate, outsider, professor, assignmentId, update, closeAndGrade, whoSees } = await submittedSetup("campus");
     await closeAndGrade();
 
     await update({ due_at: inDays(1) });
@@ -129,8 +129,11 @@ describe("제출물 열람", () => {
     const { error } = await submitFiles(author, assignmentId, [{ path: "main.py", body: "print(2)" }]);
     expect(error).toBeNull();
 
-    // 연장하면 채점 완료가 풀려서, 새 마감이 지나도 다시 채점 완료를 눌러야 공개된다
+    // 연장하면 채점 완료가 풀려서, 새 마감이 지나도 다시 채점 완료를 눌러야 공개된다.
+    // 재제출로 처음 파일은 제출 이력으로 옮겨졌으니 whoSees()의 파일 비교 대신 제출물 행으로 본다.
     await update({ due_at: inDays(-1) });
-    expect(await whoSees()).toEqual(["professor", "assistant", "author"]);
+    const seesRow = async (user: TestUser) =>
+      ((await user.client.from("submission").select("id").eq("assignment_id", assignmentId)).data ?? []).length === 1;
+    expect(await Promise.all([author, professor, classmate, outsider].map(seesRow))).toEqual([true, true, false, false]);
   });
 });
