@@ -219,14 +219,14 @@ isOneToOne: false
                   ]
                 },"assignment": {
                   Row: {
-                    "course_id": string,"created_at": string,"created_by": string | null,"criteria_version": number,"description": string,"due_at": string,"id": string,"published": boolean,"title": string,"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
+                    "course_id": string,"created_at": string,"created_by": string | null,"criteria_version": number,"description": string,"due_at": string,"graded_at": string | null,"id": string,"published": boolean,"title": string,"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "course_id": string,"created_at"?: string,"created_by"?: string | null,"criteria_version"?: number,"description"?: string,"due_at": string,"id"?: string,"published"?: boolean,"title": string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
+                    "course_id": string,"created_at"?: string,"created_by"?: string | null,"criteria_version"?: number,"description"?: string,"due_at": string,"graded_at"?: string | null,"id"?: string,"published"?: boolean,"title": string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
                   }
                   Update: {
-                    "course_id"?: string,"created_at"?: string,"created_by"?: string | null,"criteria_version"?: number,"description"?: string,"due_at"?: string,"id"?: string,"published"?: boolean,"title"?: string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
+                    "course_id"?: string,"created_at"?: string,"created_by"?: string | null,"criteria_version"?: number,"description"?: string,"due_at"?: string,"graded_at"?: string | null,"id"?: string,"published"?: boolean,"title"?: string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
                   }
                   Relationships: [
                     {

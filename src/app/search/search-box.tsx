@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 /** A plain GET form to /search?q=…, so results are a shareable, server-rendered page. */
-export function SearchBox({ defaultValue }: { defaultValue?: string }) {
+export function SearchBox({ defaultValue, className }: { defaultValue?: string; className?: string }) {
   return (
-    <form action="/search" role="search" className="flex gap-2">
+    <form action="/search" role="search" className={cn("flex gap-2", className)}>
       <Input
         name="q"
         type="search"

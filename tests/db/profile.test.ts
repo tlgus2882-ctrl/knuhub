@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { withdrawUser } from "../../src/lib/withdrawal/withdraw-user";
-import { enrollInTestCourse, inDays, moveDeadline, openTestCourse, postTestAssignment } from "../support/courses";
+import { closeAndGrade, enrollInTestCourse, openTestCourse, postTestAssignment } from "../support/courses";
 import { submitFiles } from "../support/submissions";
 import { adminClient, createTestUser, type TestUser } from "../support/supabase";
 
@@ -33,7 +33,7 @@ describe("학생 프로필", () => {
     expect(await listed(classmate)).toEqual([]);
     expect(await listed(author)).toEqual([campus, closed].sort());
 
-    for (const id of [campus, closed]) await moveDeadline(professor, id, inDays(-1));
+    for (const id of [campus, closed]) await closeAndGrade(professor, id);
     expect(await listed(classmate)).toEqual([campus]);
     expect(await listed(outsider)).toEqual([campus]);
     expect(await listed(professor)).toEqual([campus, closed].sort());

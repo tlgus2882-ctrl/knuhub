@@ -27,7 +27,7 @@ async function reviewSetup(visibility: Visibility = "course") {
   if (error) throw error;
 
   const closeDeadline = async () => {
-    const { error } = await professor.client.from("assignment").update({ due_at: inDays(-1) }).eq("id", assignmentId);
+    const { error } = await professor.client.from("assignment").update({ due_at: inDays(-1), graded_at: new Date().toISOString() }).eq("id", assignmentId);
     if (error) throw error;
   };
 

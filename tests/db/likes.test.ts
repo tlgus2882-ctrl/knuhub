@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { withdrawUser } from "../../src/lib/withdrawal/withdraw-user";
-import { enrollInTestCourse, inDays, moveDeadline, openTestCourse, postTestAssignment } from "../support/courses";
+import { closeAndGrade, enrollInTestCourse, openTestCourse, postTestAssignment } from "../support/courses";
 import { submitFiles } from "../support/submissions";
 import { adminClient, createTestUser, type TestUser } from "../support/supabase";
 
@@ -26,7 +26,7 @@ describe("좋아요", () => {
     // 마감 전이라 같은 반 학생은 볼 수 없다: 누르지도 개수를 보지도 못한다
     expect((await classmate.client.from("submission_like").insert({ submission_id: submissionId })).error).not.toBeNull();
 
-    await moveDeadline(professor, assignmentId, inDays(-1));
+    await closeAndGrade(professor, assignmentId);
     expect((await classmate.client.from("submission_like").insert({ submission_id: submissionId })).error).toBeNull();
     expect((await classmate.client.from("submission_like").insert({ submission_id: submissionId })).error?.code).toBe("23505");
     expect((await author.client.from("submission_like").insert({ submission_id: submissionId })).error).toBeNull();
@@ -41,7 +41,7 @@ describe("좋아요", () => {
 
   it("볼 수 없게 된 제출물의 좋아요 수는 보이지 않는다", async () => {
     const { professor, classmate, assignmentId, submissionId } = await submissionSetup();
-    await moveDeadline(professor, assignmentId, inDays(-1));
+    await closeAndGrade(professor, assignmentId);
     await classmate.client.from("submission_like").insert({ submission_id: submissionId });
 
     await professor.client.from("assignment").update({ visibility: "private" }).eq("id", assignmentId);
@@ -66,7 +66,7 @@ describe("좋아요", () => {
 
   it("다른 사람 이름으로 누를 수 없고, 탈퇴하면 그 사람의 좋아요가 지워진다", async () => {
     const { professor, author, classmate, assignmentId, submissionId } = await submissionSetup();
-    await moveDeadline(professor, assignmentId, inDays(-1));
+    await closeAndGrade(professor, assignmentId);
 
     expect((await classmate.client.from("submission_like").insert({ submission_id: submissionId, user_id: author.id } as never)).error).not.toBeNull();
     await classmate.client.from("submission_like").insert({ submission_id: submissionId });

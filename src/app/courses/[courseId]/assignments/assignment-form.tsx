@@ -108,7 +108,7 @@ export function AssignmentForm({ courseId, assignment }: Props) {
       </div>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-medium">마감 후 공개 범위</legend>
+        <legend className="mb-1 text-sm font-medium">채점 후 공개 범위</legend>
         {(Object.keys(VISIBILITY_LABEL) as Visibility[]).map((value) => (
           <label key={value} className="flex items-start gap-2 text-sm">
             <input
@@ -124,7 +124,7 @@ export function AssignmentForm({ courseId, assignment }: Props) {
             </span>
           </label>
         ))}
-        <p className="text-xs text-muted-foreground">마감 전에는 공개 범위와 상관없이 제출한 학생과 교수·조교만 봐요.</p>
+        <p className="text-xs text-muted-foreground">마감 후 과제 화면에서 채점 완료를 누르기 전까지는 공개 범위와 상관없이 제출한 학생과 교수·조교만 봐요.</p>
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">

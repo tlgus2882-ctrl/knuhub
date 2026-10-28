@@ -68,7 +68,7 @@ export async function SubmissionList({ courseId, assignmentId, viewerId }: Props
         </ul>
       ) : (
         <p className="text-sm text-muted-foreground">
-          볼 수 있는 제출물이 없어요. 다른 사람의 제출물은 마감 후 공개 범위에 따라 보여요.
+          볼 수 있는 제출물이 없어요. 다른 사람의 제출물은 마감 후 채점이 끝나면 공개 범위에 따라 보여요.
         </p>
       )}
     </section>
