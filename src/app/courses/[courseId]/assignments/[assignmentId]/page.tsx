@@ -20,7 +20,7 @@ import { FirstCheck } from "./first-check";
 
 export default function AssignmentPage({ params }: PageProps<"/courses/[courseId]/assignments/[assignmentId]">) {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-16">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-16">
       <Suspense fallback={<p className="text-sm text-muted-foreground">불러오는 중…</p>}>
         {params.then((p) => (
           <AssignmentDetail {...p} />
@@ -120,13 +120,14 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
 
       <Attachments assignmentId={assignmentId} canEdit={Boolean(canEdit)} />
 
-      {enrolled && user && <MySubmission courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
-      {enrolled && user && <SelfCheck courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
-      {enrolled && user && <MyAppeal assignmentId={assignmentId} studentId={user.id} />}
-
-      {canEdit && <GradeAppeals assignmentId={assignmentId} />}
-
-      {canEdit && <FirstCheck assignmentId={assignmentId} />}
+      {/* 내 제출물 · 셀프 점검 · 점수 이의신청 · 1차 검사 as a 2x2 grid (one column on phones). */}
+      <div className="grid items-start gap-4 md:grid-cols-2">
+        {enrolled && user && <MySubmission courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
+        {enrolled && user && <SelfCheck courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
+        {enrolled && user && <MyAppeal assignmentId={assignmentId} studentId={user.id} />}
+        {canEdit && <GradeAppeals assignmentId={assignmentId} />}
+        {canEdit && <FirstCheck assignmentId={assignmentId} />}
+      </div>
       {canEdit && <SubmissionStatus courseId={courseId} assignmentId={assignmentId} />}
 
       <SubmissionList courseId={courseId} assignmentId={assignmentId} viewerId={enrolled ? user?.id : undefined} />
