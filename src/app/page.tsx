@@ -58,17 +58,13 @@ async function SignedInHome({ searchParams }: Pick<PageProps<"/">, "searchParams
 
   return (
     <>
-      {/* Beside the page on the left where there is room (the 교수 추천 list sits on the right), on top otherwise. */}
-      <div className="2xl:fixed 2xl:top-24 2xl:left-4 2xl:w-64">
+      {/* Only beside the page on the left, where there is room (the 교수 추천 list sits on the right); hidden on smaller screens. */}
+      <div className="hidden 2xl:fixed 2xl:top-24 2xl:left-4 2xl:block 2xl:w-64">
         <MascotGreeting name={profile?.name ?? ""} seed={randomSeed()} />
       </div>
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">전체 과목 검색</h2>
-          <BrowseCoursesButton />
-        </div>
-        <SearchBox />
-      </section>
+      <div className="flex justify-end">
+        <SearchBox className="w-full sm:w-72" />
+      </div>
       {profile?.role === "professor" && <ProfessorCourses supabase={supabase} userId={user.id} />}
       {profile?.role === "student" && <StudentCourses supabase={supabase} userId={user.id} />}
       <div className="2xl:hidden">
@@ -102,7 +98,7 @@ async function ProfessorCourses({ supabase, userId }: { supabase: Supabase; user
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">담당 과목</h2>
+        <h2 className="text-xl font-bold">담당 과목</h2>
         <Button size="sm" nativeButton={false} render={<Link href="/courses/new" />}>
           과목 열기
         </Button>
@@ -122,7 +118,7 @@ async function StudentCourses({ supabase, userId }: { supabase: Supabase; userId
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-semibold">내 과목</h2>
+      <h2 className="text-xl font-bold">내 과목</h2>
       <CourseList
         courses={courses}
         empty="아직 참여한 과목이 없어요. 교수님께 받은 초대 코드를 입력해 주세요."
@@ -132,24 +128,19 @@ async function StudentCourses({ supabase, userId }: { supabase: Supabase; userId
   );
 }
 
-function BrowseCoursesButton() {
-  return (
-    <Button size="sm" nativeButton={false} render={<Link href="/courses" />}>
-      전체 과목 둘러보기 →
-    </Button>
-  );
-}
-
 function CourseList({ courses, empty }: { courses: CourseSummary[]; empty: string }) {
   if (courses.length === 0) return <p className="text-sm text-muted-foreground">{empty}</p>;
 
   return (
-    <ul className="flex flex-col divide-y rounded-lg border">
+    <ul className="grid gap-3 sm:grid-cols-2">
       {courses.map((course) => (
         <li key={course.id}>
-          <Link href={`/courses/${course.id}`} className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted">
-            <span className="font-medium">{course.name}</span>
-            <span className="text-xs text-muted-foreground">{courseTerm(course)}</span>
+          <Link
+            href={`/courses/${course.id}`}
+            className="flex h-full flex-col gap-1 rounded-xl border p-5 transition-colors hover:border-primary hover:bg-muted"
+          >
+            <span className="text-lg font-semibold">{course.name}</span>
+            <span className="text-sm text-muted-foreground">{courseTerm(course)}</span>
           </Link>
         </li>
       ))}

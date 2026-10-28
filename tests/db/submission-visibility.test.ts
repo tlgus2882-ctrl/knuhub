@@ -22,7 +22,7 @@ async function submittedSetup(visibility: Visibility) {
 
   const { storagePaths } = await submitFiles(author, assignmentId, [{ path: "main.py", body: "print(1)" }]);
 
-  const update = async (fields: { due_at?: string; visibility?: Visibility }) => {
+  const update = async (fields: { due_at?: string; visibility?: Visibility; graded_at?: string | null }) => {
     const { error } = await professor.client.from("assignment").update(fields).eq("id", assignmentId);
     if (error) throw error;
   };
@@ -45,7 +45,10 @@ async function submittedSetup(visibility: Visibility) {
     return names;
   };
 
-  return { ...viewers, assignmentId, update, whoSees };
+  /** Closes the 과제 and marks it 채점 완료. */
+  const closeAndGrade = () => update({ due_at: inDays(-1), graded_at: new Date().toISOString() });
+
+  return { ...viewers, assignmentId, update, closeAndGrade, whoSees };
 }
 
 describe("제출물 열람", () => {
@@ -55,30 +58,59 @@ describe("제출물 열람", () => {
     expect(await whoSees()).toEqual(["professor", "assistant", "author"]);
   });
 
-  it("마감 후 비공개면 교수·조교와 작성자만 본다", async () => {
-    const { update, whoSees } = await submittedSetup("private");
+  it("마감이 지나도 채점 완료 전에는 작성자 본인과 담당 교수·조교만 본다", async () => {
+    const { update, whoSees } = await submittedSetup("campus");
     await update({ due_at: inDays(-1) });
 
     expect(await whoSees()).toEqual(["professor", "assistant", "author"]);
   });
 
-  it("마감 후 수강생 공개면 그 과목 수강생까지 본다", async () => {
-    const { update, whoSees } = await submittedSetup("course");
+  it("채점 완료를 취소하면 공개된 제출물이 다시 숨겨진다", async () => {
+    const { update, closeAndGrade, whoSees } = await submittedSetup("campus");
+    await closeAndGrade();
+
+    await update({ graded_at: null });
+
+    expect(await whoSees()).toEqual(["professor", "assistant", "author"]);
+  });
+
+  it("조교는 채점 완료를 표시하고, 학생은 표시할 수 없다", async () => {
+    const { assistant, author, assignmentId, update, whoSees } = await submittedSetup("campus");
     await update({ due_at: inDays(-1) });
+    const markGraded = (user: TestUser) =>
+      user.client.from("assignment").update({ graded_at: new Date().toISOString() }).eq("id", assignmentId).select("id");
+
+    expect((await markGraded(author)).data ?? []).toEqual([]);
+    expect(await whoSees()).toEqual(["professor", "assistant", "author"]);
+
+    expect((await markGraded(assistant)).data).toHaveLength(1);
+    expect(await whoSees()).toEqual(["professor", "assistant", "author", "classmate", "outsider", "otherProfessor"]);
+  });
+
+  it("채점 완료 후 비공개면 교수·조교와 작성자만 본다", async () => {
+    const { closeAndGrade, whoSees } = await submittedSetup("private");
+    await closeAndGrade();
+
+    expect(await whoSees()).toEqual(["professor", "assistant", "author"]);
+  });
+
+  it("채점 완료 후 수강생 공개면 그 과목 수강생까지 본다", async () => {
+    const { closeAndGrade, whoSees } = await submittedSetup("course");
+    await closeAndGrade();
 
     expect(await whoSees()).toEqual(["professor", "assistant", "author", "classmate"]);
   });
 
-  it("마감 후 학내 공개면 모든 사용자가 본다", async () => {
-    const { update, whoSees } = await submittedSetup("campus");
-    await update({ due_at: inDays(-1) });
+  it("채점 완료 후 학내 공개면 모든 사용자가 본다", async () => {
+    const { closeAndGrade, whoSees } = await submittedSetup("campus");
+    await closeAndGrade();
 
     expect(await whoSees()).toEqual(["professor", "assistant", "author", "classmate", "outsider", "otherProfessor"]);
   });
 
   it("공개 범위를 좁히거나 넓히면 바로 반영된다", async () => {
-    const { update, whoSees } = await submittedSetup("campus");
-    await update({ due_at: inDays(-1) });
+    const { update, closeAndGrade, whoSees } = await submittedSetup("campus");
+    await closeAndGrade();
 
     await update({ visibility: "private" });
     expect(await whoSees()).toEqual(["professor", "assistant", "author"]);
@@ -88,13 +120,17 @@ describe("제출물 열람", () => {
   });
 
   it("마감을 연장하면 공개된 제출물이 다시 숨겨지고 재제출할 수 있다", async () => {
-    const { author, assignmentId, update, whoSees } = await submittedSetup("campus");
-    await update({ due_at: inDays(-1) });
+    const { author, assignmentId, update, closeAndGrade, whoSees } = await submittedSetup("campus");
+    await closeAndGrade();
 
     await update({ due_at: inDays(1) });
 
     expect(await whoSees()).toEqual(["professor", "assistant", "author"]);
     const { error } = await submitFiles(author, assignmentId, [{ path: "main.py", body: "print(2)" }]);
     expect(error).toBeNull();
+
+    // 연장하면 채점 완료가 풀려서, 새 마감이 지나도 다시 채점 완료를 눌러야 공개된다
+    await update({ due_at: inDays(-1) });
+    expect(await whoSees()).toEqual(["professor", "assistant", "author"]);
   });
 });

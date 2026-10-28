@@ -9,6 +9,7 @@ import { formatKst, timeLeft } from "@/lib/time";
 import { asCourseRole } from "../../../course-role";
 import { VISIBILITY_HINT, VISIBILITY_LABEL } from "../../../visibility";
 import { Attachments } from "./attachments";
+import { GradedButton } from "./graded-button";
 import { GradingCriteria } from "./grading-criteria";
 import { MySubmission } from "./my-submission";
 import { SelfCheck } from "./self-check";
@@ -32,7 +33,7 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
   const supabase = await createServerSupabase();
   const { data: assignment } = await supabase
     .from("assignment")
-    .select("id, title, description, due_at, visibility, published, course(name)")
+    .select("id, title, description, due_at, visibility, published, graded_at, course(name)")
     .eq("id", assignmentId)
     .eq("course_id", courseId)
     .maybeSingle();
@@ -52,6 +53,7 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
     : { data: false };
   await connection();
   const now = new Date();
+  const closed = now >= new Date(assignment.due_at);
 
   return (
     <>
@@ -90,6 +92,19 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
           <dd>
             {VISIBILITY_LABEL[assignment.visibility]}{" "}
             <span className="text-muted-foreground">· {VISIBILITY_HINT[assignment.visibility]}</span>
+          </dd>
+          <dt className="text-muted-foreground">채점</dt>
+          <dd className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            {assignment.graded_at ? (
+              <span>채점 완료 <span className="text-muted-foreground">· {formatKst(assignment.graded_at)}</span></span>
+            ) : (
+              <span>
+                {closed ? "채점 중" : "마감 전"}{" "}
+                <span className="text-muted-foreground">· 채점이 끝나면 공개 범위에 따라 제출물이 공개돼요.</span>
+              </span>
+            )}
+            {/* Before the 마감일 the button would open nothing yet, so it waits for the deadline. */}
+            {canEdit && closed && <GradedButton assignmentId={assignmentId} graded={Boolean(assignment.graded_at)} />}
           </dd>
         </dl>
       </header>

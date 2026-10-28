@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { withdrawUser } from "../../src/lib/withdrawal/withdraw-user";
-import { enrollInTestCourse, inDays, moveDeadline, openTestCourse, postTestAssignment } from "../support/courses";
+import { closeAndGrade, enrollInTestCourse, openTestCourse, postTestAssignment } from "../support/courses";
 import { download, SUBMISSION_BUCKET, submitFiles } from "../support/submissions";
 import { adminClient, createTestUser, type TestUser } from "../support/supabase";
 
@@ -74,7 +74,7 @@ describe("제출 이력", () => {
     expect(await historySeenBy(professor, assignmentId)).toHaveLength(1);
     expect(await download(professor, v1)).toBe("제출 1");
 
-    await moveDeadline(professor, assignmentId, inDays(-1));
+    await closeAndGrade(professor, assignmentId);
     expect(await historySeenBy(classmate, assignmentId)).toHaveLength(1);
     expect(await download(classmate, v1)).toBe("제출 1");
   });

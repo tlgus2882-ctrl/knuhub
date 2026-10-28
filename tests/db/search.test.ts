@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import type { Visibility } from "../../src/app/courses/visibility";
-import { enrollInTestCourse, inDays, moveDeadline, openTestCourse, postTestAssignment } from "../support/courses";
+import { closeAndGrade, enrollInTestCourse, openTestCourse, postTestAssignment } from "../support/courses";
 import { submitFiles } from "../support/submissions";
 import { anonClient, createTestUser, type TestUser } from "../support/supabase";
 
@@ -19,7 +19,7 @@ async function searchSetup(visibility: Visibility) {
   for (const student of [author, classmate]) await enrollInTestCourse(student, professor, course.id);
   const assignmentId = await postTestAssignment(professor, course.id, { visibility });
   await submitFiles(author, assignmentId, [{ path: "a.txt", body: "a" }]);
-  const closeDeadline = () => moveDeadline(professor, assignmentId, inDays(-1));
+  const closeDeadline = () => closeAndGrade(professor, assignmentId);
 
   const viewers = { professor, author, classmate, outsider };
   /** Who finds the author's 제출물 by searching for `query`. */

@@ -68,3 +68,12 @@ export async function moveDeadline(professor: TestUser, assignmentId: string, du
   const { error } = await professor.client.from("assignment").update({ due_at: dueAt }).eq("id", assignmentId);
   if (error) throw error;
 }
+
+/** Closes the assignment and marks it 채점 완료, so its 제출물 open up per the 공개 범위. */
+export async function closeAndGrade(professor: TestUser, assignmentId: string): Promise<void> {
+  const { error } = await professor.client
+    .from("assignment")
+    .update({ due_at: inDays(-1), graded_at: new Date().toISOString() })
+    .eq("id", assignmentId);
+  if (error) throw error;
+}

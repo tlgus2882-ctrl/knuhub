@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { enrollInTestCourse, inDays, moveDeadline, openTestCourse, postTestAssignment } from "../support/courses";
+import { closeAndGrade, enrollInTestCourse, inDays, openTestCourse, postTestAssignment } from "../support/courses";
 import { submitFiles } from "../support/submissions";
 import { adminClient, createTestUser, type TestUser } from "../support/supabase";
 
@@ -42,14 +42,14 @@ describe("교수 추천", () => {
     expect(await recommended(author, submissionId)).toBe(true);
     expect(await recommended(classmate, submissionId)).toBe(false);
 
-    await moveDeadline(professor, assignmentId, inDays(-1));
+    await closeAndGrade(professor, assignmentId);
     expect(await recommended(classmate, submissionId)).toBe(true);
     expect(await recommended(outsider, submissionId)).toBe(false);
   });
 
   it("최근 추천 목록에는 볼 수 있는 제출물 중 일주일 안에 추천된 것만 나온다", async () => {
     const { professor, classmate, assignmentId, submissionId } = await setup();
-    await moveDeadline(professor, assignmentId, inDays(-1));
+    await closeAndGrade(professor, assignmentId);
     await recommend(professor, submissionId);
     const recent = async (viewer: TestUser) =>
       ((await viewer.client.rpc("recent_recommendations")).data ?? []).map((r) => r.submission_id).filter((id) => id === submissionId);
