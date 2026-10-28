@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { withdrawUser } from "../../src/lib/withdrawal/withdraw-user";
-import { enrollInTestCourse, inDays, moveDeadline, openTestCourse, postTestAssignment } from "../support/courses";
+import { closeAndGrade, enrollInTestCourse, inDays, moveDeadline, openTestCourse, postTestAssignment } from "../support/courses";
 import { adminClient, createTestUser, type TestUser } from "../support/supabase";
 
 /** A 과제 with a 수강생 who may appeal, a classmate, an 조교 and people outside the course. */
@@ -24,12 +24,14 @@ const answer = (user: TestUser, assignmentId: string, studentId: string, text = 
   user.client.from("grade_appeal").update({ answer: text }).eq("assignment_id", assignmentId).eq("student_id", studentId).select("answered_by");
 
 describe("점수 이의신청", () => {
-  it("마감 전에는 할 수 없고, 마감 후 그 과목 수강생만 과제마다 한 번 한다", async () => {
+  it("마감 전이나 채점 완료 전에는 할 수 없고, 채점 완료 후 그 과목 수강생만 과제마다 한 번 한다", async () => {
     const { professor, student, outsider, assignmentId } = await appealSetup();
 
     expect((await appeal(student, assignmentId)).error).not.toBeNull();
-
     await moveDeadline(professor, assignmentId, inDays(-1));
+    expect((await appeal(student, assignmentId)).error).not.toBeNull();
+
+    await closeAndGrade(professor, assignmentId);
     for (const user of [outsider, professor]) expect((await appeal(user, assignmentId)).error).not.toBeNull();
     expect((await appeal(student, assignmentId)).error).toBeNull();
     expect((await appeal(student, assignmentId)).error?.code).toBe("23505");
@@ -37,7 +39,7 @@ describe("점수 이의신청", () => {
 
   it("빈 내용이나 다른 사람 이름으로는 신청할 수 없다", async () => {
     const { professor, student, classmate, assignmentId } = await appealSetup();
-    await moveDeadline(professor, assignmentId, inDays(-1));
+    await closeAndGrade(professor, assignmentId);
 
     expect((await appeal(student, assignmentId, " \n ")).error).not.toBeNull();
     const forged = await classmate.client
@@ -48,7 +50,7 @@ describe("점수 이의신청", () => {
 
   it("신청한 학생과 담당 교수·조교만 읽는다", async () => {
     const { professor, otherProfessor, student, classmate, assistant, outsider, assignmentId } = await appealSetup();
-    await moveDeadline(professor, assignmentId, inDays(-1));
+    await closeAndGrade(professor, assignmentId);
     await appeal(student, assignmentId);
 
     for (const user of [student, professor, assistant]) expect(await appealsSeenBy(user, assignmentId)).toEqual([student.id]);
@@ -57,7 +59,7 @@ describe("점수 이의신청", () => {
 
   it("담당 교수·조교만 답변하고, 답변한 사람이 남는다", async () => {
     const { professor, otherProfessor, student, assistant, assignmentId } = await appealSetup();
-    await moveDeadline(professor, assignmentId, inDays(-1));
+    await closeAndGrade(professor, assignmentId);
     await appeal(student, assignmentId);
 
     for (const user of [student, otherProfessor]) expect((await answer(user, assignmentId, student.id)).data ?? []).toEqual([]);
@@ -66,7 +68,7 @@ describe("점수 이의신청", () => {
 
   it("학생은 답변을 받기 전에만 자기 신청을 거둔다", async () => {
     const { professor, student, assignmentId } = await appealSetup();
-    await moveDeadline(professor, assignmentId, inDays(-1));
+    await closeAndGrade(professor, assignmentId);
     const withdraw = () =>
       student.client.from("grade_appeal").delete().eq("assignment_id", assignmentId).eq("student_id", student.id).select("student_id");
 
@@ -81,7 +83,7 @@ describe("점수 이의신청", () => {
 
   it("탈퇴하면 그 학생의 이의신청이 지워진다", async () => {
     const { professor, student, assignmentId } = await appealSetup();
-    await moveDeadline(professor, assignmentId, inDays(-1));
+    await closeAndGrade(professor, assignmentId);
     await appeal(student, assignmentId);
 
     expect((await withdrawUser({ userClient: student.client, adminClient: adminClient() })).error).toBeNull();

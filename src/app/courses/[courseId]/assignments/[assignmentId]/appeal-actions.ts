@@ -15,7 +15,7 @@ export async function createAppeal(_prev: AppealFormState, form: FormData): Prom
     .from("grade_appeal")
     .insert({ assignment_id: String(form.get("assignment_id")), body });
   if (error?.code === "23505") return { error: "이 과제에는 이미 이의신청을 했어요." };
-  if (error) return failed("createAppeal", error, "마감이 지난 과제에 그 과목 수강생만 이의신청할 수 있어요.");
+  if (error) return failed("createAppeal", error, "채점이 끝난 과제에 그 과목 수강생만 이의신청할 수 있어요.");
 
   refresh();
   return { error: null, savedAt: Date.now() };

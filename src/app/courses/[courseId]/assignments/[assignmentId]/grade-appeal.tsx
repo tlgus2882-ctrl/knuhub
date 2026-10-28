@@ -5,7 +5,7 @@ import { AnswerForm, AppealForm, WithdrawAppealButton } from "./appeal-forms";
 
 type Answer = { answer: string | null; answered_at: string | null };
 
-/** The signed-in 수강생's 점수 이의신청 for one 과제: the button after the 마감일, then its status. */
+/** The signed-in 수강생's 점수 이의신청 for one 과제: the button once it is 채점 완료, then its status. */
 export async function MyAppeal({ assignmentId, studentId }: { assignmentId: string; studentId: string }) {
   const supabase = await createServerSupabase();
   const [{ data: appeal }, { data: canAppeal }] = await Promise.all([
@@ -17,7 +17,7 @@ export async function MyAppeal({ assignmentId, studentId }: { assignmentId: stri
       .maybeSingle(),
     supabase.rpc("can_appeal", { target_assignment: assignmentId }),
   ]);
-  // Before the 마감일 there is nothing to appeal yet.
+  // Until the 과제 is 채점 완료 there is nothing to appeal yet.
   if (!appeal && !canAppeal) return null;
 
   return (

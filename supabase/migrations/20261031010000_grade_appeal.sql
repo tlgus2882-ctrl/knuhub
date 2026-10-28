@@ -1,6 +1,6 @@
 -- 점수 이의신청
 --
--- 마감이 지난 공개 과제에 그 과목 수강생이 점수에 대한 이의신청을 과제마다 하나 남긴다.
+-- 마감이 지나고 채점 완료된 공개 과제에 그 과목 수강생이 점수에 대한 이의신청을 과제마다 하나 남긴다.
 -- 점수는 이 사이트에 없으니 이의신청은 글로 남기고, 담당 교수·조교가 읽고 답변한다.
 -- 신청한 학생과 담당 교수·조교만 읽는다. 답변하기 전에는 학생이 신청을 거둘 수 있다.
 -- 탈퇴하면 그 학생의 이의신청은 외래 키로 지워지고, 답변한 사람이 탈퇴해도 답변은 남는다.
@@ -41,7 +41,7 @@ $$;
 revoke execute on function public.is_assignment_staff(uuid) from public, anon;
 grant execute on function public.is_assignment_staff(uuid) to authenticated;
 
--- 지금 이 과제에 이의신청할 수 있는가: 마감이 지난 공개 과제이고 내가 그 과목 수강생일 때
+-- 지금 이 과제에 이의신청할 수 있는가: 마감이 지나고 채점 완료된 공개 과제이고 내가 그 과목 수강생일 때
 create function public.can_appeal(target_assignment uuid)
 returns boolean
 language sql
@@ -55,6 +55,7 @@ as $$
       and published
       and public.is_enrolled(course_id)
       and now() >= due_at
+      and graded_at is not null
   );
 $$;
 
@@ -65,7 +66,7 @@ create policy "신청한 학생과 담당 교수·조교는 이의신청을 읽�
   on public.grade_appeal for select to authenticated
   using (student_id = (select auth.uid()) or public.is_assignment_staff(assignment_id));
 
-create policy "수강생은 마감 후 이의신청을 한다"
+create policy "수강생은 채점 완료 후 이의신청을 한다"
   on public.grade_appeal for insert to authenticated
   with check (student_id = (select auth.uid()) and public.can_appeal(assignment_id));
 
