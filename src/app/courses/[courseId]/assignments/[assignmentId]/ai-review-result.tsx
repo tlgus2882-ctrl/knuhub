@@ -1,6 +1,7 @@
 import type { Criterion, Opinion, Verdict } from "@/lib/ai-review/review";
 import type { Json } from "@/lib/supabase/database.types";
 import { cn } from "@/lib/utils";
+import { isNotebook } from "@/lib/submissions/notebook";
 import { submissionHref } from "./submissions/submission-href";
 
 const VERDICT: Record<Verdict, { label: string; className: string }> = {
@@ -30,10 +31,11 @@ export function AiReviewResult({ courseId, assignmentId, submission, criteriaVer
   const criteria = result.criteria as Criterion[];
   const current = sameTime(result.submitted_at, submission.submitted_at);
   // Evidence opens the code viewer at its line in the version checked (no link once it left the 제출 이력).
+  // A notebook's line numbers are those of its JSON, so it opens as source.
   const history = current ? undefined : submission.submission_history.find((h) => sameTime(h.submitted_at, result.submitted_at));
   const hrefFor =
     current || history
-      ? (path: string, line: number) => `${submissionHref(courseId, assignmentId, submission.id, path, history?.id)}#L${line}`
+      ? (path: string, line: number) => `${submissionHref(courseId, assignmentId, submission.id, path, history?.id, isNotebook(path))}#L${line}`
       : null;
 
   return (
