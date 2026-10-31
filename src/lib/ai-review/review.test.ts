@@ -100,6 +100,15 @@ describe("reviewSubmission", () => {
     expect(result.kind === "reviewed" && result.opinions[0].evidence).toEqual([{ path: "hw.ipynb", start_line: 4, end_line: 4, cell: 2 }]);
   });
 
+  it("파일에 딸린 그림(노트북 그래프)은 어느 파일 몇 번 셀의 출력인지 이름표를 붙여 함께 보낸다", async () => {
+    const { model, asked } = fakeModel({ opinions: [] });
+    const notebookFile = { path: "hw.ipynb", text: "# ── 1번 셀 ──\nplot()", cellOfLine: [1, 1], images: [{ mime: "image/png" as const, data: "PNG", cell: 1 }] };
+
+    await reviewSubmission(model, CRITERIA, [FILES[0], notebookFile]);
+
+    expect(asked[0].images).toEqual([{ mime: "image/png", data: "PNG", label: '그림: 파일 id="2"의 1번 셀 출력' }]);
+  });
+
   it("AI가 빠뜨린 채점 항목은 판단 불가로 채우고, 채점 항목 순서대로 돌려준다", async () => {
     const { model } = fakeModel({
       opinions: [{ criterion: 2, verdict: "uncertain", evidence: [], comment: "모르겠다" }],

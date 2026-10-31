@@ -117,7 +117,7 @@ describe("notebookReviewText", () => {
 
     expect(text).toContain("# ── 1번 셀 (마크다운) ──\n# 실습");
     expect(text).toContain("# ── 2번 셀 (코드 [1]) ──\nx = 1\nprint(x)");
-    expect(text).toContain("# [그림 출력]");
+    expect(text).toContain("# [그림 출력 (첨부하지 않음)]");
     expect(text).not.toContain("AAAA");
     expect(text).toContain("(40줄 생략)");
     expect(text.length).toBeLessThan(1000);
@@ -130,5 +130,30 @@ describe("notebookReviewText", () => {
     expect(cellOfLine).toHaveLength(lines.length);
     expect(cellOfLine[lines.indexOf("# 실습")]).toBe(1);
     expect(cellOfLine[lines.indexOf("print(x)")]).toBe(2);
+  });
+});
+
+describe("notebookReviewText 그림 첨부", () => {
+  const png = (n: number) => ({ output_type: "display_data", data: { "image/png": `PNG${n}` } });
+  const nb = parseNotebook(
+    notebook([
+      { cell_type: "code", execution_count: 1, source: "plot(1)", outputs: [png(1), png(2)] },
+      { cell_type: "code", execution_count: 2, source: "plot(2)", outputs: [png(3)] },
+    ]),
+  )!;
+
+  it("남은 장수만큼 그림을 셀 번호와 함께 돌려주고, 넘는 그림은 첨부하지 않았다고 글에 남긴다", () => {
+    const { text, images } = notebookReviewText(nb, 2);
+
+    expect(images).toEqual([
+      { mime: "image/png", data: "PNG1", cell: 1 },
+      { mime: "image/png", data: "PNG2", cell: 1 },
+    ]);
+    expect(text.match(/\[그림 출력: 첨부\]/g)).toHaveLength(2);
+    expect(text).toContain("# [그림 출력 (첨부하지 않음)]");
+  });
+
+  it("남은 장수가 없으면(기본) 그림을 보내지 않는다", () => {
+    expect(notebookReviewText(nb).images).toEqual([]);
   });
 });
