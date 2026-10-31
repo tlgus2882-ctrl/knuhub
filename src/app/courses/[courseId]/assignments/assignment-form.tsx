@@ -160,7 +160,7 @@ export function AssignmentForm({ courseId, defaultDue, assignment }: Props) {
         )}
         <p className="text-xs text-muted-foreground">
           {lateOn
-            ? "마감 뒤에 낸 제출물에는 지각 표시가 붙어요. 채점 완료, 제출물 공개, 1차 검사는 지각 제출 마감이 지나야 할 수 있어요."
+            ? "마감 뒤에 낸 제출물에는 지각 표시가 붙어요. 채점은 마감 뒤에 바로 할 수 있고, 지각 제출 마감에 자동으로 채점 완료돼 제출물이 공개돼요."
             : "마감이 지나면 제출을 받지 않아요."}
         </p>
       </fieldset>
@@ -182,7 +182,7 @@ export function AssignmentForm({ courseId, defaultDue, assignment }: Props) {
             </span>
           </label>
         ))}
-        <p className="text-xs text-muted-foreground">마감 후 과제 화면에서 채점 완료를 누르기 전까지는 공개 범위와 상관없이 제출한 학생과 교수·조교만 봐요.</p>
+        <p className="text-xs text-muted-foreground">채점 완료(버튼, 또는 지각 제출 마감에 자동) 전까지는 공개 범위와 상관없이 제출한 학생과 교수·조교만 봐요.</p>
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
