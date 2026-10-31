@@ -1,15 +1,14 @@
-import type { AMREntry } from "@supabase/supabase-js";
+/** A session ends after this long without any request (activity keeps it going). */
+export const SESSION_IDLE_SECONDS = 60 * 60;
 
-/** A session ends this long after logging in, even while it is being used. */
-export const SESSION_MAX_AGE_SECONDS = 60 * 60;
+/** Cookie holding the last request's time (Unix seconds); the proxy rewrites it on every request. */
+export const LAST_ACTIVE_COOKIE = "kh-last-active";
 
 /**
- * Whether a session logged in longer ago than SESSION_MAX_AGE_SECONDS, judged from the
- * access token's `amr` claim (when each auth method was used in this session).
+ * Whether the session has been idle longer than SESSION_IDLE_SECONDS. No (or a garbled) time
+ * means the first request after logging in, which is not idle.
  */
-export function isSessionExpired(amr: AMREntry[] | string[] | undefined, nowSeconds: number): boolean {
-  // shortcut: the string-only amr format has no timestamps, so such a session never expires here;
-  // Supabase issues the timestamped format, so upgrade only if that changes.
-  const times = (amr ?? []).flatMap((entry) => (typeof entry === "string" ? [] : [entry.timestamp]));
-  return times.length > 0 && nowSeconds - Math.min(...times) > SESSION_MAX_AGE_SECONDS;
+export function isIdleExpired(lastActive: string | undefined, nowSeconds: number): boolean {
+  const last = Number(lastActive);
+  return Number.isFinite(last) && last > 0 && nowSeconds - last > SESSION_IDLE_SECONDS;
 }

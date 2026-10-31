@@ -32,7 +32,7 @@ export function LoginCard({ searchParams }: { searchParams: SearchParams }) {
 async function LoginNotice({ searchParams }: { searchParams: SearchParams }) {
   const { confirm, expired } = await searchParams;
   if (expired) {
-    return <p className="text-sm text-muted-foreground">로그인한 지 1시간이 지나 로그아웃됐어요. 다시 로그인해 주세요.</p>;
+    return <p className="text-sm text-muted-foreground">1시간 동안 사용하지 않아 로그아웃됐어요. 다시 로그인해 주세요.</p>;
   }
   if (confirm !== "failed") return null;
 
