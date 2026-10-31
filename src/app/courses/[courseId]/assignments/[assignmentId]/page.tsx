@@ -16,7 +16,7 @@ import { SelfCheck } from "./self-check";
 import { SubmissionList } from "./submission-list";
 import { SubmissionStatus } from "./submission-status";
 import { DeleteAssignmentButton } from "./delete-assignment-button";
-import { FirstCheckAndGrading } from "./first-check";
+import { FirstCheckAndGrading, type Grading } from "./first-check";
 
 export default function AssignmentPage({ params }: PageProps<"/courses/[courseId]/assignments/[assignmentId]">) {
   return (
@@ -58,6 +58,12 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
   // Submitting closes at the 지각 제출 마감 when there is one; 채점 완료 and the rest wait for it.
   // closes_at is a generated column that is never null (the generated types can't tell).
   const closed = now >= new Date(assignment.closes_at!);
+  // 채점 완료 holds once graded_at has passed; a later graded_at is the automatic one at the 지각 제출 마감.
+  const grading: Grading = !assignment.graded_at
+    ? { state: "none" }
+    : new Date(assignment.graded_at) <= now
+      ? { state: "done", at: assignment.graded_at }
+      : { state: "scheduled", at: assignment.graded_at };
 
   return (
     <>
@@ -114,12 +120,20 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
           </dd>
           <dt className="text-muted-foreground">채점</dt>
           <dd className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            {assignment.graded_at ? (
-              <span>채점 완료 <span className="text-muted-foreground">· {formatKst(assignment.graded_at)}</span></span>
+            {grading.state === "done" ? (
+              <span>
+                채점 완료 <span className="text-muted-foreground">· {formatKst(grading.at)}</span>
+                {!closed && <span className="text-muted-foreground"> · 제출물은 지각 제출 마감 뒤에 공개돼요.</span>}
+              </span>
             ) : (
               <span>
-                {closed ? "채점 중" : pastDue ? "지각 제출 받는 중" : "마감 전"}{" "}
-                <span className="text-muted-foreground">· 채점이 끝나면 공개 범위에 따라 제출물이 공개돼요.</span>
+                {pastDue ? "채점 중" : "마감 전"}{" "}
+                <span className="text-muted-foreground">
+                  ·{" "}
+                  {grading.state === "scheduled"
+                    ? `${formatKst(grading.at)} 지각 제출 마감에 자동으로 채점 완료되고, 공개 범위에 따라 제출물이 공개돼요.`
+                    : "채점이 끝나면 공개 범위에 따라 제출물이 공개돼요."}
+                </span>
               </span>
             )}
           </dd>
@@ -142,7 +156,7 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
         {enrolled && user && <SelfCheck courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
         {enrolled && user && <MyAppeal assignmentId={assignmentId} studentId={user.id} />}
         {canEdit && <GradeAppeals assignmentId={assignmentId} />}
-        {canEdit && <FirstCheckAndGrading assignmentId={assignmentId} closed={closed} graded={Boolean(assignment.graded_at)} late={Boolean(assignment.late_due_at)} />}
+        {canEdit && <FirstCheckAndGrading assignmentId={assignmentId} pastDue={pastDue} grading={grading} />}
       </div>
       {canEdit && <SubmissionStatus courseId={courseId} assignmentId={assignmentId} dueAt={assignment.due_at} />}
 
