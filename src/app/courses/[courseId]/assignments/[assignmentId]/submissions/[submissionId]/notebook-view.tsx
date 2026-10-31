@@ -13,7 +13,8 @@ export async function NotebookView({ notebook }: { notebook: Notebook }) {
   return (
     <ol className="flex flex-col gap-4">
       {notebook.cells.map((cell, i) => (
-        <li key={i} className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-2">
+        // #cell-N (from 1) is where AI 검토 evidence in a notebook points.
+        <li key={i} id={`cell-${i + 1}`} className="notebook-cell grid grid-cols-[3.5rem_minmax(0,1fr)] gap-2 rounded-lg">
           <span className="pt-3 text-right font-mono text-xs text-muted-foreground">
             {cell.type === "code" && `[${cell.executionCount ?? " "}]`}
           </span>

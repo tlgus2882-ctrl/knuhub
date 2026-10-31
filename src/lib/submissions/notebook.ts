@@ -83,3 +83,36 @@ function toOutput(output: Json): NotebookOutput[] {
   const plain = joined(data["text/plain"]);
   return plain ? [{ kind: "text", text: plain, error: false }] : [];
 }
+
+/** Text output lines the AI sees per output; the rest is summarised (long prints add tokens, not evidence). */
+const REVIEW_OUTPUT_LINES = 20;
+const CELL_KIND = { markdown: "마크다운", code: "코드", raw: "원시" } as const;
+
+/**
+ * The notebook as plain text for AI 검토: a header line per cell, its source, then its text outputs
+ * (cut to REVIEW_OUTPUT_LINES) and one "[그림 출력]" line per image. Images are left out because
+ * their base64 would cost far more tokens than all the code. `cellOfLine[i]` is the cell (from 1)
+ * line i+1 belongs to, so the AI's evidence lines can point to a cell.
+ */
+export function notebookReviewText(notebook: Notebook): { text: string; cellOfLine: number[] } {
+  const lines: string[] = [];
+  const cellOfLine: number[] = [];
+  notebook.cells.forEach((cell, i) => {
+    const push = (...more: string[]) => {
+      lines.push(...more);
+      cellOfLine.push(...more.map(() => i + 1));
+    };
+    const run = cell.type === "code" && cell.executionCount !== null ? ` [${cell.executionCount}]` : "";
+    push(`# ── ${i + 1}번 셀 (${CELL_KIND[cell.type]}${run}) ──`, ...cell.source.replace(/\n$/, "").split("\n"));
+    for (const output of cell.outputs) {
+      if (output.kind === "image") {
+        push("# [그림 출력]");
+        continue;
+      }
+      const out = output.text.replace(/\n$/, "").split("\n");
+      push(output.error ? "# [오류 출력]" : "# [출력]", ...out.slice(0, REVIEW_OUTPUT_LINES));
+      if (out.length > REVIEW_OUTPUT_LINES) push(`# … (${out.length - REVIEW_OUTPUT_LINES}줄 생략)`);
+    }
+  });
+  return { text: lines.join("\n"), cellOfLine };
+}

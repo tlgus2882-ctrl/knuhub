@@ -89,6 +89,17 @@ describe("reviewSubmission", () => {
     expect(second.kind === "reviewed" && second.opinions.map((o) => o.verdict)).toEqual(["uncertain", "uncertain"]);
   });
 
+  it("노트북처럼 줄마다 셀 번호가 있는 파일이면 근거에 셀 번호를 붙인다", async () => {
+    const notebookFile = { path: "hw.ipynb", text: "# ── 1번 셀 ──\nx = 1\n# ── 2번 셀 ──\nprint(x)", cellOfLine: [1, 1, 2, 2] };
+    const { model } = fakeModel({
+      opinions: [{ criterion: 1, verdict: "met", evidence: [{ file: 1, start_line: 4, end_line: 4 }], comment: "출력한다" }],
+    });
+
+    const result = await reviewSubmission(model, CRITERIA, [notebookFile]);
+
+    expect(result.kind === "reviewed" && result.opinions[0].evidence).toEqual([{ path: "hw.ipynb", start_line: 4, end_line: 4, cell: 2 }]);
+  });
+
   it("AI가 빠뜨린 채점 항목은 판단 불가로 채우고, 채점 항목 순서대로 돌려준다", async () => {
     const { model } = fakeModel({
       opinions: [{ criterion: 2, verdict: "uncertain", evidence: [], comment: "모르겠다" }],

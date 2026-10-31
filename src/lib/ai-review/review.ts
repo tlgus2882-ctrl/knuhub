@@ -5,11 +5,13 @@ import { z } from "zod";
 export type Criterion = { name: string; points: number; description: string };
 
 /** A 제출물 text file. Callers pass text files only; binary files never reach the model. */
-export type ReviewFile = { path: string; text: string };
+/** A text file to review. A notebook is sent as its cells' text, with the cell (from 1) of each line. */
+export type ReviewFile = { path: string; text: string; cellOfLine?: number[] };
 
 export type Verdict = "met" | "not_met" | "uncertain";
 
-export type Evidence = { path: string; start_line: number; end_line: number };
+/** Lines of a reviewed file; `cell` is the notebook cell they start in (the lines are of the sent text). */
+export type Evidence = { path: string; start_line: number; end_line: number; cell?: number };
 
 /** One 채점 항목's AI 검토 의견. `criterion` is 1-based, in 채점 항목 order. */
 export type Opinion = { criterion: number; verdict: Verdict; evidence: Evidence[]; comment: string };
@@ -96,7 +98,8 @@ export async function reviewSubmission(
   const toEvidence = (e: z.infer<typeof OpinionSchema>["evidence"][number]): Evidence | null => {
     const file = files[e.file - 1];
     if (!file || e.start_line < 1 || e.start_line > e.end_line || e.end_line > lines(file.text).length) return null;
-    return { path: file.path, start_line: e.start_line, end_line: e.end_line };
+    const cell = file.cellOfLine?.[e.start_line - 1];
+    return { path: file.path, start_line: e.start_line, end_line: e.end_line, ...(cell && { cell }) };
   };
 
   return {
