@@ -4,6 +4,11 @@ export type Update = { date: string; title: string; items: string[] };
 export const UPDATES: Update[] = [
   {
     date: "2026-11-02",
+    title: "AI 검토 크기 한도 늘림",
+    items: ["셀프 점검은 코드 약 350KB, 1차 검사는 약 1.1MB까지 검사할 수 있어요 (두 배로 늘렸어요)."],
+  },
+  {
+    date: "2026-11-02",
     title: "주피터 노트북도 AI 검토",
     items: [
       "그래프가 많이 들어 있어 \"검사할 수 없음\"이 되던 .ipynb 제출물도 이제 셀프 점검과 1차 검사를 받을 수 있어요.",
