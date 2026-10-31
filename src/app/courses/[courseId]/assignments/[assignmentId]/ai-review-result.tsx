@@ -1,4 +1,4 @@
-import type { Criterion, Opinion, Verdict } from "@/lib/ai-review/review";
+import type { Criterion, Evidence, Opinion, Verdict } from "@/lib/ai-review/review";
 import type { Json } from "@/lib/supabase/database.types";
 import { cn } from "@/lib/utils";
 import { isNotebook } from "@/lib/submissions/notebook";
@@ -31,11 +31,15 @@ export function AiReviewResult({ courseId, assignmentId, submission, criteriaVer
   const criteria = result.criteria as Criterion[];
   const current = sameTime(result.submitted_at, submission.submitted_at);
   // Evidence opens the code viewer at its line in the version checked (no link once it left the 제출 이력).
-  // A notebook's line numbers are those of its JSON, so it opens as source.
+  // Evidence in a notebook names a cell and opens it in the notebook view; older evidence named lines of
+  // the notebook's JSON, so it opens the source.
   const history = current ? undefined : submission.submission_history.find((h) => sameTime(h.submitted_at, result.submitted_at));
   const hrefFor =
     current || history
-      ? (path: string, line: number) => `${submissionHref(courseId, assignmentId, submission.id, path, history?.id, isNotebook(path))}#L${line}`
+      ? (e: Evidence) =>
+          e.cell
+            ? `${submissionHref(courseId, assignmentId, submission.id, e.path, history?.id)}#cell-${e.cell}`
+            : `${submissionHref(courseId, assignmentId, submission.id, e.path, history?.id, isNotebook(e.path))}#L${e.start_line}`
       : null;
 
   return (
@@ -61,12 +65,14 @@ export function AiReviewResult({ courseId, assignmentId, submission, criteriaVer
               {opinion.evidence.length > 0 && (
                 <ul className="flex flex-wrap gap-x-3 gap-y-1">
                   {opinion.evidence.map((e) => {
-                    const label = `${e.path} ${e.start_line === e.end_line ? e.start_line : `${e.start_line}–${e.end_line}`}줄`;
+                    const label = e.cell
+                      ? `${e.path} ${e.cell}번 셀`
+                      : `${e.path} ${e.start_line === e.end_line ? e.start_line : `${e.start_line}–${e.end_line}`}줄`;
                     return (
                       <li key={`${e.path}:${e.start_line}-${e.end_line}`} className="font-mono text-xs">
                         {hrefFor ? (
                           // A full page load, so the browser marks the line as :target and scrolls to it.
-                          <a href={hrefFor(e.path, e.start_line)} className="text-primary underline">
+                          <a href={hrefFor(e)} className="text-primary underline">
                             {label}
                           </a>
                         ) : (

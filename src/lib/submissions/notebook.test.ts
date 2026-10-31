@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseNotebook } from "./notebook";
+import { notebookReviewText, parseNotebook } from "./notebook";
 
 const notebook = (cells: unknown[], metadata: unknown = { kernelspec: { language: "python" } }) =>
   JSON.stringify({ nbformat: 4, nbformat_minor: 5, metadata, cells });
@@ -93,5 +93,67 @@ describe("parseNotebook", () => {
     );
 
     expect(result?.cells[0].outputs).toEqual([{ kind: "text", text: "<IPython.core.display.SVG>", error: false }]);
+  });
+});
+
+describe("notebookReviewText", () => {
+  const nb = parseNotebook(
+    notebook([
+      { cell_type: "markdown", source: "# 실습" },
+      {
+        cell_type: "code",
+        execution_count: 1,
+        source: "x = 1\nprint(x)",
+        outputs: [
+          { output_type: "stream", text: Array.from({ length: 60 }, (_, i) => `${i}\n`) },
+          { output_type: "display_data", data: { "image/png": "A".repeat(100_000) } },
+        ],
+      },
+    ]),
+  )!;
+
+  it("셀마다 머리줄을 붙이고, 그림은 한 줄로 바꾸고, 긴 출력은 줄여서 AI에게 보낼 글로 만든다", () => {
+    const { text } = notebookReviewText(nb);
+
+    expect(text).toContain("# ── 1번 셀 (마크다운) ──\n# 실습");
+    expect(text).toContain("# ── 2번 셀 (코드 [1]) ──\nx = 1\nprint(x)");
+    expect(text).toContain("# [그림 출력 (첨부하지 않음)]");
+    expect(text).not.toContain("AAAA");
+    expect(text).toContain("(40줄 생략)");
+    expect(text.length).toBeLessThan(1000);
+  });
+
+  it("줄마다 몇 번 셀인지 알 수 있다 (AI 근거를 셀로 잇는다)", () => {
+    const { text, cellOfLine } = notebookReviewText(nb);
+    const lines = text.split("\n");
+
+    expect(cellOfLine).toHaveLength(lines.length);
+    expect(cellOfLine[lines.indexOf("# 실습")]).toBe(1);
+    expect(cellOfLine[lines.indexOf("print(x)")]).toBe(2);
+  });
+});
+
+describe("notebookReviewText 그림 첨부", () => {
+  const png = (n: number) => ({ output_type: "display_data", data: { "image/png": `PNG${n}` } });
+  const nb = parseNotebook(
+    notebook([
+      { cell_type: "code", execution_count: 1, source: "plot(1)", outputs: [png(1), png(2)] },
+      { cell_type: "code", execution_count: 2, source: "plot(2)", outputs: [png(3)] },
+    ]),
+  )!;
+
+  it("남은 장수만큼 그림을 셀 번호와 함께 돌려주고, 넘는 그림은 첨부하지 않았다고 글에 남긴다", () => {
+    const { text, images } = notebookReviewText(nb, 2);
+
+    expect(images).toEqual([
+      { mime: "image/png", data: "PNG1", cell: 1 },
+      { mime: "image/png", data: "PNG2", cell: 1 },
+    ]);
+    expect(text.match(/\[그림 출력: 첨부\]/g)).toHaveLength(2);
+    expect(text).toContain("# [그림 출력 (첨부하지 않음)]");
+  });
+
+  it("남은 장수가 없으면(기본) 그림을 보내지 않는다", () => {
+    expect(notebookReviewText(nb).images).toEqual([]);
   });
 });

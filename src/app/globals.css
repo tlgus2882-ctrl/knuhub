@@ -150,6 +150,10 @@
 .markdown > :first-child { @apply mt-0; }
 
 /* Submission code viewer: Shiki output with CSS line numbers */
+.notebook-cell:target {
+  scroll-margin-top: 6rem;
+  background-color: rgb(250 204 21 / 0.25);
+}
 .notebook-code pre {
   @apply overflow-x-auto rounded-lg border px-3 py-2 text-[13px] leading-6;
 }

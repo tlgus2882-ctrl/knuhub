@@ -1,7 +1,12 @@
 import "server-only";
 import { FinishReason, GoogleGenAI } from "@google/genai";
 import { z } from "zod";
-import type { ReviewModel, TokenUsage } from "./review";
+import type { Prompt, ReviewModel, TokenUsage } from "./review";
+
+/** The prompt text, then each attached picture after its label. */
+function parts({ user, images = [] }: Prompt) {
+  return [{ text: user }, ...images.flatMap((image) => [{ text: image.label }, { inlineData: { mimeType: image.mime, data: image.data } }])];
+}
 
 // shortcut: a free Gemini API key lets Google use and human-review what we send (Unpaid Services terms),
 // so it is only for development and the mock course. Real 제출물 go through Claude (ANTHROPIC_API_KEY),
@@ -16,16 +21,19 @@ export function geminiReviewModel(onUsage?: (usage: TokenUsage) => void): Review
   if (!apiKey) return null;
   const client = new GoogleGenAI({ apiKey });
   return {
-    async countTokens({ system, user }) {
-      const { totalTokens } = await client.models.countTokens({ model: GEMINI_MODEL, contents: `${system}\n${user}` });
+    async countTokens(prompt) {
+      const { totalTokens } = await client.models.countTokens({
+        model: GEMINI_MODEL,
+        contents: [{ role: "user", parts: [{ text: prompt.system }, ...parts(prompt)] }],
+      });
       return totalTokens ?? Infinity;
     },
-    async generate({ system, user }, schema) {
+    async generate(prompt, schema) {
       const response = await client.models.generateContent({
         model: GEMINI_MODEL,
-        contents: user,
+        contents: [{ role: "user", parts: parts(prompt) }],
         config: {
-          systemInstruction: system,
+          systemInstruction: prompt.system,
           responseMimeType: "application/json",
           responseJsonSchema: z.toJSONSchema(schema),
         },
