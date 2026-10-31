@@ -1,7 +1,7 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { addDaysToInput, formatKst, fromKstInputValue, toKstInputValue } from "@/lib/time";
+import { addDaysToInput, formatKst, fromKstInputValue, kstToday } from "@/lib/time";
 
 const TIMES = ["09:00", "12:00", "18:00", "23:59"];
 
@@ -22,9 +22,10 @@ export function DeadlineInput({ id, label, value, onChange, quickDays, from }: P
   const iso = fromKstInputValue(value);
 
   // Today is read on click, so rendering stays the same on the server and in the browser.
+  // The picked day keeps this input's own time (the 지각 제출 마감 keeps its own, not the 마감's).
   const pickDays = (days: number) => {
-    const base = from ?? `${toKstInputValue(new Date().toISOString()).slice(0, 10)}T${time}`;
-    onChange(`${addDaysToInput(base, days).slice(0, 10)}T${from ? from.split("T")[1] : time}`);
+    const day = addDaysToInput(`${from?.split("T")[0] ?? kstToday(new Date())}T${time}`, days);
+    onChange(day);
   };
 
   return (

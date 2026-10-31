@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { removeObjects } from "@/lib/storage-remove";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { fromKstInputValue } from "@/lib/time";
@@ -80,7 +81,7 @@ export async function updateAssignment(form: FormData): Promise<AssignmentFormSt
 }
 
 // Raised by delete_assignment() (supabase/migrations/*_late_submission_and_delete.sql).
-const DELETE_NOT_ALLOWED = "이 과목의 담당 교수나 조교만 과제를 지울 수 있어요.";
+const DELETE_ERRORS: Record<string, string> = { KH003: "이 과목의 담당 교수나 조교만 과제를 지울 수 있어요." };
 
 /**
  * Deletes the 과제 with its 제출물, 리뷰 and 채점 항목 (delete_assignment() checks who may), then
@@ -91,17 +92,13 @@ export async function deleteAssignment(courseId: string, assignmentId: string): 
   const { data: objects, error } = await supabase.rpc("delete_assignment", { target_assignment: assignmentId });
   if (error) {
     console.error("deleteAssignment failed", error.message);
-    return { error: DELETE_NOT_ALLOWED };
+    return { error: DELETE_ERRORS[error.code] ?? "과제를 지우지 못했어요. 잠시 뒤에 다시 해 주세요." };
   }
 
-  // The 과제 is gone now; files left behind if this fails are unreachable and only logged.
+  // The 과제 is gone now; Storage files are removed per bucket as the DB listed them.
   const admin = createAdminSupabase();
-  for (const bucket of ["submissions", "assignment-files"]) {
-    const names = objects.filter((o) => o.bucket_id === bucket).map((o) => o.name);
-    for (let i = 0; i < names.length; i += 1000) {
-      const { error: removeError } = await admin.storage.from(bucket).remove(names.slice(i, i + 1000));
-      if (removeError) console.error(`deleteAssignment: removing ${bucket} files failed`, removeError.message);
-    }
+  for (const [bucket, rows] of Map.groupBy(objects, (o) => o.bucket_id)) {
+    await removeObjects(admin, bucket, rows.map((o) => o.name), "deleteAssignment");
   }
   redirect(`/courses/${courseId}`);
 }

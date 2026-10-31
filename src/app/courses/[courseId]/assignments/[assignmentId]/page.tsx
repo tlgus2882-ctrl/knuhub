@@ -16,7 +16,7 @@ import { SelfCheck } from "./self-check";
 import { SubmissionList } from "./submission-list";
 import { SubmissionStatus } from "./submission-status";
 import { DeleteAssignmentButton } from "./delete-assignment-button";
-import { FirstCheck } from "./first-check";
+import { FirstCheckAndGrading } from "./first-check";
 
 export default function AssignmentPage({ params }: PageProps<"/courses/[courseId]/assignments/[assignmentId]">) {
   return (
@@ -56,6 +56,7 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
   const now = new Date();
   const pastDue = now >= new Date(assignment.due_at);
   // Submitting closes at the 지각 제출 마감 when there is one; 채점 완료 and the rest wait for it.
+  // closes_at is a generated column that is never null (the generated types can't tell).
   const closed = now >= new Date(assignment.closes_at!);
 
   return (
@@ -141,7 +142,7 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
         {enrolled && user && <SelfCheck courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
         {enrolled && user && <MyAppeal assignmentId={assignmentId} studentId={user.id} />}
         {canEdit && <GradeAppeals assignmentId={assignmentId} />}
-        {canEdit && <FirstCheck assignmentId={assignmentId} closed={closed} graded={Boolean(assignment.graded_at)} late={Boolean(assignment.late_due_at)} />}
+        {canEdit && <FirstCheckAndGrading assignmentId={assignmentId} closed={closed} graded={Boolean(assignment.graded_at)} late={Boolean(assignment.late_due_at)} />}
       </div>
       {canEdit && <SubmissionStatus courseId={courseId} assignmentId={assignmentId} dueAt={assignment.due_at} />}
 

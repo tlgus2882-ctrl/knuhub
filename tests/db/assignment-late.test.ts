@@ -72,6 +72,17 @@ describe("과제 삭제", () => {
     expect((await adminClient().from("submission").select("id").eq("assignment_id", assignmentId)).data).toEqual([]);
   });
 
+  it("조교도 과제를 지우고, 첨부파일도 지울 목록에 들어간다", async () => {
+    const { professor, classmate: assistant, course, assignmentId } = await setup({ due_at: inDays(3), late_due_at: null });
+    await professor.client.from("course_assistant").insert({ course_id: course.id, user_id: assistant.id });
+    const attachment = `${assignmentId}/${crypto.randomUUID()}`;
+    expect((await professor.client.storage.from("assignment-files").upload(attachment, new Blob(["자료"]))).error).toBeNull();
+
+    const { data: objects, error } = await assistant.client.rpc("delete_assignment", { target_assignment: assignmentId });
+    expect(error).toBeNull();
+    expect(objects).toEqual([{ bucket_id: "assignment-files", name: attachment }]);
+  });
+
   it("학생과 다른 과목 교수는 과제를 지우지 못한다", async () => {
     const { author, assignmentId } = await setup({ due_at: inDays(3), late_due_at: null });
     const otherProfessor = await createTestUser({ role: "professor" });

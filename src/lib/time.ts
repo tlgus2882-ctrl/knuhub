@@ -52,7 +52,12 @@ export function addDaysToInput(value: string, days: number): string {
   return `${moved.toISOString().slice(0, 10)}T${time}`;
 }
 
+/** Today's date in Korean time: "2026-10-28". */
+export function kstToday(now: Date): string {
+  return toKstInputValue(now.toISOString()).slice(0, 10);
+}
+
 /** A new 과제's default 마감: a week from today in Korean time, at 23:59. */
 export function defaultDueInput(now: Date): string {
-  return addDaysToInput(`${toKstInputValue(now.toISOString()).slice(0, 10)}T23:59`, 7);
+  return addDaysToInput(`${kstToday(now)}T23:59`, 7);
 }

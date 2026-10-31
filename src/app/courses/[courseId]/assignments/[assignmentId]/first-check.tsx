@@ -13,7 +13,7 @@ type Props = {
 
 // 1차 검사 and 채점 완료 for the course's professor and assistants (the page shows it to them only;
 // request_first_check(), claim_first_check() and the assignment RLS are what actually decide).
-export async function FirstCheck({ assignmentId, closed, graded, late }: Props) {
+export async function FirstCheckAndGrading({ assignmentId, closed, graded, late }: Props) {
   const after = late ? "지각 제출 마감 후" : "마감 후";
   const supabase = await createServerSupabase();
   const [{ data: canRun }, { data: progress }, { data: assignment }] = await Promise.all([
