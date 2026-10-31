@@ -1,6 +1,6 @@
 "use server";
 
-import { isSuspicious, reviewSubmission, type ReviewModel } from "@/lib/ai-review/review";
+import { FIRST_CHECK_TOKEN_LIMIT, isSuspicious, reviewSubmission, type ReviewModel } from "@/lib/ai-review/review";
 import { reviewModel } from "@/lib/ai-review/model";
 import { readTextFiles } from "@/lib/submissions/read-text-files";
 import { createAdminSupabase, type AdminSupabase } from "@/lib/supabase/admin";
@@ -91,7 +91,7 @@ async function checkOne(
     .map(({ name, points, description }) => ({ name, points, description }));
   const files = await readTextFiles(supabase, submission.submission_file);
   const redact = [submission.profile?.name, submission.profile?.student_number].filter((s): s is string => Boolean(s));
-  const review = files.length ? await reviewSubmission(model, criteria, files, { redact }) : ({ kind: "too_large" } as const);
+  const review = files.length ? await reviewSubmission(model, criteria, files, { redact, tokenLimit: FIRST_CHECK_TOKEN_LIMIT }) : ({ kind: "too_large" } as const);
   if (review.kind === "failed") return STOPPED_ERRORS.failed;
 
   const { error: saveError } = await admin.from("first_check").upsert({
