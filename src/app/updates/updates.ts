@@ -4,6 +4,13 @@ export type Update = { date: string; title: string; items: string[] };
 export const UPDATES: Update[] = [
   {
     date: "2026-11-02",
+    title: "1차 검사는 더 큰 제출물도 검사해요",
+    items: [
+      "1차 검사가 검사할 수 있는 제출물 크기를 3배로 늘렸어요 (코드 약 1MB 안팎). 셀프 점검은 지금과 같아요.",
+    ],
+  },
+  {
+    date: "2026-11-02",
     title: "마감 뒤 바로 채점, 자동 채점 완료",
     items: [
       "이제 지각 제출 기간에도 마감만 지나면 1차 검사를 하고 채점 완료를 누를 수 있어요.",

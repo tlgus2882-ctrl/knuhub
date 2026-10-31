@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { z } from "zod";
 import {
+  FIRST_CHECK_TOKEN_LIMIT,
   INPUT_TOKEN_LIMIT,
   isSuspicious,
   reviewSubmission,
@@ -31,6 +32,14 @@ const CRITERIA = [
 const FILES = [{ path: "src/list.c", text: "int insert() {\n  return 0;\n}\n" }];
 
 describe("reviewSubmission", () => {
+  it("한도를 따로 주면 그 한도로 잰다 (1차 검사는 셀프 점검보다 큰 제출물도 검토한다)", async () => {
+    const { model } = fakeModel({ opinions: [] }, { tokens: INPUT_TOKEN_LIMIT + 1 });
+
+    expect((await reviewSubmission(model, CRITERIA, FILES, { tokenLimit: FIRST_CHECK_TOKEN_LIMIT })).kind).toBe("reviewed");
+    const { model: huge } = fakeModel({ opinions: [] }, { tokens: FIRST_CHECK_TOKEN_LIMIT + 1 });
+    expect(await reviewSubmission(huge, CRITERIA, FILES, { tokenLimit: FIRST_CHECK_TOKEN_LIMIT })).toEqual({ kind: "too_large" });
+  });
+
   it("입력이 한도를 넘으면 모델에게 묻지 않고 너무 크다고 알린다", async () => {
     const { model, asked } = fakeModel(null, { tokens: INPUT_TOKEN_LIMIT + 1 });
 
