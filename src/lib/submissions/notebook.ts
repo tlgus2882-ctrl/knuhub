@@ -11,6 +11,8 @@ export type NotebookCell = {
   source: string;
   executionCount: number | null;
   outputs: NotebookOutput[];
+  /** Images pasted into a markdown cell, by the URL its source uses (`attachment:<name>`) → a data URL. */
+  attachments: Record<string, string>;
 };
 
 export type Notebook = { language: string; cells: NotebookCell[] };
@@ -48,9 +50,25 @@ export function parseNotebook(text: string): Notebook | null {
       source: joined(cell.source),
       executionCount: type === "code" && typeof cell.execution_count === "number" ? cell.execution_count : null,
       outputs: type === "code" && Array.isArray(cell.outputs) ? cell.outputs.filter(isObject).flatMap(toOutput) : [],
+      attachments: isObject(cell.attachments) ? toAttachments(cell.attachments) : {},
     };
   });
   return { language, cells };
+}
+
+/** The first safe image in a mime bundle (base64, without the line breaks nbformat may add). */
+function imageOf(bundle: Json) {
+  const mime = IMAGE_TYPES.find((type) => typeof bundle[type] === "string" || Array.isArray(bundle[type]));
+  return mime ? { mime, data: joined(bundle[mime]).replace(/\s/g, "") } : null;
+}
+
+function toAttachments(attachments: Json): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(attachments).flatMap(([name, bundle]) => {
+      const image = isObject(bundle) ? imageOf(bundle) : null;
+      return image ? [[`attachment:${name}`, `data:${image.mime};base64,${image.data}`]] : [];
+    }),
+  );
 }
 
 function toOutput(output: Json): NotebookOutput[] {
@@ -60,8 +78,8 @@ function toOutput(output: Json): NotebookOutput[] {
     return [{ kind: "text", text: traceback.replace(ANSI, ""), error: true }];
   }
   const data = isObject(output.data) ? output.data : {};
-  const image = IMAGE_TYPES.find((mime) => typeof data[mime] === "string" || Array.isArray(data[mime]));
-  if (image) return [{ kind: "image", mime: image, data: joined(data[image]).replace(/\s/g, "") }];
+  const image = imageOf(data);
+  if (image) return [{ kind: "image", ...image }];
   const plain = joined(data["text/plain"]);
   return plain ? [{ kind: "text", text: plain, error: false }] : [];
 }

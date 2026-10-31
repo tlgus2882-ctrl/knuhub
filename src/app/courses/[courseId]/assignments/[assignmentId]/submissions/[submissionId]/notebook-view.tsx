@@ -20,7 +20,7 @@ export async function NotebookView({ notebook }: { notebook: Notebook }) {
           <div className="flex min-w-0 flex-col gap-2">
             {cell.type === "markdown" ? (
               <div className="min-w-0 rounded-lg px-3 py-1">
-                <Markdown>{cell.source}</Markdown>
+                <Markdown images={cell.attachments}>{cell.source}</Markdown>
               </div>
             ) : cell.type === "raw" ? (
               <pre className="overflow-x-auto rounded-lg border bg-muted/40 p-3 text-[13px] whitespace-pre-wrap">{cell.source}</pre>

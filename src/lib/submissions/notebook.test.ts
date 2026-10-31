@@ -26,11 +26,12 @@ describe("parseNotebook", () => {
     expect(result).toEqual({
       language: "python",
       cells: [
-        { type: "markdown", source: "# 제목\n설명", executionCount: null, outputs: [] },
+        { type: "markdown", source: "# 제목\n설명", executionCount: null, outputs: [], attachments: {} },
         {
           type: "code",
           source: "print(1)\nplt.plot()",
           executionCount: 3,
+          attachments: {},
           outputs: [
             { kind: "text", text: "1\n", error: false },
             { kind: "image", mime: "image/png", data: "iVBORw0KGgo=" },
@@ -39,6 +40,20 @@ describe("parseNotebook", () => {
         },
       ],
     });
+  });
+
+  it("마크다운 셀에 붙인 그림(attachment:)은 이름별 data URL로 읽고, 그림이 아닌 첨부는 뺀다", () => {
+    const result = parseNotebook(
+      notebook([
+        {
+          cell_type: "markdown",
+          source: "![그래프](attachment:plot.png)",
+          attachments: { "plot.png": { "image/png": "iVBORw0K\nGgo=" }, "x.svg": { "image/svg+xml": "<svg/>" } },
+        },
+      ]),
+    );
+
+    expect(result?.cells[0].attachments).toEqual({ "attachment:plot.png": "data:image/png;base64,iVBORw0KGgo=" });
   });
 
   it("오류 출력은 터미널 색 코드를 빼고 오류로 표시한다", () => {
