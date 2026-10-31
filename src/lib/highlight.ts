@@ -16,11 +16,12 @@ export function languageOf(path: string): string {
 /**
  * Syntax-highlighted HTML (Shiki escapes the code, so it is safe to inject).
  * Each line is a `.line` span with id `L<n>` (so `#L12` opens at line 12); line numbers come
- * from CSS (globals.css .code-view).
+ * from CSS (globals.css .code-view). `lineIds: false` leaves the ids out, for snippets such as notebook
+ * cells where several would repeat them.
  */
-export async function highlight(code: string, path: string): Promise<string> {
+export async function highlight(code: string, path: string, { lineIds = true } = {}): Promise<string> {
   const source = code.replace(/\r?\n$/, "");
-  const options = { themes: { light: "github-light", dark: "github-dark" }, transformers: [LINE_IDS] };
+  const options = { themes: { light: "github-light", dark: "github-dark" }, transformers: lineIds ? [LINE_IDS] : [] };
   try {
     return await codeToHtml(source, { lang: languageOf(path), ...options });
   } catch {

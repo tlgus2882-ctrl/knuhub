@@ -150,6 +150,14 @@
 .markdown > :first-child { @apply mt-0; }
 
 /* Submission code viewer: Shiki output with CSS line numbers */
+.notebook-code pre {
+  @apply overflow-x-auto rounded-lg border px-3 py-2 text-[13px] leading-6;
+}
+.dark .notebook-code .shiki,
+.dark .notebook-code .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
 .code-view pre {
   @apply overflow-x-auto rounded-lg border py-3 text-[13px] leading-6;
 }

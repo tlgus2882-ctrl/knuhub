@@ -14,6 +14,8 @@ import { FileTree } from "./file-tree";
 import { FirstCheckOpinions } from "./first-check-opinions";
 import { Likes } from "@/app/likes/likes";
 import { Recommendation } from "@/app/recommendations/recommendation";
+import { isNotebook, parseNotebook, type Notebook } from "@/lib/submissions/notebook";
+import { NotebookView } from "./notebook-view";
 import { Reviews } from "./reviews";
 
 type Route = "/courses/[courseId]/assignments/[assignmentId]/submissions/[submissionId]";
@@ -23,17 +25,19 @@ type ViewedFile = Pick<Tables<"submission_file">, "path" | "size" | "storage_pat
 
 /** Bigger text files are offered as a download instead of being highlighted. */
 const HIGHLIGHT_MAX_BYTES = 1024 * 1024;
+const NOTEBOOK_MAX_BYTES = 10 * 1024 * 1024;
 const DOWNLOAD_LINK_SECONDS = 60 * 5;
 
 export default function SubmissionPage({ params, searchParams }: PageProps<Route>) {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 py-16">
       <Suspense fallback={<p className="text-sm text-muted-foreground">불러오는 중…</p>}>
-        {Promise.all([params, searchParams]).then(([p, { file, history }]) => (
+        {Promise.all([params, searchParams]).then(([p, { file, history, view }]) => (
           <SubmissionView
             {...p}
             file={typeof file === "string" ? file : undefined}
             historyId={typeof history === "string" ? history : undefined}
+            source={view === "source"}
           />
         ))}
       </Suspense>
@@ -47,7 +51,8 @@ async function SubmissionView({
   submissionId,
   file,
   historyId,
-}: Params & { file?: string; historyId?: string }) {
+  source,
+}: Params & { file?: string; historyId?: string; source: boolean }) {
   const supabase = await createServerSupabase();
   // RLS returns the 제출물 only to those who may see it (docs/adr/0002).
   const { data: submission } = await supabase
@@ -132,7 +137,12 @@ async function SubmissionView({
         <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-start">
           <div className="min-w-0 flex-1">
             {selected ? (
-              <FileContent supabase={supabase} file={selected} />
+              <FileContent
+                supabase={supabase}
+                file={selected}
+                source={source}
+                hrefFor={(asSource) => submissionHref(courseId, assignmentId, submissionId, selected.path, viewed?.id, asSource)}
+              />
             ) : (
               <p className="text-sm text-muted-foreground">파일이 없는 제출물이에요.</p>
             )}
@@ -152,19 +162,40 @@ const NO_PREVIEW = {
   failed: "파일을 불러오지 못했어요.",
 };
 
-async function FileContent({ supabase, file }: { supabase: ServerSupabase; file: ViewedFile }) {
+type FileContentProps = {
+  supabase: ServerSupabase;
+  file: ViewedFile;
+  /** A notebook as its JSON (line numbers, for AI 검토 evidence) instead of as cells. */
+  source: boolean;
+  /** This file in the viewer, as cells or as source. */
+  hrefFor: (source: boolean) => string;
+};
+
+async function FileContent({ supabase, file, source, hrefFor }: FileContentProps) {
   const storage = supabase.storage.from(SUBMISSION_BUCKET);
   const { data: signed } = await storage.createSignedUrl(file.storage_path, DOWNLOAD_LINK_SECONDS);
   const download = signed && downloadUrl(signed.signedUrl, file.path.split("/").pop()!);
+  const notebookFile = isNotebook(file.path);
+  const asCells = notebookFile && !source;
 
   let html: string | null = null;
+  let notebook: Notebook | null = null;
   let noPreview: keyof typeof NO_PREVIEW | null = null;
   if (file.kind === "binary") noPreview = "binary";
-  else if (file.size > HIGHLIGHT_MAX_BYTES) noPreview = "large";
+  // Notebooks carry their output images, so they may be bigger as cells; their source is still capped.
+  else if (file.size > (asCells ? NOTEBOOK_MAX_BYTES : HIGHLIGHT_MAX_BYTES)) noPreview = "large";
   else {
     const { data } = await storage.download(file.storage_path);
-    if (data) html = await highlight(decodeText(await data.arrayBuffer()), file.path);
-    else noPreview = "failed";
+    const text = data && decodeText(await data.arrayBuffer());
+    if (text === null) noPreview = "failed";
+    else {
+      notebook = asCells ? parseNotebook(text) : null;
+      // Not a notebook after all: shown like any other file.
+      if (!notebook) {
+        if (file.size > HIGHLIGHT_MAX_BYTES) noPreview = "large";
+        else html = await highlight(text, file.path);
+      }
+    }
   }
 
   return (
@@ -172,6 +203,11 @@ async function FileContent({ supabase, file }: { supabase: ServerSupabase; file:
       <header className="flex items-center justify-between gap-3 text-sm">
         <span className="truncate font-medium">{file.path}</span>
         <span className="flex shrink-0 items-center gap-3 text-muted-foreground">
+          {notebookFile && (
+            <Link href={hrefFor(!source)} className="text-primary underline">
+              {source ? "노트북으로 보기" : "원본(JSON) 보기"}
+            </Link>
+          )}
           {formatBytes(file.size)}
           {download && (
             <a href={download} className="text-primary underline">
@@ -180,7 +216,9 @@ async function FileContent({ supabase, file }: { supabase: ServerSupabase; file:
           )}
         </span>
       </header>
-      {html ? (
+      {notebook ? (
+        <NotebookView notebook={notebook} />
+      ) : html ? (
         <div className="code-view" dangerouslySetInnerHTML={{ __html: html }} />
       ) : (
         noPreview && <p className="rounded-lg border p-6 text-sm text-muted-foreground">{NO_PREVIEW[noPreview]}</p>
