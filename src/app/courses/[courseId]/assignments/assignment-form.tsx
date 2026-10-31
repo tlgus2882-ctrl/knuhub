@@ -5,14 +5,18 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { addDaysToInput } from "@/lib/time";
 import { VISIBILITY_HINT, VISIBILITY_LABEL, type Visibility } from "../../visibility";
 import { saveGradingCriteria } from "./[assignmentId]/criteria-actions";
 import { createAssignment, updateAssignment } from "./actions";
 import { ASSIGNMENT_FILE_LIMIT_LABEL, attachFiles, oversizedFiles, oversizedMessage } from "./attach-files";
 import { CriteriaRows, toCriteria, toRows, trimRows } from "./criteria-rows";
+import { DeadlineInput } from "./deadline-input";
 
 type Props = {
   courseId: string;
+  /** A new 과제's 마감 to start from (datetime-local value in Korean time). */
+  defaultDue?: string;
   /** Present when editing an existing assignment. */
   assignment?: {
     id: string;
@@ -20,6 +24,8 @@ type Props = {
     description: string;
     /** datetime-local value in Korean time */
     dueInput: string;
+    /** 지각 제출 마감 in the same form, or null when 지각 제출 is off. */
+    lateInput: string | null;
     visibility: Visibility;
     published: boolean;
   };
@@ -27,16 +33,28 @@ type Props = {
 
 // Saves the 과제 first (the 채점 항목 and 첨부파일 need its id), then saves the 채점 항목 and
 // attaches the picked files, and opens it. Editing leaves the 채점 항목 to the 과제 화면.
-export function AssignmentForm({ courseId, assignment }: Props) {
+export function AssignmentForm({ courseId, defaultDue, assignment }: Props) {
   const router = useRouter();
+  const [due, setDue] = useState(assignment?.dueInput ?? defaultDue ?? "");
+  // A new 과제 takes 지각 제출 for a week after the 마감 by default; the 지각 제출 마감 follows
+  // the 마감 until it is picked by hand.
+  const [lateOn, setLateOn] = useState(assignment ? assignment.lateInput !== null : true);
+  const [late, setLate] = useState(assignment?.lateInput ?? (due ? addDaysToInput(due, 7) : ""));
+  const [lateTouched, setLateTouched] = useState(Boolean(assignment?.lateInput));
   const [files, setFiles] = useState<File[]>([]);
   const [rows, setRows] = useState(() => toRows([]));
   const [error, setError] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  function changeDue(value: string) {
+    setDue(value);
+    if (!lateTouched) setLate(addDaysToInput(value, 7));
+  }
+
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (lateOn && late <= due) return setError("지각 제출 마감은 마감보다 뒤여야 해요.");
     const tooLarge = oversizedFiles(files);
     if (tooLarge.length) return setError(oversizedMessage(tooLarge));
     // Blank rows are left out; checked before saving so a bad row never leaves a 과제 without them.
@@ -102,10 +120,50 @@ export function AssignmentForm({ courseId, assignment }: Props) {
         </fieldset>
       )}
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="due_at">마감일 (한국 시간)</Label>
-        <Input id="due_at" name="due_at" type="datetime-local" defaultValue={assignment?.dueInput} required />
-      </div>
+      <input type="hidden" name="due_at" value={due} />
+      <DeadlineInput
+        id="due_at"
+        label="마감"
+        value={due}
+        onChange={changeDue}
+        quickDays={[
+          { label: "내일", days: 1 },
+          { label: "3일 뒤", days: 3 },
+          { label: "1주 뒤", days: 7 },
+          { label: "2주 뒤", days: 14 },
+        ]}
+      />
+
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-1 text-sm font-medium">지각 제출</legend>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={lateOn} onChange={(e) => setLateOn(e.target.checked)} className="size-4" />
+          마감 뒤에도 지각 제출 받기
+        </label>
+        <input type="hidden" name="late_due_at" value={lateOn ? late : ""} />
+        {lateOn && (
+          <DeadlineInput
+            id="late_due_at"
+            label="지각 제출 마감"
+            value={late}
+            from={due}
+            onChange={(value) => {
+              setLate(value);
+              setLateTouched(true);
+            }}
+            quickDays={[
+              { label: "마감 +1일", days: 1 },
+              { label: "+3일", days: 3 },
+              { label: "+1주", days: 7 },
+            ]}
+          />
+        )}
+        <p className="text-xs text-muted-foreground">
+          {lateOn
+            ? "마감 뒤에 낸 제출물에는 지각 표시가 붙어요. 채점 완료, 제출물 공개, 1차 검사는 지각 제출 마감이 지나야 할 수 있어요."
+            : "마감이 지나면 제출을 받지 않아요."}
+        </p>
+      </fieldset>
 
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-sm font-medium">채점 후 공개 범위</legend>

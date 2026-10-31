@@ -2,12 +2,13 @@ import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { UserLink } from "@/components/user-link";
 import { formatKst } from "@/lib/time";
+import { LateBadge } from "./late-badge";
 import type { Criterion, Opinion } from "@/lib/ai-review/review";
 import { sameTime } from "./ai-review-result";
 import { StatusFilter } from "./status-filter";
 import { submissionHref } from "./submissions/submission-href";
 
-type Props = { courseId: string; assignmentId: string };
+type Props = { courseId: string; assignmentId: string; dueAt: string };
 
 /** One 수강생's row. The generated types miss that a missing submission comes back as null. */
 type StatusRow = {
@@ -20,7 +21,7 @@ type StatusRow = {
 
 // 제출 현황 표: every 수강생, submitted or not. submission_status() lets only the
 // course's professor and assistants read it (docs/adr/0002).
-export async function SubmissionStatus({ courseId, assignmentId }: Props) {
+export async function SubmissionStatus({ courseId, assignmentId, dueAt }: Props) {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.rpc("submission_status", {
     target_assignment: assignmentId,
@@ -106,7 +107,14 @@ export async function SubmissionStatus({ courseId, assignmentId }: Props) {
                           <span className="text-destructive">미제출</span>
                         )}
                       </td>
-                      <td className="px-4 py-2 text-muted-foreground">{row.submitted_at ? formatKst(row.submitted_at) : "-"}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{row.submitted_at ? (
+                          <>
+                            {formatKst(row.submitted_at)} <LateBadge submittedAt={row.submitted_at} dueAt={dueAt} />
+                          </>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
                       <td className="px-4 py-2">
                         <FirstCheckBadge cell={firstCheck} />
                       </td>
