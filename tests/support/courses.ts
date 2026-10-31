@@ -52,7 +52,7 @@ export const inDays = (days: number) => new Date(Date.now() + days * 24 * 60 * 6
 export async function postTestAssignment(
   professor: TestUser,
   courseId: string,
-  fields: { title?: string; due_at?: string; visibility?: Visibility; published?: boolean } = {},
+  fields: { title?: string; due_at?: string; late_due_at?: string | null; visibility?: Visibility; published?: boolean } = {},
 ): Promise<string> {
   const { data, error } = await professor.client
     .from("assignment")

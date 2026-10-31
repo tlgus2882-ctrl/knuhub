@@ -219,14 +219,14 @@ isOneToOne: false
                   ]
                 },"assignment": {
                   Row: {
-                    "course_id": string,"created_at": string,"created_by": string | null,"criteria_version": number,"description": string,"due_at": string,"graded_at": string | null,"id": string,"published": boolean,"title": string,"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
+                    "closes_at": string | null,"course_id": string,"created_at": string,"created_by": string | null,"criteria_version": number,"description": string,"due_at": string,"graded_at": string | null,"id": string,"late_due_at": string | null,"published": boolean,"title": string,"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "course_id": string,"created_at"?: string,"created_by"?: string | null,"criteria_version"?: number,"description"?: string,"due_at": string,"graded_at"?: string | null,"id"?: string,"published"?: boolean,"title": string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
+                    "closes_at"?: never,"course_id": string,"created_at"?: string,"created_by"?: string | null,"criteria_version"?: number,"description"?: string,"due_at": string,"graded_at"?: string | null,"id"?: string,"late_due_at"?: string | null,"published"?: boolean,"title": string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
                   }
                   Update: {
-                    "course_id"?: string,"created_at"?: string,"created_by"?: string | null,"criteria_version"?: number,"description"?: string,"due_at"?: string,"graded_at"?: string | null,"id"?: string,"published"?: boolean,"title"?: string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
+                    "closes_at"?: never,"course_id"?: string,"created_at"?: string,"created_by"?: string | null,"criteria_version"?: number,"description"?: string,"due_at"?: string,"graded_at"?: string | null,"id"?: string,"late_due_at"?: string | null,"published"?: boolean,"title"?: string,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
                   }
                   Relationships: [
                     {
@@ -951,6 +951,11 @@ isOneToOne: false
 "course_roster":
 { Args: { "target_course": string }; Returns: {
               "email": string,"is_assistant": boolean,"name": string,"student_id": string,"student_number": string
+            }[]
+                           },
+"delete_assignment":
+{ Args: { "target_assignment": string }; Returns: {
+              "bucket_id": string,"name": string
             }[]
                            },
 "delete_submission":

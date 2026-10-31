@@ -43,3 +43,21 @@ export function fromKstInputValue(value: string): string | null {
   const date = new Date(`${match[1]}${match[2] ?? ":00"}+09:00`);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
+
+/** The same datetime-local value `days` later (the clock time stays). */
+export function addDaysToInput(value: string, days: number): string {
+  const [date, time] = value.split("T");
+  const [y, m, d] = date.split("-").map(Number);
+  const moved = new Date(Date.UTC(y, m - 1, d + days));
+  return `${moved.toISOString().slice(0, 10)}T${time}`;
+}
+
+/** Today's date in Korean time: "2026-10-28". */
+export function kstToday(now: Date): string {
+  return toKstInputValue(now.toISOString()).slice(0, 10);
+}
+
+/** A new 과제's default 마감: a week from today in Korean time, at 23:59. */
+export function defaultDueInput(now: Date): string {
+  return addDaysToInput(`${kstToday(now)}T23:59`, 7);
+}

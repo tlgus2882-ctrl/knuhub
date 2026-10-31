@@ -10,13 +10,13 @@ import { asCourseRole } from "../../../course-role";
 import { VISIBILITY_HINT, VISIBILITY_LABEL } from "../../../visibility";
 import { Attachments } from "./attachments";
 import { GradeAppeals, MyAppeal } from "./grade-appeal";
-import { GradedButton } from "./graded-button";
 import { GradingCriteria } from "./grading-criteria";
 import { MySubmission } from "./my-submission";
 import { SelfCheck } from "./self-check";
 import { SubmissionList } from "./submission-list";
 import { SubmissionStatus } from "./submission-status";
-import { FirstCheck } from "./first-check";
+import { DeleteAssignmentButton } from "./delete-assignment-button";
+import { FirstCheckAndGrading } from "./first-check";
 
 export default function AssignmentPage({ params }: PageProps<"/courses/[courseId]/assignments/[assignmentId]">) {
   return (
@@ -34,7 +34,7 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
   const supabase = await createServerSupabase();
   const { data: assignment } = await supabase
     .from("assignment")
-    .select("id, title, description, due_at, visibility, published, graded_at, course(name)")
+    .select("id, title, description, due_at, late_due_at, closes_at, visibility, published, graded_at, course(name)")
     .eq("id", assignmentId)
     .eq("course_id", courseId)
     .maybeSingle();
@@ -54,7 +54,10 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
     : { data: false };
   await connection();
   const now = new Date();
-  const closed = now >= new Date(assignment.due_at);
+  const pastDue = now >= new Date(assignment.due_at);
+  // Submitting closes at the 지각 제출 마감 when there is one; 채점 완료 and the rest wait for it.
+  // closes_at is a generated column that is never null (the generated types can't tell).
+  const closed = now >= new Date(assignment.closes_at!);
 
   return (
     <>
@@ -66,20 +69,35 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
         <div className="flex items-start justify-between gap-4">
           <h1 className="text-2xl font-semibold tracking-tight">{assignment.title}</h1>
           {canEdit && (
-            <Button
-              size="sm"
-              variant="outline"
-              nativeButton={false}
-              render={<Link href={`/courses/${courseId}/assignments/${assignmentId}/edit`} />}
-            >
-              고치기
-            </Button>
+            <div className="flex shrink-0 items-start gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                nativeButton={false}
+                render={<Link href={`/courses/${courseId}/assignments/${assignmentId}/edit`} />}
+              >
+                고치기
+              </Button>
+              <DeleteAssignmentButton courseId={courseId} assignmentId={assignmentId} title={assignment.title} />
+            </div>
           )}
         </div>
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
           <dt className="text-muted-foreground">마감</dt>
           <dd>
             {formatKst(assignment.due_at)} <span className="font-medium">({timeLeft(assignment.due_at, now)})</span>
+          </dd>
+          <dt className="text-muted-foreground">지각 제출</dt>
+          <dd>
+            {assignment.late_due_at ? (
+              <>
+                {formatKst(assignment.late_due_at)}까지{" "}
+                <span className="font-medium">({timeLeft(assignment.late_due_at, now)})</span>{" "}
+                <span className="text-muted-foreground">· 마감 뒤에 낸 제출물은 지각으로 표시돼요.</span>
+              </>
+            ) : (
+              <span className="text-muted-foreground">받지 않아요</span>
+            )}
           </dd>
           {!assignment.published && (
             <>
@@ -100,12 +118,10 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
               <span>채점 완료 <span className="text-muted-foreground">· {formatKst(assignment.graded_at)}</span></span>
             ) : (
               <span>
-                {closed ? "채점 중" : "마감 전"}{" "}
+                {closed ? "채점 중" : pastDue ? "지각 제출 받는 중" : "마감 전"}{" "}
                 <span className="text-muted-foreground">· 채점이 끝나면 공개 범위에 따라 제출물이 공개돼요.</span>
               </span>
             )}
-            {/* Before the 마감일 the button would open nothing yet, so it waits for the deadline. */}
-            {canEdit && closed && <GradedButton assignmentId={assignmentId} graded={Boolean(assignment.graded_at)} />}
           </dd>
         </dl>
       </header>
@@ -122,15 +138,15 @@ async function AssignmentDetail({ courseId, assignmentId }: { courseId: string; 
 
       {/* 내 제출물 · 셀프 점검 · 점수 이의신청 · 1차 검사 as a 2x2 grid (one column on phones). */}
       <div className="grid items-start gap-4 md:grid-cols-2">
-        {enrolled && user && <MySubmission courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
+        {enrolled && user && <MySubmission courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} dueAt={assignment.due_at} lateDueAt={assignment.late_due_at} pastDue={pastDue} />}
         {enrolled && user && <SelfCheck courseId={courseId} assignmentId={assignmentId} studentId={user.id} open={Boolean(canSubmit)} />}
         {enrolled && user && <MyAppeal assignmentId={assignmentId} studentId={user.id} />}
         {canEdit && <GradeAppeals assignmentId={assignmentId} />}
-        {canEdit && <FirstCheck assignmentId={assignmentId} />}
+        {canEdit && <FirstCheckAndGrading assignmentId={assignmentId} closed={closed} graded={Boolean(assignment.graded_at)} late={Boolean(assignment.late_due_at)} />}
       </div>
-      {canEdit && <SubmissionStatus courseId={courseId} assignmentId={assignmentId} />}
+      {canEdit && <SubmissionStatus courseId={courseId} assignmentId={assignmentId} dueAt={assignment.due_at} />}
 
-      <SubmissionList courseId={courseId} assignmentId={assignmentId} viewerId={enrolled ? user?.id : undefined} />
+      <SubmissionList courseId={courseId} assignmentId={assignmentId} dueAt={assignment.due_at} viewerId={enrolled ? user?.id : undefined} />
     </>
   );
 }

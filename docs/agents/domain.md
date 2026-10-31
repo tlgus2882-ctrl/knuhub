@@ -72,6 +72,7 @@ Code (tables, columns, types, variables) uses these English names for the `GLOSS
 | 연락처 공개 범위 | `contact_visibility`: `public` / `course` / `private` |
 | 첨부파일 | `assignment_file` |
 | 채점 항목 | `grading_criterion` (목록을 저장할 때마다 과제의 `criteria_version`이 오른다) |
+| 지각 제출 | `assignment.late_due_at` (비면 받지 않음), 제출이 닫히는 때는 생성 열 `assignment.closes_at` (지각 제출 마감, 없으면 마감). 지각인지는 `submission.submitted_at > assignment.due_at` |
 | 셀프 점검 | `self_check` (결과 하나, 그 학생만 읽음), `self_check_usage` (과제당 쓴 횟수, 제출물과 따로), 한도는 `self_check_limit()` |
 | 1차 검사 | `first_check` (제출물마다 최신 결과 하나. `status`: `reviewed` 검사함 / `unreviewable` 검사할 수 없음, 의심은 별도 `suspicious`), `first_check_queue` (검사 대기열), `first_check_run` (진행 상황) |
 | 자기소개 | `profile.bio` |

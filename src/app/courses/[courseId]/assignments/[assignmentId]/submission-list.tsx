@@ -5,6 +5,7 @@ import Link from "next/link";
 import { cn } from "cn";
 import { buttonVariants } from "@/components/ui/button";
 import { UserChip } from "@/components/user-link";
+import { LateBadge } from "./late-badge";
 import { SubmissionFileList } from "./submission-files";
 import { RecommendedBadge } from "@/app/recommendations/recommended-badge";
 import { submissionFileHrefs, submissionHref } from "./submissions/submission-href";
@@ -14,11 +15,13 @@ type Props = {
   assignmentId: string;
   /** Left out of the list because "내 제출물" already shows it. */
   viewerId?: string;
+  /** The 마감: later 제출물 get a 지각 badge. */
+  dueAt: string;
 };
 
 // Every 제출물 of the assignment the viewer may see. Which ones that is
 // (마감일, 공개 범위, role) is decided by RLS alone (docs/adr/0002).
-export async function SubmissionList({ courseId, assignmentId, viewerId }: Props) {
+export async function SubmissionList({ courseId, assignmentId, viewerId, dueAt }: Props) {
   const supabase = await createServerSupabase();
   let query = supabase
     .from("submission")
@@ -46,7 +49,7 @@ export async function SubmissionList({ courseId, assignmentId, viewerId }: Props
                 />
                 {submission.recommendation && <RecommendedBadge />}
                 <span className="order-last basis-full text-sm text-muted-foreground sm:order-none sm:basis-auto">
-                  {formatKst(submission.submitted_at)}
+                  {formatKst(submission.submitted_at)} <LateBadge submittedAt={submission.submitted_at} dueAt={dueAt} />
                 </span>
                 <Link
                   href={submissionHref(courseId, assignmentId, submission.id)}

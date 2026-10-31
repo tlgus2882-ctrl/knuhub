@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
+import { defaultDueInput } from "@/lib/time";
 import { AssignmentForm } from "../assignment-form";
 
 export default function NewAssignmentPage({ params }: PageProps<"/courses/[courseId]/assignments/new">) {
@@ -12,10 +14,16 @@ export default function NewAssignmentPage({ params }: PageProps<"/courses/[cours
               ← 과목으로
             </Link>
             <h1 className="text-2xl font-semibold tracking-tight">과제 만들기</h1>
-            <AssignmentForm courseId={courseId} />
+            <NewAssignmentForm courseId={courseId} />
           </>
         ))}
       </Suspense>
     </main>
   );
+}
+
+// The default 마감 (a week from today) depends on when the page is opened, so it renders per request.
+async function NewAssignmentForm({ courseId }: { courseId: string }) {
+  await connection();
+  return <AssignmentForm courseId={courseId} defaultDue={defaultDueInput(new Date())} />;
 }
