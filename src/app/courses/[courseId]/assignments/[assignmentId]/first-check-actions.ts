@@ -2,7 +2,7 @@
 
 import { FIRST_CHECK_TOKEN_LIMIT, isSuspicious, reviewSubmission, type ReviewModel } from "@/lib/ai-review/review";
 import { reviewModel } from "@/lib/ai-review/model";
-import { readTextFiles } from "@/lib/submissions/read-text-files";
+import { readReviewFiles } from "@/lib/submissions/read-review-files";
 import { createAdminSupabase, type AdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase, type ServerSupabase } from "@/lib/supabase/server";
 
@@ -89,7 +89,7 @@ async function checkOne(
   const criteria = submission.assignment.grading_criterion
     .toSorted((a, b) => a.position - b.position)
     .map(({ name, points, description }) => ({ name, points, description }));
-  const files = await readTextFiles(supabase, submission.submission_file);
+  const files = await readReviewFiles(supabase, submission.submission_file);
   const redact = [submission.profile?.name, submission.profile?.student_number].filter((s): s is string => Boolean(s));
   const review = files.length ? await reviewSubmission(model, criteria, files, { redact, tokenLimit: FIRST_CHECK_TOKEN_LIMIT }) : ({ kind: "too_large" } as const);
   if (review.kind === "failed") return STOPPED_ERRORS.failed;

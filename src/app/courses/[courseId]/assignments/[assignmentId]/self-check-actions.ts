@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { reviewModel } from "@/lib/ai-review/model";
 import { reviewSubmission } from "@/lib/ai-review/review";
-import { readTextFiles } from "@/lib/submissions/read-text-files";
+import { readReviewFiles } from "@/lib/submissions/read-review-files";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase, type ServerSupabase } from "@/lib/supabase/server";
 
@@ -14,7 +14,7 @@ const START_ERRORS: Record<string, string> = {
 };
 const NOT_SAVED_ERRORS = {
   notConfigured: "AI 기능이 아직 설정되지 않았어요. 횟수는 차감되지 않았어요.",
-  noText: "점검할 텍스트 파일이 없어요. 코드 파일을 제출해 주세요. 횟수는 차감되지 않았어요.",
+  noFiles: "점검할 파일이 없어요. 코드나 PDF 파일을 제출해 주세요. 횟수는 차감되지 않았어요.",
   tooLarge: "제출물이 너무 커서 점검할 수 없어요. 횟수는 차감되지 않았어요.",
   failed: "점검하지 못했어요. 횟수는 차감되지 않았으니 잠시 뒤에 다시 해 주세요.",
 };
@@ -77,9 +77,9 @@ async function reviewAndSave(supabase: ServerSupabase, assignmentId: string, stu
   const model = reviewModel();
   if (!model) return NOT_SAVED_ERRORS.notConfigured;
 
-  // Binary files never reach the model.
-  const files = await readTextFiles(supabase, submission.submission_file);
-  if (!files.length) return NOT_SAVED_ERRORS.noText;
+  // Binary files other than PDFs never reach the model.
+  const files = await readReviewFiles(supabase, submission.submission_file);
+  if (!files.length) return NOT_SAVED_ERRORS.noFiles;
 
   const criteria = assignment.grading_criterion.map(({ name, points, description }) => ({ name, points, description }));
   const redact = [author?.name, author?.student_number].filter((s): s is string => Boolean(s));

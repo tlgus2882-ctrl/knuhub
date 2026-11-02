@@ -4,6 +4,15 @@ export type Update = { date: string; title: string; items: string[] };
 export const UPDATES: Update[] = [
   {
     date: "2026-11-02",
+    title: "PDF 제출물도 AI 검토",
+    items: [
+      "제출물에 PDF가 있으면 셀프 점검과 1차 검사가 PDF 내용(글자와 그림)도 읽고 판단해요.",
+      "PDF에서 나온 AI 검토 근거는 \"N쪽\"으로 보이고, 누르면 제출물 화면에서 그 쪽이 열려요.",
+      "제출물 화면에서 PDF를 내려받지 않고 바로 볼 수 있어요.",
+    ],
+  },
+  {
+    date: "2026-11-02",
     title: "다크 모드",
     items: ["오른쪽 위 메뉴의 화면 테마에서 라이트, 다크, 시스템 설정 중에 고를 수 있어요. 처음에는 기기 설정을 따라가고, 고른 값은 그 기기에 저장돼요."],
   },

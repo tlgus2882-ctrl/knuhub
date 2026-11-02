@@ -3,13 +3,17 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { Prompt, ReviewModel, TokenUsage } from "./review";
 
-/** The prompt text, then each attached picture after its label. */
-function content({ user, images = [] }: Prompt): Anthropic.ContentBlockParam[] {
+/** The prompt text, then each attached picture and PDF after its label. */
+function content({ user, images = [], documents = [] }: Prompt): Anthropic.ContentBlockParam[] {
   return [
     { type: "text", text: user },
     ...images.flatMap((image): Anthropic.ContentBlockParam[] => [
       { type: "text", text: image.label },
       { type: "image", source: { type: "base64", media_type: image.mime, data: image.data } },
+    ]),
+    ...documents.flatMap((document): Anthropic.ContentBlockParam[] => [
+      { type: "text", text: document.label },
+      { type: "document", source: { type: "base64", media_type: "application/pdf", data: document.data } },
     ]),
   ];
 }

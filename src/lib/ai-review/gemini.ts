@@ -3,7 +3,7 @@ import { FinishReason, GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 import type { Prompt, ReviewModel, TokenUsage } from "./review";
 
-/** The prompt text, then each attached picture after its label. */
+/** The prompt text, then each attached picture after its label (PDFs are not sent: development only). */
 function parts({ user, images = [] }: Prompt) {
   return [{ text: user }, ...images.flatMap((image) => [{ text: image.label }, { inlineData: { mimeType: image.mime, data: image.data } }])];
 }

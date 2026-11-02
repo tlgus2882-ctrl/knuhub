@@ -109,6 +109,35 @@ describe("reviewSubmission", () => {
     expect(asked[0].images).toEqual([{ mime: "image/png", data: "PNG", label: '그림: 파일 id="2"의 1번 셀 출력' }]);
   });
 
+  it("PDF는 파일 id를 단 문서로 첨부하고, 근거를 쪽 번호로 달라고 알린다", async () => {
+    const { model, asked } = fakeModel({ opinions: [] });
+
+    await reviewSubmission(model, CRITERIA, [FILES[0], { path: "report.pdf", text: "", pdf: "PDFDATA" }]);
+
+    expect(asked[0].documents).toEqual([{ data: "PDFDATA", label: '문서: 파일 id="2" (PDF)' }]);
+    expect(asked[0].user).toContain('<file id="2" path="report.pdf" type="pdf">');
+    expect(asked[0].system).toContain("쪽 번호");
+  });
+
+  it("PDF의 근거는 쪽 범위로 돌려주고, 코드의 근거는 그대로 줄로 돌려준다", async () => {
+    const pdfFile = { path: "report.pdf", text: "", pdf: "PDFDATA" };
+    const { model } = fakeModel({
+      opinions: [
+        { criterion: 1, verdict: "met", evidence: [{ file: 1, start_line: 1, end_line: 2 }, { file: 2, start_line: 3, end_line: 5 }], comment: "설명한다" },
+        { criterion: 2, verdict: "met", evidence: [{ file: 2, start_line: 4, end_line: 2 }], comment: "거꾸로 된 쪽" },
+        { criterion: 3, verdict: "met", evidence: [{ file: 2, start_line: 0, end_line: 1 }], comment: "0쪽" },
+      ],
+    });
+
+    const result = await reviewSubmission(model, [...CRITERIA, { name: "보고서", points: 10, description: "" }], [FILES[0], pdfFile]);
+
+    expect(result.kind === "reviewed" && result.opinions[0].evidence).toEqual([
+      { path: "src/list.c", start_line: 1, end_line: 2 },
+      { path: "report.pdf", start_page: 3, end_page: 5 },
+    ]);
+    expect(result.kind === "reviewed" && result.opinions.slice(1).map((o) => o.verdict)).toEqual(["uncertain", "uncertain"]);
+  });
+
   it("AI가 빠뜨린 채점 항목은 판단 불가로 채우고, 채점 항목 순서대로 돌려준다", async () => {
     const { model } = fakeModel({
       opinions: [{ criterion: 2, verdict: "uncertain", evidence: [], comment: "모르겠다" }],
