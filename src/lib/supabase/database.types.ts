@@ -872,7 +872,7 @@ isOneToOne: false
                            },
 "admin_list_users":
 { Args: { "query": string }; Returns: {
-              "created_at": string,"email": string,"id": string,"name": string,"role": Database["public"]['Enums']["role"],"student_number": string
+              "created_at": string,"email": string,"email_confirmed_at": string,"id": string,"name": string,"role": Database["public"]['Enums']["role"],"student_number": string
             }[]
                            },
 "admin_promote_to_professor":
@@ -1032,6 +1032,9 @@ isOneToOne: false
 "profile_files_limit":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"purge_unverified_users":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "recent_recommendations":
 { Args: Record<PropertyKey, never>; Returns: {
               "assignment_id": string,"assignment_title": string,"course_id": string,"course_name": string,"recommended_at": string,"student_name": string,"submission_id": string
@@ -1073,6 +1076,11 @@ isOneToOne: false
                            },
 "submit_files":
 { Args: { "files": Json,"target_assignment": string }; Returns: (string)[]
+                           },
+"unverified_users_to_purge":
+{ Args: { "max_age": string }; Returns: {
+              "created_at": string,"email": string,"id": string
+            }[]
                            },
 "update_my_profile":
 { Args: { "contact_visibility": Database["public"]['Enums']["contact_visibility"],"github"?: string,"new_name": string,"open_chat_url"?: string,"show_email": boolean }; Returns: undefined

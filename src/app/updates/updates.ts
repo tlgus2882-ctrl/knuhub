@@ -4,6 +4,14 @@ export type Update = { date: string; title: string; items: string[] };
 export const UPDATES: Update[] = [
   {
     date: "2026-11-02",
+    title: "메일 인증 안 한 계정 정리",
+    items: [
+      "관리자 페이지 사용자 목록에서 학교 메일 인증 여부를 볼 수 있어요.",
+      "가입하고 24시간 안에 메일 인증을 하지 않은 계정은 자동으로 지워져요. 그 계정이 쓰려던 학번도 다시 쓸 수 있게 돼요.",
+    ],
+  },
+  {
+    date: "2026-11-02",
     title: "AI 검토 크기 한도 늘림",
     items: ["셀프 점검은 코드 약 350KB, 1차 검사는 약 1.1MB까지 검사할 수 있어요 (두 배로 늘렸어요)."],
   },
