@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,19 @@ import { CloseReportButton } from "./close-report-button";
 import { UserActions } from "./user-actions";
 
 const ROLE_LABEL = { student: "학생", professor: "교수", admin: "관리자" } as const;
+
+/** Unverified accounts are removed 24 hours after signing up (purge_unverified_users(), hourly). */
+const UNVERIFIED_HOURS = 24;
+
+// The page renders per request (after connection()), so reading the clock here is fine.
+function currentTime() {
+  return Date.now();
+}
+
+function purgeLabel(createdAt: string, now: number): string {
+  const hoursLeft = Math.ceil((Date.parse(createdAt) + UNVERIFIED_HOURS * 3_600_000 - now) / 3_600_000);
+  return hoursLeft > 0 ? `${hoursLeft}시간 안에 인증 안 하면 삭제` : "곧 삭제 (1시간마다 정리)";
+}
 
 export default function AdminPage({ searchParams }: PageProps<"/admin">) {
   return (
@@ -32,6 +46,8 @@ async function AdminView({ query }: { query: string }) {
   // Others get the plain 404, as if there were no such page.
   if (!isAdmin) notFound();
 
+  await connection();
+  const now = currentTime();
   const [{ data: users }, { data: archived }, { data: reports }] = await Promise.all([
     supabase.rpc("admin_list_users", { query }),
     supabase.from("archived_course").select("id, name, semester, section, professor_name, archived_at").order("archived_at", { ascending: false }),
@@ -97,6 +113,7 @@ async function AdminView({ query }: { query: string }) {
                 <th className="px-4 py-2 font-medium">이름</th>
                 <th className="px-4 py-2 font-medium">학교 메일</th>
                 <th className="px-4 py-2 font-medium">역할</th>
+                <th className="px-4 py-2 font-medium">메일 인증</th>
                 <th className="px-4 py-2 font-medium">가입</th>
                 <th className="px-4 py-2 font-medium">학번 · 승격</th>
               </tr>
@@ -111,6 +128,18 @@ async function AdminView({ query }: { query: string }) {
                   </td>
                   <td className="px-4 py-2 text-muted-foreground">{user.email}</td>
                   <td className="px-4 py-2">{ROLE_LABEL[user.role]}</td>
+                  <td className="px-4 py-2 whitespace-nowrap">
+                    {user.email_confirmed_at ? (
+                      <span className="text-muted-foreground">인증함</span>
+                    ) : (
+                      <span className="text-destructive">
+                        인증 안 함
+                        {user.role !== "admin" && (
+                          <span className="block text-xs text-muted-foreground">{purgeLabel(user.created_at, now)}</span>
+                        )}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-2 whitespace-nowrap text-muted-foreground">{formatKst(user.created_at)}</td>
                   <td className="px-4 py-2">
                     <UserActions userId={user.id} name={user.name} role={user.role} studentNumber={user.student_number} />
