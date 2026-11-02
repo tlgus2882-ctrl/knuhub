@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { ChatWidget } from "@/app/chat/chat-widget";
 import { RecentRecommendations } from "@/app/recommendations/recent-recommendations";
 import { SiteHeader } from "@/components/site-header";
+import { THEME_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,7 +34,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="ko"
       className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} h-full antialiased`}
+      // The theme script adds "dark" before React hydrates.
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <SiteHeader />
         {children}

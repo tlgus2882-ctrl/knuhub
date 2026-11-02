@@ -32,7 +32,8 @@ async function AccountActions() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return null;
+  // Signed out, the menu only offers the 화면 테마.
+  if (!user) return <SiteMenu signedIn={false} isAdmin={false} />;
   const { data: isAdmin } = await supabase.rpc("is_admin");
 
   return (
@@ -51,7 +52,7 @@ async function AccountActions() {
           로그아웃
         </Button>
       </form>
-      <SiteMenu isAdmin={Boolean(isAdmin)} />
+      <SiteMenu signedIn isAdmin={Boolean(isAdmin)} />
     </div>
   );
 }

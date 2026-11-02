@@ -4,6 +4,11 @@ export type Update = { date: string; title: string; items: string[] };
 export const UPDATES: Update[] = [
   {
     date: "2026-11-02",
+    title: "다크 모드",
+    items: ["오른쪽 위 메뉴의 화면 테마에서 라이트, 다크, 시스템 설정 중에 고를 수 있어요. 처음에는 기기 설정을 따라가고, 고른 값은 그 기기에 저장돼요."],
+  },
+  {
+    date: "2026-11-02",
     title: "익명 채팅",
     items: [
       "로그인하면 모든 화면 오른쪽 아래의 채팅 동그라미를 눌러 익명 채팅을 열 수 있어요. 모두가 같은 방에서 이야기하고, 메시지는 바로 떠요.",
