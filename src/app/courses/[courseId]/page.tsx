@@ -84,9 +84,16 @@ async function CourseDetail({ courseId }: { courseId: string }) {
         <section id="board" className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">과목 게시판</h2>
-            <Button size="sm" nativeButton={false} render={<Link href={`/board/new?course=${courseId}`} />}>
-              글쓰기
-            </Button>
+            <div className="flex gap-2">
+              {myRole === "professor" && (
+                <Button size="sm" variant="outline" nativeButton={false} render={<Link href={`/board/team-draw/new?course=${courseId}`} />}>
+                  팀 추첨 만들기
+                </Button>
+              )}
+              <Button size="sm" nativeButton={false} render={<Link href={`/board/new?course=${courseId}`} />}>
+                글쓰기
+              </Button>
+            </div>
           </div>
           <PostList courseId={courseId} limit={BOARD_SIZE} />
         </section>

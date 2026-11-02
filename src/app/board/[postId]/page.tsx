@@ -11,6 +11,7 @@ import { CommentForm } from "../comment-form";
 import { CommentItem } from "../comment-item";
 import { DeleteButton } from "../delete-button";
 import { ReportButton } from "../report-button";
+import { TeamDrawPanel } from "../team-draw/team-draw-panel";
 
 export default function PostPage({ params }: PageProps<"/board/[postId]">) {
   return (
@@ -31,7 +32,7 @@ async function Post({ postId }: { postId: string }) {
   const [{ data: post }, { data: claims }] = await Promise.all([
     supabase
       .from("post")
-      .select("id, course_id, category, is_notice, title, body, author_id, created_at, updated_at, profile(name), course(name), post_comment(id, body, author_id, created_at, updated_at, profile(name))")
+      .select("id, course_id, category, is_notice, title, body, author_id, created_at, updated_at, profile(name), course(name), team_draw(post_id), post_comment(id, body, author_id, created_at, updated_at, profile(name))")
       .eq("id", postId)
       .order("created_at", { referencedTable: "post_comment" })
       .maybeSingle(),
@@ -42,6 +43,8 @@ async function Post({ postId }: { postId: string }) {
   // Only which buttons to show: RLS decides what is allowed (docs/adr/0002).
   const me = claims?.claims.sub;
   const mine = post.author_id === me;
+  // A 팀 추첨 has 댓글 but no 좋아요 or 신고.
+  const teamDraw = Boolean(post.team_draw);
   const { data: canModerate } = await supabase.rpc("can_moderate_board", { target_course: post.course_id ?? undefined });
 
   return (
@@ -62,15 +65,16 @@ async function Post({ postId }: { postId: string }) {
           </p>
         </div>
         <p className="whitespace-pre-wrap break-words">{post.body}</p>
+        {teamDraw && post.course_id && <TeamDrawPanel postId={post.id} courseId={post.course_id} />}
         <div className="flex flex-wrap items-start gap-2">
-          <Likes target={{ postId: post.id }} />
+          {!teamDraw && <Likes target={{ postId: post.id }} />}
           {mine && (
             <Button size="xs" variant="ghost" nativeButton={false} render={<Link href={`/board/${post.id}/edit`} />}>
               고치기
             </Button>
           )}
           {(mine || canModerate) && <DeleteButton target={{ post_id: post.id }} />}
-          {!mine && <ReportButton target={{ post_id: post.id }} />}
+          {!mine && !teamDraw && <ReportButton target={{ post_id: post.id }} />}
         </div>
       </article>
 
