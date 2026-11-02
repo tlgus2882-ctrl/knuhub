@@ -263,6 +263,46 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"chat_alias": {
+                  Row: {
+                    "day": string,"number": number,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "day": string,"number": number,"user_id": string
+                  }
+                  Update: {
+                    "day"?: string,"number"?: number,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "chat_alias_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"chat_message": {
+                  Row: {
+                    "alias": number,"author_id": string,"body": string,"created_at": string,"id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "alias": number,"author_id": string,"body": string,"created_at"?: string,"id"?: string
+                  }
+                  Update: {
+                    "alias"?: number,"author_id"?: string,"body"?: string,"created_at"?: string,"id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "chat_message_author_id_fkey"
+      columns: ["author_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"course": {
                   Row: {
                     "created_at": string,"id": string,"name": string,"professor_id": string,"section": string,"semester": string
@@ -647,17 +687,23 @@ isOneToOne: true
                   ]
                 },"report": {
                   Row: {
-                    "closed_at": string | null,"comment_id": string | null,"created_at": string,"id": string,"post_id": string | null,"reason": string,"reporter_id": string
+                    "chat_message_id": string | null,"closed_at": string | null,"comment_id": string | null,"created_at": string,"id": string,"post_id": string | null,"reason": string,"reporter_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "closed_at"?: string | null,"comment_id"?: string | null,"created_at"?: string,"id"?: string,"post_id"?: string | null,"reason": string,"reporter_id"?: string
+                    "chat_message_id"?: string | null,"closed_at"?: string | null,"comment_id"?: string | null,"created_at"?: string,"id"?: string,"post_id"?: string | null,"reason": string,"reporter_id"?: string
                   }
                   Update: {
-                    "closed_at"?: string | null,"comment_id"?: string | null,"created_at"?: string,"id"?: string,"post_id"?: string | null,"reason"?: string,"reporter_id"?: string
+                    "chat_message_id"?: string | null,"closed_at"?: string | null,"comment_id"?: string | null,"created_at"?: string,"id"?: string,"post_id"?: string | null,"reason"?: string,"reporter_id"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "report_chat_message_id_fkey"
+      columns: ["chat_message_id"]
+isOneToOne: false
+      referencedRelation: "chat_message"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "report_comment_id_fkey"
       columns: ["comment_id"]
 isOneToOne: false
@@ -1109,6 +1155,9 @@ isOneToOne: false
 "is_profile_file_object":
 { Args: { "object_name": string }; Returns: boolean
                            },
+"is_reported_chat_message":
+{ Args: { "target_message": string }; Returns: boolean
+                           },
 "is_submission_course_professor":
 { Args: { "target_submission": string }; Returns: boolean
                            },
@@ -1154,8 +1203,16 @@ isOneToOne: false
 "publish_team_draw":
 { Args: { "target_post": string }; Returns: undefined
                            },
+"purge_chat_messages":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "purge_unverified_users":
 { Args: Record<PropertyKey, never>; Returns: number
+                           },
+"recent_chat_messages":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "alias": number,"body": string,"created_at": string,"id": string,"mine": boolean
+            }[]
                            },
 "recent_recommendations":
 { Args: Record<PropertyKey, never>; Returns: {
@@ -1181,6 +1238,11 @@ isOneToOne: false
                            },
 "self_check_limit":
 { Args: Record<PropertyKey, never>; Returns: number
+                           },
+"send_chat_message":
+{ Args: { "message": string }; Returns: {
+              "alias": number,"body": string,"created_at": string,"id": string
+            }[]
                            },
 "shares_course_with":
 { Args: { "other": string }; Returns: boolean
