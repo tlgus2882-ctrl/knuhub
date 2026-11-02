@@ -24,7 +24,7 @@ export async function FirstCheckOpinions({ courseId, assignmentId, submission }:
       {check.status === "unreviewable" ? (
         <p className="rounded-lg border p-4 text-sm">
           <span className="font-medium">1차 검사 · 검사할 수 없음</span>
-          <span className="block text-muted-foreground">제출물이 너무 크거나 텍스트 파일이 없어서 AI가 검사하지 못했어요. 직접 확인해 주세요.</span>
+          <span className="block text-muted-foreground">제출물이 너무 크거나 검사할 수 있는 파일(코드·PDF)이 없어서 AI가 검사하지 못했어요. 직접 확인해 주세요.</span>
         </p>
       ) : (
         <AiReviewResult

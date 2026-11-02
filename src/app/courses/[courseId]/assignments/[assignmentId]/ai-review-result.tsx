@@ -32,14 +32,16 @@ export function AiReviewResult({ courseId, assignmentId, submission, criteriaVer
   const current = sameTime(result.submitted_at, submission.submitted_at);
   // Evidence opens the code viewer at its line in the version checked (no link once it left the 제출 이력).
   // Evidence in a notebook names a cell and opens it in the notebook view; older evidence named lines of
-  // the notebook's JSON, so it opens the source.
+  // the notebook's JSON, so it opens the source. Evidence in a PDF opens it at its first page.
   const history = current ? undefined : submission.submission_history.find((h) => sameTime(h.submitted_at, result.submitted_at));
   const hrefFor =
     current || history
       ? (e: Evidence) =>
-          e.cell
-            ? `${submissionHref(courseId, assignmentId, submission.id, e.path, history?.id)}#cell-${e.cell}`
-            : `${submissionHref(courseId, assignmentId, submission.id, e.path, history?.id, isNotebook(e.path))}#L${e.start_line}`
+          "start_page" in e
+            ? submissionHref(courseId, assignmentId, submission.id, e.path, history?.id, false, e.start_page)
+            : e.cell
+              ? `${submissionHref(courseId, assignmentId, submission.id, e.path, history?.id)}#cell-${e.cell}`
+              : `${submissionHref(courseId, assignmentId, submission.id, e.path, history?.id, isNotebook(e.path))}#L${e.start_line}`
       : null;
 
   return (
@@ -65,11 +67,11 @@ export function AiReviewResult({ courseId, assignmentId, submission, criteriaVer
               {opinion.evidence.length > 0 && (
                 <ul className="flex flex-wrap gap-x-3 gap-y-1">
                   {opinion.evidence.map((e) => {
-                    const label = e.cell
-                      ? `${e.path} ${e.cell}번 셀`
-                      : `${e.path} ${e.start_line === e.end_line ? e.start_line : `${e.start_line}–${e.end_line}`}줄`;
+                    const [start, end, unit, dash] = "start_page" in e ? [e.start_page, e.end_page, "쪽", "~"] : [e.start_line, e.end_line, "줄", "–"];
+                    const label =
+                      "cell" in e && e.cell ? `${e.path} ${e.cell}번 셀` : `${e.path} ${start === end ? start : `${start}${dash}${end}`}${unit}`;
                     return (
-                      <li key={`${e.path}:${e.start_line}-${e.end_line}`} className="font-mono text-xs">
+                      <li key={`${e.path}:${start}-${end}${unit}`} className="font-mono text-xs">
                         {hrefFor ? (
                           // A full page load, so the browser marks the line as :target and scrolls to it.
                           <a href={hrefFor(e)} className="text-primary underline">

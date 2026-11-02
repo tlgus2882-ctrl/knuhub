@@ -16,6 +16,8 @@ import { Likes } from "@/app/likes/likes";
 import { Recommendation } from "@/app/recommendations/recommendation";
 import { isNotebook, parseNotebook, type Notebook } from "@/lib/submissions/notebook";
 import { NotebookView } from "./notebook-view";
+import { isPdf } from "@/lib/submissions/pdf";
+import { PdfView } from "./pdf-view";
 import { Reviews } from "./reviews";
 
 type Route = "/courses/[courseId]/assignments/[assignmentId]/submissions/[submissionId]";
@@ -32,12 +34,13 @@ export default function SubmissionPage({ params, searchParams }: PageProps<Route
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 py-16">
       <Suspense fallback={<p className="text-sm text-muted-foreground">불러오는 중…</p>}>
-        {Promise.all([params, searchParams]).then(([p, { file, history, view }]) => (
+        {Promise.all([params, searchParams]).then(([p, { file, history, view, page }]) => (
           <SubmissionView
             {...p}
             file={typeof file === "string" ? file : undefined}
             historyId={typeof history === "string" ? history : undefined}
             source={view === "source"}
+            page={typeof page === "string" && Number(page) >= 1 ? Math.floor(Number(page)) : undefined}
           />
         ))}
       </Suspense>
@@ -52,7 +55,8 @@ async function SubmissionView({
   file,
   historyId,
   source,
-}: Params & { file?: string; historyId?: string; source: boolean }) {
+  page,
+}: Params & { file?: string; historyId?: string; source: boolean; page?: number }) {
   const supabase = await createServerSupabase();
   // RLS returns the 제출물 only to those who may see it (docs/adr/0002).
   const { data: submission } = await supabase
@@ -141,6 +145,7 @@ async function SubmissionView({
                 supabase={supabase}
                 file={selected}
                 source={source}
+                page={page}
                 hrefFor={(asSource) => submissionHref(courseId, assignmentId, submissionId, selected.path, viewed?.id, asSource)}
               />
             ) : (
@@ -167,21 +172,25 @@ type FileContentProps = {
   file: ViewedFile;
   /** A notebook as its JSON (line numbers, for AI 검토 evidence) instead of as cells. */
   source: boolean;
+  /** The page a PDF opens at (AI 검토 evidence). */
+  page?: number;
   /** This file in the viewer, as cells or as source. */
   hrefFor: (source: boolean) => string;
 };
 
-async function FileContent({ supabase, file, source, hrefFor }: FileContentProps) {
+async function FileContent({ supabase, file, source, page, hrefFor }: FileContentProps) {
   const storage = supabase.storage.from(SUBMISSION_BUCKET);
   const { data: signed } = await storage.createSignedUrl(file.storage_path, DOWNLOAD_LINK_SECONDS);
   const download = signed && downloadUrl(signed.signedUrl, file.path.split("/").pop()!);
   const notebookFile = isNotebook(file.path);
   const asCells = notebookFile && !source;
+  const pdf = file.kind === "binary" && isPdf(file.path) && signed;
 
   let html: string | null = null;
   let notebook: Notebook | null = null;
   let noPreview: keyof typeof NO_PREVIEW | null = null;
-  if (file.kind === "binary") noPreview = "binary";
+  // A PDF is shown by the browser's own viewer; other binary files are not shown.
+  if (file.kind === "binary") noPreview = pdf ? null : "binary";
   // Notebooks carry their output images, so they may be bigger as cells; their source is still capped.
   else if (file.size > (asCells ? NOTEBOOK_MAX_BYTES : HIGHLIGHT_MAX_BYTES)) noPreview = "large";
   else {
@@ -216,7 +225,9 @@ async function FileContent({ supabase, file, source, hrefFor }: FileContentProps
           )}
         </span>
       </header>
-      {notebook ? (
+      {pdf ? (
+        <PdfView url={signed.signedUrl} page={page} />
+      ) : notebook ? (
         <NotebookView notebook={notebook} />
       ) : html ? (
         <div className="code-view" dangerouslySetInnerHTML={{ __html: html }} />

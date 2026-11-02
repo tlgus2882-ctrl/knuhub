@@ -1,6 +1,6 @@
 /**
  * The code viewer for one 제출물, optionally opened at one of its files or at one entry of its 제출 이력.
- * `source` shows a notebook (.ipynb) as its JSON with line numbers instead of as cells.
+ * `source` shows a notebook (.ipynb) as its JSON with line numbers instead of as cells; `page` opens a PDF at that page.
  */
 export function submissionHref(
   courseId: string,
@@ -9,12 +9,14 @@ export function submissionHref(
   path?: string,
   historyId?: string,
   source?: boolean,
+  page?: number,
 ) {
   const base = `/courses/${courseId}/assignments/${assignmentId}/submissions/${submissionId}`;
   const query = new URLSearchParams();
   if (historyId) query.set("history", historyId);
   if (path) query.set("file", path);
   if (source) query.set("view", "source");
+  if (page) query.set("page", String(page));
   const search = query.toString();
   return search ? `${base}?${search}` : base;
 }
