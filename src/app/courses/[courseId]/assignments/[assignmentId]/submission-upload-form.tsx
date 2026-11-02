@@ -28,19 +28,24 @@ const PREVIEW_COUNT = 8;
 // Uploads go straight from the browser to Storage (docs/adr/0002); the server
 // action then makes them the 제출물.
 export function SubmissionUploadForm({ assignmentId, studentId, resubmit }: Props) {
+  const [picked, setPicked] = useState<PickedFile[]>([]);
   const [prepared, setPrepared] = useState<Extract<PreparedUpload, { ok: true }> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  async function prepare(picking: Promise<PickedFile[]>) {
+  // Each pick or drop adds to the files picked so far (the same path is replaced). If the files no longer
+  // fit, the earlier ones stay picked.
+  async function add(picking: Promise<PickedFile[]>) {
     setError(null);
-    setPrepared(null);
+    const more = await picking;
+    const merged = [...picked.filter((p) => !more.some((m) => m.path === p.path)), ...more];
     try {
-      const result = prepareUpload(await readPicked(await picking));
-      if (result.ok) setPrepared(result);
-      else setError(PREPARE_ERRORS[result.reason]);
+      const result = prepareUpload(await readPicked(merged));
+      if (!result.ok) return setError(PREPARE_ERRORS[result.reason]);
+      setPicked(merged);
+      setPrepared(result);
     } catch (e) {
       setError(e instanceof UploadTooLargeError ? TOO_LARGE : "파일을 읽지 못했어요. zip이 손상되지 않았는지 확인해 주세요.");
     }
@@ -67,8 +72,13 @@ export function SubmissionUploadForm({ assignmentId, studentId, resubmit }: Prop
         setError(result.error);
         return;
       }
-      setPrepared(null);
+      clear();
     });
+  }
+
+  function clear() {
+    setPicked([]);
+    setPrepared(null);
   }
 
   return (
@@ -82,21 +92,21 @@ export function SubmissionUploadForm({ assignmentId, studentId, resubmit }: Prop
         onDrop={(event) => {
           event.preventDefault();
           setDragging(false);
-          void prepare(pickedFromDrop(event.dataTransfer.items));
+          void add(pickedFromDrop(event.dataTransfer.items));
         }}
         className={`flex flex-col items-center gap-3 rounded-lg border-2 border-dashed p-6 text-center text-sm ${
           dragging ? "border-ring bg-muted" : "border-input"
         }`}
       >
         <p>
-          {resubmit ? "다시 제출할" : "제출할"} 파일이나 폴더, zip을 여기에 끌어다 놓거나 골라 주세요.
+          {resubmit ? "다시 제출할" : "제출할"} 파일이나 폴더, zip을 여기에 끌어다 놓거나 골라 주세요. 여러 번 고르면 합쳐져요.
           <span className="block text-xs text-muted-foreground">
             zip은 풀어서 올려요. node_modules, .git 같은 폴더는 빼고, 합쳐서 20MB까지 제출할 수 있어요.
           </span>
         </p>
         <div className="flex gap-2">
-          <PickButton label="파일·zip 고르기" onPick={(list) => prepare(Promise.resolve(pickedFromInput(list)))} />
-          <PickButton label="폴더 고르기" directory onPick={(list) => prepare(Promise.resolve(pickedFromInput(list)))} />
+          <PickButton label="파일·zip 고르기" onPick={(list) => add(Promise.resolve(pickedFromInput(list)))} />
+          <PickButton label="폴더 고르기" directory onPick={(list) => add(Promise.resolve(pickedFromInput(list)))} />
         </div>
       </div>
 
@@ -104,6 +114,9 @@ export function SubmissionUploadForm({ assignmentId, studentId, resubmit }: Prop
         <div className="flex flex-col gap-1 text-sm">
           <p className="font-medium">
             파일 {prepared.files.length}개 · {formatBytes(prepared.totalBytes)}
+            <button type="button" onClick={clear} disabled={pending} className="ml-2 text-xs font-normal text-muted-foreground underline hover:text-foreground">
+              모두 빼기
+            </button>
           </p>
           <ul className="text-muted-foreground">
             {prepared.files.slice(0, PREVIEW_COUNT).map((f) => (
