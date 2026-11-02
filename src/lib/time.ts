@@ -10,6 +10,11 @@ export function formatKst(iso: string): string {
   }).format(new Date(iso));
 }
 
+/** Just the clock time in Korean time: "오후 3:05". */
+export function formatKstTime(iso: string): string {
+  return new Intl.DateTimeFormat("ko-KR", { timeZone: KST, timeStyle: "short" }).format(new Date(iso));
+}
+
 /** "3일 4시간 남음", "25분 남음", or "마감됨". */
 export function timeLeft(iso: string, now: Date): string {
   const minutes = Math.floor((new Date(iso).getTime() - now.getTime()) / 60_000);

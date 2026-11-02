@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import { Suspense } from "react";
+import { ChatWidget } from "@/app/chat/chat-widget";
 import { RecentRecommendations } from "@/app/recommendations/recent-recommendations";
 import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
@@ -42,6 +43,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <RecentRecommendations />
           </Suspense>
         </aside>
+        <Suspense>
+          <ChatWidget />
+        </Suspense>
       </body>
     </html>
   );

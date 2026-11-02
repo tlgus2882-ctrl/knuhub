@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
 import { DeleteButton } from "../board/delete-button";
-import { CloseReportButton } from "./close-report-button";
+import { CloseReportButton, DeleteChatMessageButton } from "./close-report-button";
 import { UserActions } from "./user-actions";
 
 const ROLE_LABEL = { student: "학생", professor: "교수", admin: "관리자" } as const;
@@ -53,7 +53,9 @@ async function AdminView({ query }: { query: string }) {
     supabase.from("archived_course").select("id, name, semester, section, professor_name, archived_at").order("archived_at", { ascending: false }),
     supabase
       .from("report")
-      .select("id, reason, created_at, profile(name), post(id, title), post_comment(id, body, post_id)")
+      .select(
+        "id, reason, created_at, profile(name), post(id, title), post_comment(id, body, post_id), chat_message(id, alias, body, created_at, author:profile(name, student_number))",
+      )
       .is("closed_at", null)
       .order("created_at"),
   ]);
@@ -64,10 +66,31 @@ async function AdminView({ query }: { query: string }) {
         <h2 className="text-lg font-semibold">
           신고 <span className="text-muted-foreground">{reports?.length ?? 0}</span>
         </h2>
-        <p className="text-sm text-muted-foreground">게시판에 들어온 신고예요. 글을 지우면 그 신고도 함께 사라지고, 지울 일이 아니면 신고를 닫아요.</p>
+        <p className="text-sm text-muted-foreground">게시판과 익명 채팅에 들어온 신고예요. 대상을 지우면 그 신고도 함께 사라지고, 지울 일이 아니면 신고를 닫아요.</p>
         {reports?.length ? (
           <ul className="flex flex-col divide-y rounded-xl border">
             {reports.map((report) => {
+              const chat = report.chat_message;
+              if (chat) {
+                return (
+                  <li key={report.id} className="flex flex-col gap-1 px-4 py-3">
+                    <p className="text-sm">
+                      채팅 <span className="font-medium break-all">{chat.body}</span>
+                    </p>
+                    <p className="text-xs">
+                      익명 {chat.alias} = {chat.author?.name} ({chat.author?.student_number ?? "학번 없음"}) · {formatKst(chat.created_at)}
+                    </p>
+                    <p className="text-sm whitespace-pre-wrap">사유: {report.reason}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {report.profile?.name} 신고 · {formatKst(report.created_at)}
+                    </p>
+                    <div className="flex flex-wrap items-start gap-2">
+                      <DeleteChatMessageButton messageId={chat.id} />
+                      <CloseReportButton reportId={report.id} />
+                    </div>
+                  </li>
+                );
+              }
               const comment = report.post_comment;
               const postId = report.post?.id ?? comment?.post_id;
               return (

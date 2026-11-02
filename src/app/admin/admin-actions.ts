@@ -48,3 +48,11 @@ export async function closeReport(reportId: string): Promise<{ error: string | n
   if (!error && !data?.length) return { error: "신고를 닫지 못했어요. 이미 처리됐을 수 있어요. 새로 고쳐 주세요." };
   return toActionResult("closeReport", error);
 }
+
+/** Deletes a reported 채팅 메시지; its 신고 go with it and it disappears from every open 익명 채팅. */
+export async function deleteChatMessage(messageId: string): Promise<{ error: string | null }> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.from("chat_message").delete().eq("id", messageId).select("id");
+  if (!error && !data?.length) return { error: "채팅 메시지를 지우지 못했어요. 이미 지워졌을 수 있어요. 새로 고쳐 주세요." };
+  return toActionResult("deleteChatMessage", error);
+}
