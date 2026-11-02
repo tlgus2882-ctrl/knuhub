@@ -13,8 +13,9 @@ export const CATEGORY_LABEL: Record<PostCategory, string> = {
 
 export const CATEGORIES = Object.keys(CATEGORY_LABEL) as PostCategory[];
 
-/** 공지, the post's 말머리, or nothing (a plain 과목 게시판 post). */
-export function postLabel(post: { is_notice: boolean; category: PostCategory | null }): string | null {
+/** 팀 추첨, 공지, the post's 말머리, or nothing (a plain 과목 게시판 post). */
+export function postLabel(post: { is_notice: boolean; category: PostCategory | null; team_draw?: unknown }): string | null {
+  if (post.team_draw) return "팀 추첨";
   return post.is_notice ? "공지" : post.category && CATEGORY_LABEL[post.category];
 }
 

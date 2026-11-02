@@ -861,6 +861,110 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"survey_response": {
+                  Row: {
+                    "answers": NonNullable<Json>,"post_id": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "answers": NonNullable<Json>,"post_id": string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "answers"?: NonNullable<Json>,"post_id"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "survey_response_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "team_draw"
+      referencedColumns: ["post_id"]
+    },{
+      foreignKeyName: "survey_response_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"team_draw": {
+                  Row: {
+                    "course_id": string,"criteria": string,"drawing_started_at": string | null,"edited_at": string | null,"excluded": (string)[],"mode": Database["public"]['Enums']["team_draw_mode"],"post_id": string,"published_at": string | null,"questions": NonNullable<Json>,"status": Database["public"]['Enums']["team_draw_status"],"survey_due_at": string | null,"team_size": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "course_id": string,"criteria"?: string,"drawing_started_at"?: string | null,"edited_at"?: string | null,"excluded"?: (string)[],"mode": Database["public"]['Enums']["team_draw_mode"],"post_id": string,"published_at"?: string | null,"questions"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["team_draw_status"],"survey_due_at"?: string | null,"team_size": number
+                  }
+                  Update: {
+                    "course_id"?: string,"criteria"?: string,"drawing_started_at"?: string | null,"edited_at"?: string | null,"excluded"?: (string)[],"mode"?: Database["public"]['Enums']["team_draw_mode"],"post_id"?: string,"published_at"?: string | null,"questions"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["team_draw_status"],"survey_due_at"?: string | null,"team_size"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "team_draw_course_id_fkey"
+      columns: ["course_id"]
+isOneToOne: false
+      referencedRelation: "course"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "team_draw_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: true
+      referencedRelation: "post"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"team_draw_note": {
+                  Row: {
+                    "post_id": string,"rationale": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "post_id": string,"rationale": string
+                  }
+                  Update: {
+                    "post_id"?: string,"rationale"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "team_draw_note_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: true
+      referencedRelation: "team_draw"
+      referencedColumns: ["post_id"]
+    }
+                  ]
+                },"team_member": {
+                  Row: {
+                    "course_id": string,"guest_name": string | null,"id": string,"post_id": string,"team_no": number | null,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "course_id": string,"guest_name"?: string | null,"id"?: string,"post_id": string,"team_no"?: number | null,"user_id"?: string | null
+                  }
+                  Update: {
+                    "course_id"?: string,"guest_name"?: string | null,"id"?: string,"post_id"?: string,"team_no"?: number | null,"user_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "team_member_course_id_user_id_fkey"
+      columns: ["course_id","user_id"]
+isOneToOne: false
+      referencedRelation: "enrollment"
+      referencedColumns: ["course_id","student_id"]
+    },{
+      foreignKeyName: "team_member_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "team_draw"
+      referencedColumns: ["post_id"]
+    },{
+      foreignKeyName: "team_member_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profile"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
@@ -897,6 +1001,9 @@ isOneToOne: false
 { Args: { "target": string }; Returns: {
               "email": string,"github": string,"open_chat_url": string
             }[]
+                           },
+"can_answer_survey":
+{ Args: { "target_post": string }; Returns: boolean
                            },
 "can_appeal":
 { Args: { "target_assignment": string }; Returns: boolean
@@ -948,10 +1055,16 @@ isOneToOne: false
               "claimed_at": string,"submission_id": string
             }[]
                            },
+"claim_team_draw":
+{ Args: { "target_post": string }; Returns: string
+                           },
 "course_roster":
 { Args: { "target_course": string }; Returns: {
               "email": string,"is_assistant": boolean,"name": string,"student_id": string,"student_number": string
             }[]
+                           },
+"create_team_draw":
+{ Args: { "body": string,"criteria"?: string,"mode": Database["public"]['Enums']["team_draw_mode"],"questions"?: Json,"survey_due_at"?: string,"target_course": string,"team_size": number,"title": string }; Returns: string
                            },
 "delete_assignment":
 { Args: { "target_assignment": string }; Returns: {
@@ -963,6 +1076,9 @@ isOneToOne: false
                            },
 "detach_assignment_file":
 { Args: { "target_file": string }; Returns: string
+                           },
+"finish_team_draw":
+{ Args: { "claimed_at": string,"rationale"?: string,"target_post": string,"teams": Json }; Returns: boolean
                            },
 "first_check_progress":
 { Args: { "target_assignment": string }; Returns: {
@@ -1002,6 +1118,9 @@ isOneToOne: false
 "is_submitted_object":
 { Args: { "object_name": string }; Returns: boolean
                            },
+"is_team_draw":
+{ Args: { "target_post": string }; Returns: boolean
+                           },
 "issue_invite_code":
 { Args: { "target_course": string }; Returns: string
                            },
@@ -1031,6 +1150,9 @@ isOneToOne: false
                            },
 "profile_files_limit":
 { Args: Record<PropertyKey, never>; Returns: number
+                           },
+"publish_team_draw":
+{ Args: { "target_post": string }; Returns: undefined
                            },
 "purge_unverified_users":
 { Args: Record<PropertyKey, never>; Returns: number
@@ -1077,6 +1199,14 @@ isOneToOne: false
 "submit_files":
 { Args: { "files": Json,"target_assignment": string }; Returns: (string)[]
                            },
+"team_draw_course":
+{ Args: { "target_post": string }; Returns: string
+                           },
+"team_draw_people":
+{ Args: { "target_post": string }; Returns: {
+              "answers": Json,"key": string
+            }[]
+                           },
 "unverified_users_to_purge":
 { Args: { "max_age": string }; Returns: {
               "created_at": string,"email": string,"id": string
@@ -1084,10 +1214,13 @@ isOneToOne: false
                            },
 "update_my_profile":
 { Args: { "contact_visibility": Database["public"]['Enums']["contact_visibility"],"github"?: string,"new_name": string,"open_chat_url"?: string,"show_email": boolean }; Returns: undefined
+                           },
+"valid_survey_questions":
+{ Args: { "questions": Json }; Returns: boolean
                            }
           }
           Enums: {
-            "contact_visibility": "public"|"course"|"private","file_kind": "text"|"binary","post_category": "free"|"question"|"career"|"info"|"etc","role": "student"|"professor"|"admin","visibility": "private"|"course"|"campus"
+            "contact_visibility": "public"|"course"|"private","file_kind": "text"|"binary","post_category": "free"|"question"|"career"|"info"|"etc","role": "student"|"professor"|"admin","team_draw_mode": "random"|"survey","team_draw_status": "open"|"drawing"|"failed"|"drafted"|"published","visibility": "private"|"course"|"campus"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1207,7 +1340,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "contact_visibility": ["public", "course", "private"],"file_kind": ["text", "binary"],"post_category": ["free", "question", "career", "info", "etc"],"role": ["student", "professor", "admin"],"visibility": ["private", "course", "campus"]
+            "contact_visibility": ["public", "course", "private"],"file_kind": ["text", "binary"],"post_category": ["free", "question", "career", "info", "etc"],"role": ["student", "professor", "admin"],"team_draw_mode": ["random", "survey"],"team_draw_status": ["open", "drawing", "failed", "drafted", "published"],"visibility": ["private", "course", "campus"]
           }
         }
 } as const
