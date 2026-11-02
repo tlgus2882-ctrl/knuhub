@@ -4,6 +4,11 @@ export type Update = { date: string; title: string; items: string[] };
 export const UPDATES: Update[] = [
   {
     date: "2026-11-02",
+    title: "제출할 파일을 여러 번 나눠 고르기",
+    items: ["제출할 파일을 여러 번 고르거나 끌어다 놓으면 앞서 고른 파일에 합쳐져요. 같은 경로의 파일은 새 파일로 바뀌고, \"모두 빼기\"로 처음부터 다시 고를 수 있어요."],
+  },
+  {
+    date: "2026-11-02",
     title: "PDF 제출물도 AI 검토",
     items: [
       "제출물에 PDF가 있으면 셀프 점검과 1차 검사가 PDF 내용(글자와 그림)도 읽고 판단해요.",
