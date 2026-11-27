@@ -13,12 +13,12 @@ import { DeleteButton } from "../delete-button";
 import { ReportButton } from "../report-button";
 import { TeamDrawPanel } from "../team-draw/team-draw-panel";
 
-export default function PostPage({ params }: PageProps<"/board/[postId]">) {
+export default function PostPage({ params, searchParams }: PageProps<"/board/[postId]">) {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-16">
       <Suspense fallback={<p className="text-sm text-muted-foreground">불러오는 중…</p>}>
-        {params.then(({ postId }) => (
-          <Post postId={postId} />
+        {Promise.all([params, searchParams]).then(([{ postId }, { from }]) => (
+          <Post postId={postId} fromHome={from === "home"} />
         ))}
       </Suspense>
     </main>
@@ -27,7 +27,7 @@ export default function PostPage({ params }: PageProps<"/board/[postId]">) {
 
 const edited = (row: { created_at: string; updated_at: string }) => Date.parse(row.updated_at) > Date.parse(row.created_at);
 
-async function Post({ postId }: { postId: string }) {
+async function Post({ postId, fromHome }: { postId: string; fromHome: boolean }) {
   const supabase = await createServerSupabase();
   const [{ data: post }, { data: claims }] = await Promise.all([
     supabase
@@ -49,8 +49,9 @@ async function Post({ postId }: { postId: string }) {
 
   return (
     <>
-      <Link href={boardHref(post.course_id)} className="text-sm text-muted-foreground hover:underline">
-        ← {post.course ? `${post.course.name} 과목 게시판` : "메인 게시판"}
+      {/* Opened from the 메인 page's post list: back to the 메인 page, not the board (#102). */}
+      <Link href={fromHome ? "/" : boardHref(post.course_id)} className="text-sm text-muted-foreground hover:underline">
+        ← {fromHome ? "메인" : post.course ? `${post.course.name} 과목 게시판` : "메인 게시판"}
       </Link>
       <article className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">

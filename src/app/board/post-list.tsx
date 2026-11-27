@@ -2,12 +2,15 @@ import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
 import { cn } from "@/lib/utils";
-import { postLabel, type PostCategory } from "./categories";
+import { postHref, postLabel, type PostCategory } from "./categories";
 
 type Board = { courseId: string; category?: undefined } | { courseId?: undefined; category: PostCategory | null };
 
-/** Newest posts of a 과목 게시판 (공지 first), or of the 메인 게시판, optionally of one 말머리. */
-export async function PostList({ limit, ...board }: Board & { limit: number }) {
+/**
+ * Newest posts of a 과목 게시판 (공지 first), or of the 메인 게시판, optionally of one 말머리.
+ * `fromHome` makes each post's back link return to the 메인 page instead of the board.
+ */
+export async function PostList({ limit, fromHome = false, ...board }: Board & { limit: number; fromHome?: boolean }) {
   const supabase = await createServerSupabase();
   let query = supabase.from("post").select("id, category, is_notice, title, created_at, profile(name), team_draw(post_id), post_comment(count), post_like(count)");
   if (board.courseId) query = query.eq("course_id", board.courseId).order("is_notice", { ascending: false });
@@ -22,7 +25,7 @@ export async function PostList({ limit, ...board }: Board & { limit: number }) {
     <ul className="flex flex-col divide-y rounded-xl border">
       {posts.map((post) => (
         <li key={post.id} className={post.is_notice ? "bg-primary/5" : undefined}>
-          <Link href={`/board/${post.id}`} className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted">
+          <Link href={postHref(post.id, fromHome)} className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted">
             <span className="min-w-0 truncate">
               {postLabel(post) && (
                 <span className={cn("mr-2 text-sm text-primary", post.is_notice && "font-semibold")}>[{postLabel(post)}]</span>
