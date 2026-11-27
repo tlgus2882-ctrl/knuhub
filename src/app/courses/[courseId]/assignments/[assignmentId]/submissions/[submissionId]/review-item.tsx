@@ -2,14 +2,24 @@
 
 import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ReviewAuthorBadge } from "@/components/review-author-badge";
 import { UserLink } from "@/components/user-link";
+import type { ReviewAuthorRole } from "@/lib/reviews/author-role";
 import { deleteReview, type ReviewFormState } from "./review-actions";
 import { ReviewForm } from "./review-form";
 
 const initial: ReviewFormState = { error: null };
 
 type Props = {
-  review: { id: string; body: string; authorId: string; authorName: string; writtenAt: string; edited: boolean };
+  review: {
+    id: string;
+    body: string;
+    authorId: string;
+    authorName: string;
+    authorRole: ReviewAuthorRole | null;
+    writtenAt: string;
+    edited: boolean;
+  };
   canEdit: boolean;
   canDelete: boolean;
 };
@@ -20,8 +30,9 @@ export function ReviewItem({ review, canEdit, canDelete }: Props) {
 
   return (
     <li className="flex flex-col gap-2 p-4">
-      <p className="text-sm">
-        <UserLink userId={review.authorId} name={review.authorName} />{" "}
+      <p className="flex flex-wrap items-center gap-x-1.5 text-sm">
+        <UserLink userId={review.authorId} name={review.authorName} />
+        <ReviewAuthorBadge role={review.authorRole} />
         <span className="text-muted-foreground">
           · {review.writtenAt}
           {review.edited && " (고침)"}

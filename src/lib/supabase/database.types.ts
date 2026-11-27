@@ -725,9 +725,9 @@ isOneToOne: false
                   ]
                 },"review": {
                   Row: {
-                    "author_id": string,"body": string,"created_at": string,"id": string,"submission_id": string,"updated_at": string,"can_delete": boolean | null,"can_edit": boolean | null
+                    "author_id": string,"body": string,"created_at": string,"id": string,"submission_id": string,"updated_at": string,"author_role": string | null,"can_delete": boolean | null,"can_edit": boolean | null
                   }
-                  ComputedFields: "can_delete" | "can_edit"
+                  ComputedFields: "author_role" | "can_delete" | "can_edit"
                   Insert: {
                     "author_id"?: string,"body": string,"created_at"?: string,"id"?: string,"submission_id": string,"updated_at"?: string
                   }
@@ -1048,6 +1048,9 @@ isOneToOne: false
               "email": string,"github": string,"open_chat_url": string
             }[]
                            },
+"author_role":
+{ Args: { "": Database["public"]['Tables']["review"]['Row'] }; Returns: { error: true } & "the function public.author_role with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+                           },
 "can_answer_survey":
 { Args: { "target_post": string }; Returns: boolean
                            },
@@ -1227,6 +1230,9 @@ isOneToOne: false
                            },
 "request_first_check":
 { Args: { "target_assignment": string }; Returns: number
+                           },
+"review_author_role":
+{ Args: { "review_author": string,"target_submission": string }; Returns: string
                            },
 "save_grading_criteria":
 { Args: { "criteria": Json,"target_assignment": string }; Returns: number
