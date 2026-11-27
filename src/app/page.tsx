@@ -82,7 +82,7 @@ async function SignedInHome({ searchParams }: Pick<PageProps<"/">, "searchParams
             </Button>
           </div>
         </div>
-        <PostList category={null} limit={5} />
+        <PostList category={null} limit={5} fromHome />
       </section>
     </>
   );

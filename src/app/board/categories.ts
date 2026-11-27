@@ -24,6 +24,11 @@ export function boardHref(courseId: string | null) {
   return courseId ? `/courses/${courseId}#board` : "/board";
 }
 
+/** A post, opened from the 메인 page (`fromHome`) so that its back link returns there. */
+export function postHref(postId: string, fromHome = false) {
+  return fromHome ? `/board/${postId}?from=home` : `/board/${postId}`;
+}
+
 export function toCategory(value: unknown): PostCategory | null {
   return CATEGORIES.find((category) => category === value) ?? null;
 }

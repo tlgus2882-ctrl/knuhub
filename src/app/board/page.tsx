@@ -11,6 +11,9 @@ const PAGE_SIZE = 100;
 export default function BoardPage({ searchParams }: PageProps<"/board">) {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-16">
+      <Link href="/" className="text-sm text-muted-foreground hover:underline">
+        ← 메인
+      </Link>
       <h1 className="text-2xl font-semibold tracking-tight">메인 게시판</h1>
       <Suspense fallback={<p className="text-sm text-muted-foreground">불러오는 중…</p>}>
         {searchParams.then(({ category }) => (
