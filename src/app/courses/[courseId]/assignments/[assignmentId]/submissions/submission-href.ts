@@ -25,3 +25,16 @@ export function submissionHref(
 export function submissionFileHrefs(courseId: string, assignmentId: string, submissionId: string, historyId?: string) {
   return (path: string) => submissionHref(courseId, assignmentId, submissionId, path, historyId);
 }
+
+/**
+ * Compares two versions of one 제출물. A version is a 제출 이력 entry id, or `undefined` for the 지금 제출물.
+ * Without `from`, the screen compares `to` with the version just before it.
+ */
+export function submissionCompareHref(courseId: string, assignmentId: string, submissionId: string, from?: string, to?: string) {
+  const base = `/courses/${courseId}/assignments/${assignmentId}/submissions/${submissionId}/compare`;
+  const query = new URLSearchParams();
+  if (from) query.set("from", from);
+  if (to) query.set("to", to);
+  const search = query.toString();
+  return search ? `${base}?${search}` : base;
+}
