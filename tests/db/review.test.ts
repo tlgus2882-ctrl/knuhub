@@ -177,3 +177,48 @@ describe("리뷰 열람", () => {
     expect(await reviewsSeenBy(outsider, submissionId)).toEqual([]);
   });
 });
+
+describe("리뷰 배지", () => {
+  async function badgesSeenBy(user: TestUser, submissionId: string) {
+    const { data, error } = await user.client.from("review").select("author_id, author_role").eq("submission_id", submissionId);
+    if (error) throw error;
+    return Object.fromEntries((data ?? []).map((r) => [r.author_id, r.author_role]));
+  }
+
+  it("리뷰마다 그 과목 안에서 쓴 사람의 역할(교수, 조교, 학생)이 붙는다", async () => {
+    const { professor, assistant, author, classmate, submissionId, closeDeadline } = await reviewSetup();
+    await closeDeadline();
+    for (const user of [professor, assistant, author, classmate]) await writeReview(user, submissionId);
+
+    for (const viewer of [author, classmate, professor]) {
+      expect(await badgesSeenBy(viewer, submissionId)).toEqual({
+        [professor.id]: "professor",
+        [assistant.id]: "assistant",
+        [author.id]: "student",
+        [classmate.id]: "student",
+      });
+    }
+  });
+
+  it("조교 지정을 풀면 그 조교의 리뷰 배지가 학생으로 바뀐다", async () => {
+    const { professor, assistant, author, submissionId } = await reviewSetup();
+    await writeReview(assistant, submissionId);
+
+    const { error } = await professor.client.from("course_assistant").delete().eq("user_id", assistant.id);
+    expect(error).toBeNull();
+
+    expect(await badgesSeenBy(author, submissionId)).toEqual({ [assistant.id]: "student" });
+  });
+
+  it("과목 밖 사람이 학내 공개 제출물에 쓴 리뷰에는 배지가 없다", async () => {
+    const { outsider, author, submissionId, closeDeadline } = await reviewSetup("campus");
+    const otherProfessor = await createTestUser({ role: "professor" });
+    await closeDeadline();
+    for (const user of [outsider, otherProfessor]) {
+      const { error } = await writeReview(user, submissionId);
+      expect(error).toBeNull();
+    }
+
+    expect(await badgesSeenBy(author, submissionId)).toEqual({ [outsider.id]: null, [otherProfessor.id]: null });
+  });
+});
