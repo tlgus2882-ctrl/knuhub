@@ -8,7 +8,7 @@ import { SUBMISSION_BUCKET } from "@/lib/submissions/storage";
 import type { Tables } from "@/lib/supabase/database.types";
 import { createServerSupabase, type ServerSupabase } from "@/lib/supabase/server";
 import { formatKst } from "@/lib/time";
-import { submissionFileHrefs, submissionHref } from "../submission-href";
+import { submissionCompareHref, submissionFileHrefs, submissionHref } from "../submission-href";
 import { AuthorCard } from "@/components/author-card";
 import { FileTree } from "./file-tree";
 import { FirstCheckOpinions } from "./first-check-opinions";
@@ -120,6 +120,12 @@ async function SubmissionView({
                 {h.id ? formatKst(h.submitted_at) : "지금 제출물"}
               </Link>
             ))}
+            {/* The oldest entry has nothing before it to compare with. */}
+            {viewed?.id !== history.at(-1)?.id && (
+              <Link href={submissionCompareHref(courseId, assignmentId, submissionId, undefined, viewed?.id)} className="text-primary underline">
+                바뀐 부분 보기
+              </Link>
+            )}
           </nav>
         )}
         {viewed && (
